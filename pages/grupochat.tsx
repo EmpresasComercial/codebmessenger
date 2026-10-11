@@ -12,6 +12,7 @@ import {
   Send, 
   X, 
   CheckCheck,
+  Clock,
   MoreVertical,
   ArrowDown,
   Download,
@@ -477,7 +478,13 @@ const MessageItem = React.memo(({
                 <span className="text-[9.5px] font-normal text-white/85 select-none">editada</span>
               )}
               <span className="text-[10px] font-normal text-white">{timeFormatted}</span>
-              {isMe && <CheckCheck className="w-3 h-3 text-white stroke-[2.4]" />}
+              {isMe && (
+                m.status === 'sending'
+                  ? <Clock className="w-3 h-3 text-white/70 stroke-[2]" />
+                  : m.status === 'failed'
+                  ? <span className="text-[10px] text-red-300 font-bold leading-none">!</span>
+                  : <CheckCheck className="w-3 h-3 text-white stroke-[2.4]" />
+              )}
             </div>
             {Object.keys(reactions).length > 0 && (
               <div className="absolute -bottom-5 left-0 flex flex-wrap gap-1">
@@ -600,9 +607,18 @@ const MessageItem = React.memo(({
                   {timeFormatted}
                 </span>
                 {isMe && (
-                  <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
+                  m.status === 'sending'
+                    ? <Clock className="w-[14px] h-[14px] text-[#8e8e93] stroke-[2] ml-[2px]" />
+                    : m.status === 'failed'
+                    ? <span className="text-[12px] text-[#e53e3e] font-bold ml-[2px] leading-none">!</span>
+                    : <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
                 )}
               </div>
+              {isMe && m.status === 'failed' && (
+                <p className="text-[10px] text-[#e53e3e] mt-0.5 text-right font-medium select-none leading-tight">
+                  Mensagem não enviada
+                </p>
+              )}
             </div>
 
             {Object.keys(reactions).length > 0 && (
@@ -1210,7 +1226,8 @@ export default function grupochat() {
       mensagem: tempMsg || "",
       detalhes,
       data_registrada: new Date().toISOString(),
-      perfil: { telefone: "Eu", nome_exibicao: "Eu" }
+      perfil: { telefone: "Eu", nome_exibicao: "Eu" },
+      status: 'sending' as const
     };
     setPublicMessages(prev => [...prev, optimisticMessage]);
     scrollToBottom();
@@ -1239,7 +1256,8 @@ export default function grupochat() {
           perfil: { 
             telefone: phoneCache[user.id] || "Eu",
             nome_exibicao: phoneCache[user.id] || "Eu"
-          }
+          },
+          status: 'sent' as const
         } : m));
       }
       console.log('[CommunityChat] Mensagem inserida com sucesso');
