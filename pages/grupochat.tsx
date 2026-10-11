@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -97,6 +97,38 @@ Object.values(CONTEXT_GROUPS).forEach(group => {
 const ALL_KEYWORDS_SORTED = Object.keys(KEYWORD_TO_PATH).sort((a, b) => b.length - a.length);
 const SMART_CONTEXT_REGEX = new RegExp(`(${ALL_KEYWORDS_SORTED.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
 
+const URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+
+const isAllowedUrl = (rawUrl: string): boolean => {
+  if (!rawUrl) return false;
+  try {
+    const cleanUrl = rawUrl.trim().replace(/[.,;!?)]+$/, '');
+    const formatted = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')
+      ? cleanUrl
+      : `https://${cleanUrl}`;
+    const parsed = new URL(formatted);
+    const host = parsed.hostname.toLowerCase();
+
+    if (host === 'telegramas.cc' || host === 'www.telegramas.cc' || host.endsWith('.telegramas.cc')) {
+      return true;
+    }
+
+    if (typeof window !== 'undefined' && window.location?.hostname) {
+      const currentHost = window.location.hostname.toLowerCase();
+      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+        if (host === currentHost || host.endsWith(`.${currentHost}`)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+};
+
+const MAX_TRANSLATION_CACHE = 250;
 const translationCache = new Map<string, string>();
 const translationQueue: (() => Promise<void>)[] = [];
 let isTranslating = false;
@@ -108,17 +140,34 @@ const processTranslationQueue = async () => {
     const task = translationQueue.shift();
     if (task) {
       await task();
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 60));
     }
   }
   isTranslating = false;
 };
 
+const getCachedTranslation = (key: string): string | undefined => {
+  if (!translationCache.has(key)) return undefined;
+  const val = translationCache.get(key)!;
+  translationCache.delete(key);
+  translationCache.set(key, val);
+  return val;
+};
+
+const setCachedTranslation = (key: string, val: string) => {
+  if (translationCache.size >= MAX_TRANSLATION_CACHE) {
+    const oldestKey = translationCache.keys().next().value;
+    if (oldestKey) translationCache.delete(oldestKey);
+  }
+  translationCache.set(key, val);
+};
+
 const translateTextAPI = (text: string, lang: string): Promise<string> => {
   return new Promise((resolve) => {
-    if (!text || text.trim() === '') return resolve(text);
+    if (!text || text.trim() === '' || lang === 'pt') return resolve(text);
     const cacheKey = `${lang}:${text}`;
-    if (translationCache.has(cacheKey)) return resolve(translationCache.get(cacheKey)!);
+    const cached = getCachedTranslation(cacheKey);
+    if (cached) return resolve(cached);
     
     translationQueue.push(async () => {
       try {
@@ -127,7 +176,7 @@ const translateTextAPI = (text: string, lang: string): Promise<string> => {
         const json = await res.json();
         if (json && json[0]) {
           const result = json[0].map((item: any) => item[0]).join('');
-          translationCache.set(cacheKey, result);
+          setCachedTranslation(cacheKey, result);
           resolve(result);
         } else resolve(text);
       } catch {
@@ -138,20 +187,29 @@ const translateTextAPI = (text: string, lang: string): Promise<string> => {
   });
 };
 
-const TranslatedMessage = ({ text, language, renderFormatted }: { text: string, language: string, renderFormatted: (t: string) => React.ReactNode }) => {
+const TranslatedMessage = React.memo(({ text, language, renderFormatted }: { text: string, language: string, renderFormatted: (t: string) => React.ReactNode }) => {
   const [translated, setTranslated] = useState<string>(text);
 
   useEffect(() => {
     let isMounted = true;
-    if (!text) return;
-    if (language === 'pt') { setTranslated(text); return; }
-    setTranslated(translationCache.get(`${language}:${text}`) || text);
-    translateTextAPI(text, language).then(result => { if (isMounted) setTranslated(result); });
+    if (!text || language === 'pt') {
+      setTranslated(text);
+      return;
+    }
+    const cached = getCachedTranslation(`${language}:${text}`);
+    if (cached) {
+      setTranslated(cached);
+      return;
+    }
+    translateTextAPI(text, language).then(result => { 
+      if (isMounted) setTranslated(result); 
+    });
     return () => { isMounted = false; };
   }, [text, language]);
 
   return <>{renderFormatted(translated)}</>;
-};
+});
+TranslatedMessage.displayName = "TranslatedMessage";
 
 const USER_COLORS = [
   "#229ED9", "#E56555", "#8E44AD", "#27AE60", "#D35400", "#16A085", "#C0392B", "#2980B9"
@@ -164,12 +222,71 @@ function getUserColor(str: string): string {
 }
 
 const formatSenderPhone = (p?: string | null) => {
-  if (!p) return 'Contacto';
+  if (!p || p === "Membro") return 'Membro';
   const clean = p.replace(/^\+?244\s*/, '').trim();
   if (/^\d{9}$/.test(clean)) {
-    return `+244 ${clean.slice(0, 3)} ${clean.slice(3, 6)} ${clean.slice(6)}`;
+    return `${clean.slice(0, 3)} ${clean.slice(3, 6)} ${clean.slice(6)}`;
   }
-  return p;
+  return clean || 'Contacto';
+};
+
+const formatTime = (ts: string) => ts ? new Date(ts).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }) : "";
+
+const formatDateLabel = (dateStr: string) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (days === 0) return "Hoje";
+  if (days === 1) return "Ontem";
+  return d.toLocaleDateString("pt-PT", { day: "numeric", month: "long" });
+};
+
+const compressImage = (file: File, maxWidth = 1280, maxHeight = 1280, quality = 0.75): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
 };
 
 const phoneCache: Record<string, string> = {};
@@ -252,6 +369,265 @@ const GROUP_TABS: { id: GroupTab; label: string }[] = [
   { id: 'links', label: 'Links' },
 ];
 
+interface MessageItemProps {
+  message: any;
+  isMe: boolean;
+  displayName: string;
+  authorColor: string;
+  showDate: boolean;
+  dateLabel: string;
+  timeFormatted: string;
+  language: string;
+  isSelectedInContextMenu: boolean;
+  onStartLongPress: (m: any, isMe: boolean, clientX: number, clientY: number) => void;
+  onCancelLongPress: () => void;
+  onCheckMoveCancel: (clientX: number, clientY: number) => void;
+  onContextMenu: (e: React.MouseEvent, m: any, isMe: boolean) => void;
+  onClickBubble: (e: React.MouseEvent) => void;
+  onToggleReaction: (messageId: number, emoji: string) => void;
+  onOpenZoomedImage: (imgUrl: string) => void;
+  renderFormattedMessage: (text: string) => React.ReactNode;
+}
+
+const MessageItem = React.memo(({
+  message: m,
+  isMe,
+  displayName,
+  authorColor,
+  showDate,
+  dateLabel,
+  timeFormatted,
+  language,
+  isSelectedInContextMenu,
+  onStartLongPress,
+  onCancelLongPress,
+  onCheckMoveCancel,
+  onContextMenu,
+  onClickBubble,
+  onToggleReaction,
+  onOpenZoomedImage,
+  renderFormattedMessage
+}: MessageItemProps) => {
+  const parsedData: any = (m.detalhes && typeof m.detalhes === 'object') ? m.detalhes : {};
+  const reply = parsedData.reply;
+  const reactions = parsedData.reacoes || {};
+  const isEdited = Boolean(parsedData.editado);
+
+  return (
+    <React.Fragment>
+      {showDate && (
+        <div className="flex justify-center my-3">
+          <span className="text-[12px] font-medium text-white bg-black/35 backdrop-blur-xs rounded-full px-3.5 py-0.5 shadow-2xs">
+            {dateLabel}
+          </span>
+        </div>
+      )}
+
+      <div className={`flex items-end w-full gap-1.5 ${isMe ? "justify-end" : "justify-start"} relative group`}>
+        {!isMe && (
+          <div 
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-bold shrink-0 mb-0.5 shadow-xs overflow-hidden select-none"
+            style={{ backgroundColor: authorColor }}
+          >
+            {displayName.slice(0, 2).toUpperCase()}
+          </div>
+        )}
+
+        {/* ── Mensagem só com imagem (sem balão) ── */}
+        {parsedData.imagem_url && !m.mensagem?.trim() ? (
+          <div
+            className="relative cursor-pointer rounded-[18px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.18)] max-w-[72vw] sm:max-w-[320px]"
+            onTouchStart={(e) => {
+              const t = e.touches[0];
+              onStartLongPress(m, isMe, t.clientX, t.clientY);
+            }}
+            onTouchMove={(e) => {
+              const t = e.touches[0];
+              onCheckMoveCancel(t.clientX, t.clientY);
+            }}
+            onTouchEnd={onCancelLongPress}
+            onTouchCancel={onCancelLongPress}
+            onMouseDown={(e) => {
+              if (e.button === 0) {
+                onStartLongPress(m, isMe, e.clientX, e.clientY);
+              }
+            }}
+            onMouseMove={(e) => {
+              onCheckMoveCancel(e.clientX, e.clientY);
+            }}
+            onMouseUp={onCancelLongPress}
+            onMouseLeave={onCancelLongPress}
+            onContextMenu={(e) => onContextMenu(e, m, isMe)}
+            onClick={onClickBubble}
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+          >
+            <img
+              src={parsedData.imagem_url}
+              alt="Foto"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-auto block rounded-[18px] cursor-pointer active:opacity-90"
+              style={{ maxHeight: '340px', objectFit: 'cover' }}
+              onClick={(e) => { e.stopPropagation(); onOpenZoomedImage(parsedData.imagem_url); }}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+            />
+            <div className="absolute bottom-1.5 right-2 flex items-center gap-1 bg-black/40 rounded-full px-1.5 py-0.5 select-none">
+              {isEdited && (
+                <span className="text-[9.5px] font-normal text-white/85 select-none">editada</span>
+              )}
+              <span className="text-[10px] font-normal text-white">{timeFormatted}</span>
+              {isMe && <CheckCheck className="w-3 h-3 text-white stroke-[2.4]" />}
+            </div>
+            {Object.keys(reactions).length > 0 && (
+              <div className="absolute -bottom-5 left-0 flex flex-wrap gap-1">
+                {Object.entries(reactions).map(([emoji, users]: [string, any]) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onToggleReaction(m.id, emoji); }}
+                    className="bg-white/90 border border-black/5 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm hover:bg-white active:scale-95 transition-transform cursor-pointer"
+                  >
+                    <span className="text-[11px]">{emoji}</span>
+                    <span className="text-[10px] font-bold text-[#555555]">{(users as any[]).length}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── Mensagem normal (texto ± imagem) ── */
+          <div
+            onTouchStart={(e) => {
+              const t = e.touches[0];
+              onStartLongPress(m, isMe, t.clientX, t.clientY);
+            }}
+            onTouchMove={(e) => {
+              const t = e.touches[0];
+              onCheckMoveCancel(t.clientX, t.clientY);
+            }}
+            onTouchEnd={onCancelLongPress}
+            onTouchCancel={onCancelLongPress}
+            onMouseDown={(e) => {
+              if (e.button === 0) {
+                onStartLongPress(m, isMe, e.clientX, e.clientY);
+              }
+            }}
+            onMouseMove={(e) => {
+              onCheckMoveCancel(e.clientX, e.clientY);
+            }}
+            onMouseUp={onCancelLongPress}
+            onMouseLeave={onCancelLongPress}
+            onContextMenu={(e) => onContextMenu(e, m, isMe)}
+            onClick={onClickBubble}
+            className={cn(
+              "tg-bubble max-w-[85%] px-[10px] pt-[6px] pb-[6px] text-[#000000] dark:text-[#f3f4f6] shadow-[0_1px_2px_rgba(16,35,47,0.15)] relative cursor-pointer active:brightness-95 active:scale-[0.985] transition-all select-none",
+              isMe ? "bg-[#eeffde] dark:bg-[#2b5278] is-me" : "bg-white dark:bg-[#182533] is-other",
+              isSelectedInContextMenu && "brightness-90 scale-[0.985]"
+            )}
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+          >
+            {isMe ? (
+              <svg
+                width="9"
+                height="20"
+                viewBox="0 0 9 20"
+                className="absolute pointer-events-none"
+                style={{ bottom: 0, right: -8, fill: 'currentColor' }}
+                stroke="none"
+                color="inherit"
+              >
+                <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#eeffde] dark:fill-[#2b5278]" />
+              </svg>
+            ) : (
+              <svg
+                width="9"
+                height="20"
+                viewBox="0 0 9 20"
+                className="absolute pointer-events-none"
+                style={{ bottom: 0, left: -8, transform: 'scaleX(-1)', fill: 'currentColor' }}
+              >
+                <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-white dark:fill-[#182533]" />
+              </svg>
+            )}
+
+            {!isMe && (
+              <p 
+                className="text-[13px] font-medium mb-[2px] cursor-pointer truncate"
+                style={{ color: authorColor }}
+              >
+                {displayName}
+              </p>
+            )}
+
+            {reply && (
+              <div className={cn(
+                "rounded-[4px] px-2 py-1 mb-1.5 text-[13px] border-l-[3px] bg-black/5 overflow-hidden",
+                isMe ? "border-[#4fae4e] text-[#444444]" : "border-[#2b82c9] text-[#555555]"
+              )}>
+                <p className="font-medium text-[13px] text-[#2b82c9] truncate leading-tight">{reply.sender}</p>
+                <p className="truncate text-[13px] text-[#666666] leading-tight mt-0.5">{reply.text || "📷 Foto"}</p>
+              </div>
+            )}
+
+            {parsedData.imagem_url && (
+              <div className="mb-1.5 -mx-[2px] -mt-[2px] overflow-hidden rounded-[8px]">
+                <img
+                  src={parsedData.imagem_url}
+                  alt="Anexo"
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-auto max-h-[260px] object-cover cursor-pointer active:opacity-90 rounded-[8px]"
+                  onClick={(e) => { e.stopPropagation(); onOpenZoomedImage(parsedData.imagem_url); }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
+
+            <div className="relative leading-[1.3]">
+              <span className="text-[16px] whitespace-pre-wrap break-words font-normal">
+                <TranslatedMessage text={m.mensagem} language={language} renderFormatted={renderFormattedMessage} />
+              </span>
+              
+              <span className="inline-block h-[1px]" style={{ width: isEdited ? (isMe ? '75px' : '60px') : (isMe ? '56px' : '42px') }}></span>
+
+              <div className="absolute bottom-[-1px] right-0 flex items-center gap-[2px] select-none text-[12px]" style={{ color: isMe ? '#55864e' : '#8e8e93' }}>
+                {isEdited && (
+                  <span className="opacity-80 mr-[2px]">editada</span>
+                )}
+                <span className="font-normal leading-none mt-[1px]">
+                  {timeFormatted}
+                </span>
+                {isMe && (
+                  <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
+                )}
+              </div>
+            </div>
+
+            {Object.keys(reactions).length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-black/5">
+                {Object.entries(reactions).map(([emoji, users]: [string, any]) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onToggleReaction(m.id, emoji); }}
+                    className="bg-white/80 border border-black/5 rounded-full px-2 py-[2px] flex items-center gap-1 shadow-2xs hover:bg-white active:scale-95 transition-transform cursor-pointer"
+                  >
+                    <span className="text-[12px] leading-none">{emoji}</span>
+                    <span className="text-[11px] font-bold text-[#555555] leading-none">{(users as any[]).length}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </React.Fragment>
+  );
+});
+MessageItem.displayName = "MessageItem";
+
 export default function grupochat() {
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -281,15 +657,13 @@ export default function grupochat() {
   const [reactionMenuId, setReactionMenuId] = useState<number | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // ── Context Menu Telegram ──
   const [contextMenu, setContextMenu] = useState<{ message: any; isMe: boolean } | null>(null);
   const [showAllReactions, setShowAllReactions] = useState(false);
-  // ── Long Press Gesture (Pressionar para abrir modal) ───────────────────
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressTriggeredRef = useRef(false);
   const pressStartPosRef = useRef<{ x: number; y: number } | null>(null);
 
-  const startLongPress = (m: any, isMe: boolean, clientX: number, clientY: number) => {
+  const startLongPress = useCallback((m: any, isMe: boolean, clientX: number, clientY: number) => {
     isLongPressTriggeredRef.current = false;
     pressStartPosRef.current = { x: clientX, y: clientY };
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
@@ -302,29 +676,49 @@ export default function grupochat() {
       setContextMenu({ message: m, isMe });
       setShowAllReactions(false);
     }, 500);
-  };
+  }, []);
 
-  const cancelLongPress = () => {
+  const cancelLongPress = useCallback(() => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
     pressStartPosRef.current = null;
-  };
+  }, []);
 
-  const checkMoveCancel = (clientX: number, clientY: number) => {
+  const checkMoveCancel = useCallback((clientX: number, clientY: number) => {
     if (!pressStartPosRef.current) return;
     const diffX = Math.abs(clientX - pressStartPosRef.current.x);
     const diffY = Math.abs(clientY - pressStartPosRef.current.y);
     if (diffX > 10 || diffY > 10) {
       cancelLongPress();
     }
-  };
+  }, [cancelLongPress]);
 
-  const closeContextMenu = () => {
+  const closeContextMenu = useCallback(() => {
     setContextMenu(null);
     setShowAllReactions(false);
-  };
+  }, []);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, m: any, isMe: boolean) => {
+    e.preventDefault();
+    e.stopPropagation();
+    cancelLongPress();
+    setContextMenu({ message: m, isMe });
+    setShowAllReactions(false);
+  }, [cancelLongPress]);
+
+  const handleClickBubble = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isLongPressTriggeredRef.current) {
+      e.preventDefault();
+      isLongPressTriggeredRef.current = false;
+    }
+  }, []);
+
+  const handleOpenZoomedImage = useCallback((imgUrl: string) => {
+    setZoomedImage(imgUrl);
+  }, []);
 
   const handleDeleteMessage = async (msgId: number) => {
     if (editingMessage?.id === msgId) {
@@ -369,29 +763,85 @@ export default function grupochat() {
     }
   };
 
-  const renderFormattedMessage = (text: string) => {
+  const handleOpenAuthorizedLink = useCallback((e: React.MouseEvent | React.TouchEvent, url: string) => {
+    e.stopPropagation();
+    try {
+      const cleanUrl = url.trim().replace(/[.,;!?)]+$/, '');
+      const targetUrl = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')
+        ? cleanUrl
+        : `https://${cleanUrl}`;
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    } catch {}
+  }, []);
+
+  const renderFormattedMessage = useCallback((text: string) => {
     if (!text) return null;
-    const parts = text.split(SMART_CONTEXT_REGEX);
+
+    const urlParts = text.split(URL_REGEX);
     const usedGroups = new Set<string>();
 
-    return parts.map((part, i) => {
-      const lowerPart = part.toLowerCase();
-      const path = KEYWORD_TO_PATH[lowerPart];
-      if (path && !usedGroups.has(path)) {
-        usedGroups.add(path);
-        return (
-          <span 
-            key={i}
-            onClick={(e) => { e.stopPropagation(); navigate(path); }}
-            className="text-[#229ED9] font-medium underline cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            {part}
-          </span>
-        );
+    return urlParts.map((part, partIdx) => {
+      if (!part) return null;
+
+      if (/^(https?:\/\/|www\.)/i.test(part)) {
+        const match = part.match(/^(.+?)([.,;!?)]*)$/);
+        const candidateUrl = match ? match[1] : part;
+        const trailing = match ? match[2] : '';
+
+        if (isAllowedUrl(candidateUrl)) {
+          const targetUrl = candidateUrl.startsWith('http://') || candidateUrl.startsWith('https://')
+            ? candidateUrl
+            : `https://${candidateUrl}`;
+
+          return (
+            <React.Fragment key={`url-${partIdx}`}>
+              <a
+                href={targetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleOpenAuthorizedLink(e, targetUrl);
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                className="text-[#2481cc] dark:text-[#52a6eb] underline font-medium cursor-pointer hover:opacity-80 transition-opacity break-all select-text"
+              >
+                {candidateUrl}
+              </a>
+              {trailing}
+            </React.Fragment>
+          );
+        }
+
+        return part;
       }
-      return part;
+
+      const kwParts = part.split(SMART_CONTEXT_REGEX);
+      return (
+        <React.Fragment key={`txt-${partIdx}`}>
+          {kwParts.map((kwPart, kwIdx) => {
+            const lowerPart = kwPart.toLowerCase();
+            const path = KEYWORD_TO_PATH[lowerPart];
+            if (path && !usedGroups.has(path)) {
+              usedGroups.add(path);
+              return (
+                <span 
+                  key={`kw-${partIdx}-${kwIdx}`}
+                  onClick={(e) => { e.stopPropagation(); navigate(path); }}
+                  className="text-[#229ED9] font-medium underline cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  {kwPart}
+                </span>
+              );
+            }
+            return kwPart;
+          })}
+        </React.Fragment>
+      );
     });
-  };
+  }, [handleOpenAuthorizedLink, navigate]);
 
   const isFetchingRef = useRef(false);
 
@@ -542,25 +992,32 @@ export default function grupochat() {
       .subscribe();
 
     const channel = supabase.channel("tg_community_chat_realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_gruop" }, async (payload) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_gruop" }, (payload) => {
         if (payload.eventType === "DELETE") {
           setPublicMessages(prev => prev.filter(m => m.id !== payload.old.id));
           return;
         }
         if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-          const { data } = await supabase.from("chat_gruop").select('*').eq("id", payload.new.id).single();
-          if (data) { 
+          const data: any = payload.new;
+          if (data && data.id) { 
             let tel = phoneCache[data.uid_emissor] || null;
             if (!tel && data.uid_emissor) {
-              const { data: prof } = await supabase
+              supabase
                 .from('sys_t500')
                 .select('telefone, nome_exibicao')
                 .eq('id', data.uid_emissor)
-                .maybeSingle();
-              if (prof) {
-                tel = prof.nome_exibicao || prof.telefone || "Telefone Desconhecido";
-                phoneCache[data.uid_emissor] = tel;
-              }
+                .maybeSingle()
+                .then(({ data: prof }) => {
+                  if (prof) {
+                    const resolvedTel = prof.nome_exibicao || prof.telefone || "Telefone Desconhecido";
+                    phoneCache[data.uid_emissor] = resolvedTel;
+                    setPublicMessages(prev => prev.map(m => 
+                      m.uid_emissor === data.uid_emissor && m.perfil?.nome_exibicao !== resolvedTel
+                        ? { ...m, perfil: { telefone: resolvedTel, nome_exibicao: resolvedTel } }
+                        : m
+                    ));
+                  }
+                });
             }
             const dataWithPhone = { 
               ...data, 
@@ -570,30 +1027,37 @@ export default function grupochat() {
               } 
             };
             setPublicMessages((c) => {
+              if (payload.eventType === "UPDATE") {
+                return c.map(m => {
+                  if (m.id !== data.id) return m;
+                  if (pendingReactionIds.current.has(data.id)) {
+                    const localDetalhes = (m.detalhes && typeof m.detalhes === 'object') ? (m.detalhes as any) : {};
+                    const serverDetalhes = (dataWithPhone.detalhes && typeof dataWithPhone.detalhes === 'object') ? (dataWithPhone.detalhes as any) : {};
+                    const mergedDetalhes = { ...serverDetalhes, reacoes: localDetalhes.reacoes || serverDetalhes.reacoes };
+                    return { ...dataWithPhone, detalhes: mergedDetalhes };
+                  }
+                  return dataWithPhone;
+                });
+              }
+
               const withoutTemp = c.filter(m => !(
                 typeof m.id === 'number' &&
                 m.id > 1000000000000 &&
                 m.uid_emissor === data.uid_emissor &&
                 m.mensagem === data.mensagem
               ));
-              const msgMap = new Map(withoutTemp.map(m => [m.id, m]));
-              // Se a mensagem tem reaÃ§Ã£o pendente, mesclar reacoes locais
-              // para evitar que o realtime sobrescreva o estado otimista
-              if (pendingReactionIds.current.has(data.id)) {
-                const localMsg = c.find(m => m.id === data.id);
-                const localDetalhes = (localMsg?.detalhes && typeof localMsg.detalhes === 'object') ? (localMsg.detalhes as any) : {} as any;
-                const serverDetalhes = (dataWithPhone.detalhes && typeof dataWithPhone.detalhes === 'object') ? (dataWithPhone.detalhes as any) : {} as any;
-                // Usar as reacoes locais (otimistas) em vez das do servidor
-                const mergedDetalhes = { ...serverDetalhes, reacoes: localDetalhes.reacoes || serverDetalhes.reacoes };
-                msgMap.set(data.id, { ...dataWithPhone, detalhes: mergedDetalhes });
-              } else {
-                msgMap.set(data.id, dataWithPhone);
+              if (withoutTemp.some(m => m.id === data.id)) {
+                return withoutTemp.map(m => m.id === data.id ? dataWithPhone : m);
               }
-              return Array.from(msgMap.values()).sort((a, b) => 
-                new Date(a.data_registrada).getTime() - new Date(b.data_registrada).getTime()
-              );
+              const updated = [...withoutTemp, dataWithPhone];
+              try {
+                localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
+              } catch {}
+              return updated;
             }); 
-            if (payload.eventType === "INSERT" && scrollRef.current) scrollToBottom();
+            if (payload.eventType === "INSERT") {
+              scrollToBottom();
+            }
           }
         }
       }).subscribe();
@@ -634,25 +1098,29 @@ export default function grupochat() {
   };
 
   const validateMessage = (text: string) => {
-    if (text.length > 2000) return "A mensagem Ã© muito longa.";
+    if (text.length > 2000) return "A mensagem é muito longa.";
     if (FORBIDDEN_REGEX.test(text)) return "Por favor, evite termos ofensivos.";
-    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
-    const matches = text.match(urlRegex);
+    const matches = text.match(URL_REGEX);
     if (matches) {
-      const allowed = ['azure', 'mcn', 'telegram business', 't.me'];
-      if (matches.some(m => !allowed.some(d => m.toLowerCase().includes(d))))
-        return "NÃ£o sÃ£o permitidos links externos.";
+      if (matches.some(m => !isAllowedUrl(m))) {
+        return "Não são permitidos links externos.";
+      }
     }
     return null;
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { showToast("MÃ¡ximo 5MB.", "error"); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    if (file.size > 10 * 1024 * 1024) { showToast("Máximo 10MB.", "error"); return; }
+    try {
+      const compressed = await compressImage(file, 1280, 1280, 0.75);
+      setImagePreview(compressed);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
     e.target.value = "";
   };
 
@@ -787,92 +1255,59 @@ export default function grupochat() {
 
   };
 
-  const handleToggleReaction = async (messageId: number, emoji: string) => {
+
+  const handleToggleReaction = useCallback(async (messageId: number, emoji: string) => {
     if (!user) return;
-    setReactionMenuId(null);
     closeContextMenu();
 
-    const targetMsg = publicMessages.find(m => m.id === messageId);
-    if (!targetMsg) return;
+    setPublicMessages(prev => {
+      const targetMsg = prev.find(m => m.id === messageId);
+      if (!targetMsg) return prev;
 
-    const prevDetalhes = (targetMsg.detalhes && typeof targetMsg.detalhes === 'object')
-      ? { ...targetMsg.detalhes }
-      : {};
-    const currentReactions: Record<string, string[]> = { ...(prevDetalhes.reacoes || {}) };
-    const usersForEmoji: string[] = Array.isArray(currentReactions[emoji]) 
-      ? [...currentReactions[emoji]] 
-      : [];
-    const hasReacted = usersForEmoji.includes(user.id);
+      const prevDetalhes = (targetMsg.detalhes && typeof targetMsg.detalhes === 'object')
+        ? { ...targetMsg.detalhes }
+        : {};
+      const currentReactions: Record<string, string[]> = { ...(prevDetalhes.reacoes || {}) };
+      const usersForEmoji: string[] = Array.isArray(currentReactions[emoji]) 
+        ? [...currentReactions[emoji]] 
+        : [];
+      const hasReacted = usersForEmoji.includes(user.id);
 
-    if (hasReacted) {
-      const filtered = usersForEmoji.filter(uid => uid !== user.id);
-      if (filtered.length === 0) {
-        delete currentReactions[emoji];
+      if (hasReacted) {
+        const filtered = usersForEmoji.filter(uid => uid !== user.id);
+        if (filtered.length === 0) {
+          delete currentReactions[emoji];
+        } else {
+          currentReactions[emoji] = filtered;
+        }
       } else {
-        currentReactions[emoji] = filtered;
+        currentReactions[emoji] = [...usersForEmoji, user.id];
       }
-    } else {
-      currentReactions[emoji] = [...usersForEmoji, user.id];
-    }
 
-    const updatedDetalhes = {
-      ...prevDetalhes,
-      reacoes: currentReactions
-    };
+      const updatedDetalhes = {
+        ...prevDetalhes,
+        reacoes: currentReactions
+      };
 
-    // 1. Marcar como pendente para o realtime nÃ£o sobrescrever
-    pendingReactionIds.current.add(messageId);
+      pendingReactionIds.current.add(messageId);
 
-    // 2. AtualizaÃ§Ã£o otimista imediata no estado local
-    setPublicMessages(prev => prev.map(m => m.id === messageId ? { ...m, detalhes: updatedDetalhes } : m));
+      (async () => {
+        try {
+          const { error } = await supabase
+            .from('chat_gruop')
+            .update({ detalhes: updatedDetalhes })
+            .eq('id', messageId);
+          if (error) console.error('[CommunityChat] Erro ao salvar reação:', error);
+        } catch (err: any) {
+          console.error('[CommunityChat] Falha ao persistir reação:', err);
+        } finally {
+          setTimeout(() => pendingReactionIds.current.delete(messageId), 3000);
+        }
+      })();
 
-    // 3. Persistir no Supabase chat_gruop
-    try {
-      const { error } = await supabase
-        .from('chat_gruop')
-        .update({ detalhes: updatedDetalhes })
-        .eq('id', messageId);
-
-      if (error) {
-        console.error('[CommunityChat] Erro ao salvar reaÃ§Ã£o:', error);
-      }
-    } catch (err) {
-      console.error('[CommunityChat] Falha ao persistir reaÃ§Ã£o:', err);
-    } finally {
-      // 4. Remover da lista de pendentes apÃ³s 3s (tempo suficiente para o realtime processar)
-      setTimeout(() => pendingReactionIds.current.delete(messageId), 3000);
-    }
-  };
-
-  const handleLongPressStart = (id: number) => {
-    const timer = setTimeout(() => {
-      setReactionMenuId(id);
-      if (window.navigator.vibrate) window.navigator.vibrate(50);
-    }, 500);
-    setLongPressTimer(timer);
-  };
-
-  const handleLongPressEnd = () => { if (longPressTimer) clearTimeout(longPressTimer); };
-
-  const formatTime = (ts: string) => ts ? new Date(ts).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }) : "";
-  const formatDateLabel = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const now = new Date();
-    const diff = now.getTime() - d.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days === 0) return "Hoje";
-    if (days === 1) return "Ontem";
-    return d.toLocaleDateString("pt-PT", { day: "numeric", month: "long" });
-  };
-
-  const formatSenderPhone = (p: string) => {
-    if (!p || p === "Membro") return "Membro";
-    const clean = p.replace(/^\+?244\s*/, '').trim();
-    if (/^\d{9}$/.test(clean)) {
-      return `${clean.slice(0, 3)} ${clean.slice(3, 6)} ${clean.slice(6)}`;
-    }
-    return clean;
-  };
+      return prev.map(m => m.id === messageId ? { ...m, detalhes: updatedDetalhes } : m);
+    });
+  }, [user, closeContextMenu]);
 
   const handleDownloadImage = async (imageUrl: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1023,258 +1458,32 @@ export default function grupochat() {
           const displayName = isMe 
             ? "Eu" 
             : (m.perfil?.nome_exibicao || formatSenderPhone(m.perfil?.telefone));
-          const showDate = i === 0 || formatDateLabel(m.data_registrada) !== formatDateLabel(publicMessages[i-1].data_registrada);
+          const prevDate = i > 0 ? formatDateLabel(publicMessages[i - 1].data_registrada) : "";
+          const currDate = formatDateLabel(m.data_registrada);
+          const showDate = i === 0 || currDate !== prevDate;
           const authorColor = getUserColor(displayName);
 
-          const parsedData: any = (m.detalhes && typeof m.detalhes === 'object') ? m.detalhes : {};
-          const reply = parsedData.reply;
-          const reactions = parsedData.reacoes || {};
-          const isEdited = Boolean(parsedData.editado);
-
           return (
-            <React.Fragment key={m.id}>
-              {showDate && (
-                <div className="flex justify-center my-3">
-                  <span className="text-[12px] font-medium text-white bg-black/35 backdrop-blur-xs rounded-full px-3.5 py-0.5 shadow-2xs">
-                    {formatDateLabel(m.data_registrada)}
-                  </span>
-                </div>
-              )}
-              
-              <motion.div 
-                initial={{ opacity: 0, y: 3 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex items-end w-full gap-1.5 ${isMe ? "justify-end" : "justify-start"} relative group`}
-              >
-                {!isMe && (
-                  <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-bold shrink-0 mb-0.5 shadow-xs overflow-hidden"
-                    style={{ backgroundColor: authorColor }}
-                  >
-                    {displayName.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-
-                {/* ── Mensagem só com imagem (sem balão) ── */}
-                {parsedData.imagem_url && !m.mensagem?.trim() ? (
-                  <div
-                    className="relative cursor-pointer rounded-[18px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.18)] max-w-[72vw] sm:max-w-[320px]"
-                    onTouchStart={(e) => {
-                      const t = e.touches[0];
-                      startLongPress(m, isMe, t.clientX, t.clientY);
-                    }}
-                    onTouchMove={(e) => {
-                      const t = e.touches[0];
-                      checkMoveCancel(t.clientX, t.clientY);
-                    }}
-                    onTouchEnd={cancelLongPress}
-                    onTouchCancel={cancelLongPress}
-                    onMouseDown={(e) => {
-                      if (e.button === 0) {
-                        startLongPress(m, isMe, e.clientX, e.clientY);
-                      }
-                    }}
-                    onMouseMove={(e) => {
-                      if (pressStartPosRef.current) {
-                        checkMoveCancel(e.clientX, e.clientY);
-                      }
-                    }}
-                    onMouseUp={cancelLongPress}
-                    onMouseLeave={cancelLongPress}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      cancelLongPress();
-                      setContextMenu({ message: m, isMe });
-                      setShowAllReactions(false);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isLongPressTriggeredRef.current) {
-                        e.preventDefault();
-                        isLongPressTriggeredRef.current = false;
-                      }
-                    }}
-                    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <img
-                      src={parsedData.imagem_url}
-                      alt="Foto"
-                      className="w-full h-auto block rounded-[18px] cursor-pointer active:opacity-90"
-                      style={{ maxHeight: '340px', objectFit: 'cover' }}
-                      onClick={(e) => { e.stopPropagation(); setZoomedImage(parsedData.imagem_url); }}
-                      onTouchStart={(e) => e.stopPropagation()}
-                      onTouchEnd={(e) => e.stopPropagation()}
-                    />
-                    {/* Timestamp sobreposto */}
-                    <div className="absolute bottom-1.5 right-2 flex items-center gap-1 bg-black/40 rounded-full px-1.5 py-0.5 select-none">
-                      {isEdited && (
-                        <span className="text-[9.5px] font-normal text-white/85 select-none">editada</span>
-                      )}
-                      <span className="text-[10px] font-normal text-white">{formatTime(m.data_registrada)}</span>
-                      {isMe && <CheckCheck className="w-3 h-3 text-white stroke-[2.4]" />}
-                    </div>
-                    {/* Reações */}
-                    {Object.keys(reactions).length > 0 && (
-                      <div className="absolute -bottom-5 left-0 flex flex-wrap gap-1">
-                        {Object.entries(reactions).map(([emoji, users]: [string, any]) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => handleToggleReaction(m.id, emoji)}
-                            className="bg-white/90 border border-black/5 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm hover:bg-white active:scale-95 transition-transform cursor-pointer"
-                          >
-                            <span className="text-[11px]">{emoji}</span>
-                            <span className="text-[10px] font-bold text-[#555555]">{(users as any[]).length}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  /* ── Mensagem normal (texto ± imagem) ── */
-                  <div
-                    onTouchStart={(e) => {
-                      const t = e.touches[0];
-                      startLongPress(m, isMe, t.clientX, t.clientY);
-                    }}
-                    onTouchMove={(e) => {
-                      const t = e.touches[0];
-                      checkMoveCancel(t.clientX, t.clientY);
-                    }}
-                    onTouchEnd={cancelLongPress}
-                    onTouchCancel={cancelLongPress}
-                    onMouseDown={(e) => {
-                      if (e.button === 0) {
-                        startLongPress(m, isMe, e.clientX, e.clientY);
-                      }
-                    }}
-                    onMouseMove={(e) => {
-                      if (pressStartPosRef.current) {
-                        checkMoveCancel(e.clientX, e.clientY);
-                      }
-                    }}
-                    onMouseUp={cancelLongPress}
-                    onMouseLeave={cancelLongPress}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      cancelLongPress();
-                      setContextMenu({ message: m, isMe });
-                      setShowAllReactions(false);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isLongPressTriggeredRef.current) {
-                        e.preventDefault();
-                        isLongPressTriggeredRef.current = false;
-                      }
-                    }}
-                    className={cn(
-                      "tg-bubble max-w-[85%] px-[10px] pt-[6px] pb-[6px] text-[#000000] dark:text-[#f3f4f6] shadow-[0_1px_2px_rgba(16,35,47,0.15)] relative cursor-pointer active:brightness-95 active:scale-[0.985] transition-all select-none",
-                      isMe ? "bg-[#eeffde] dark:bg-[#2b5278] is-me" : "bg-white dark:bg-[#182533] is-other",
-                      contextMenu?.message.id === m.id && "brightness-90 scale-[0.985]"
-                    )}
-                    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    {/* Ponta de agulha discreta (Tail) */}
-                    {isMe ? (
-                      <svg
-                        width="9"
-                        height="20"
-                        viewBox="0 0 9 20"
-                        className="absolute pointer-events-none"
-                        style={{ bottom: 0, right: -8, fill: 'currentColor' }}
-                        stroke="none"
-                        color="inherit"
-                      >
-                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#eeffde] dark:fill-[#2b5278]" />
-                      </svg>
-                    ) : (
-                      <svg
-                        width="9"
-                        height="20"
-                        viewBox="0 0 9 20"
-                        className="absolute pointer-events-none"
-                        style={{ bottom: 0, left: -8, transform: 'scaleX(-1)', fill: 'currentColor' }}
-                      >
-                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-white dark:fill-[#182533]" />
-                      </svg>
-                    )}
-
-                    {!isMe && (
-                      <p 
-                        className="text-[13px] font-medium mb-[2px] cursor-pointer truncate"
-                        style={{ color: authorColor }}
-                      >
-                        {displayName}
-                      </p>
-                    )}
-
-                    {reply && (
-                      <div className={cn(
-                        "rounded-[4px] px-2 py-1 mb-1.5 text-[13px] border-l-[3px] bg-black/5 overflow-hidden",
-                        isMe ? "border-[#4fae4e] text-[#444444]" : "border-[#2b82c9] text-[#555555]"
-                      )}>
-                        <p className="font-medium text-[13px] text-[#2b82c9] truncate leading-tight">{reply.sender}</p>
-                        <p className="truncate text-[13px] text-[#666666] leading-tight mt-0.5">{reply.text || "📷 Foto"}</p>
-                      </div>
-                    )}
-
-                    {parsedData.imagem_url && (
-                      <div className="mb-1.5 -mx-[2px] -mt-[2px] overflow-hidden rounded-[8px]">
-                        <img
-                          src={parsedData.imagem_url}
-                          alt="Anexo"
-                          className="w-full h-auto max-h-[260px] object-cover cursor-pointer active:opacity-90 rounded-[8px]"
-                          onClick={(e) => { e.stopPropagation(); setZoomedImage(parsedData.imagem_url); }}
-                          onTouchStart={(e) => e.stopPropagation()}
-                          onTouchEnd={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                    )}
-
-                    {/* Texto e Horário na mesma linha */}
-                    <div className="relative leading-[1.3]">
-                      <span className="text-[16px] whitespace-pre-wrap break-words font-normal">
-                        <TranslatedMessage text={m.mensagem} language={language} renderFormatted={renderFormattedMessage} />
-                      </span>
-                      
-                      {/* Espaçador invisível para garantir que o texto não sobreponha a hora no final da linha */}
-                      <span className="inline-block h-[1px]" style={{ width: isEdited ? (isMe ? '75px' : '60px') : (isMe ? '56px' : '42px') }}></span>
-
-                      <div className="absolute bottom-[-1px] right-0 flex items-center gap-[2px] select-none text-[12px]" style={{ color: isMe ? '#55864e' : '#8e8e93' }}>
-                        {isEdited && (
-                          <span className="opacity-80 mr-[2px]">editada</span>
-                        )}
-                        <span className="font-normal leading-none mt-[1px]">
-                          {formatTime(m.data_registrada)}
-                        </span>
-                        {isMe && (
-                          <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
-                        )}
-                      </div>
-                    </div>
-
-                    {Object.keys(reactions).length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-black/5">
-                        {Object.entries(reactions).map(([emoji, users]: [string, any]) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => handleToggleReaction(m.id, emoji)}
-                            className="bg-white/80 border border-black/5 rounded-full px-2 py-[2px] flex items-center gap-1 shadow-2xs hover:bg-white active:scale-95 transition-transform cursor-pointer"
-                          >
-                            <span className="text-[12px] leading-none">{emoji}</span>
-                            <span className="text-[11px] font-bold text-[#555555] leading-none">{(users as any[]).length}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            </React.Fragment>
+            <MessageItem
+              key={m.id}
+              message={m}
+              isMe={isMe}
+              displayName={displayName}
+              authorColor={authorColor}
+              showDate={showDate}
+              dateLabel={currDate}
+              timeFormatted={formatTime(m.data_registrada)}
+              language={language}
+              isSelectedInContextMenu={contextMenu?.message?.id === m.id}
+              onStartLongPress={startLongPress}
+              onCancelLongPress={cancelLongPress}
+              onCheckMoveCancel={checkMoveCancel}
+              onContextMenu={handleContextMenu}
+              onClickBubble={handleClickBubble}
+              onToggleReaction={handleToggleReaction}
+              onOpenZoomedImage={handleOpenZoomedImage}
+              renderFormattedMessage={renderFormattedMessage}
+            />
           );
         })}
         {/* Indicador de digitando no chat */}

