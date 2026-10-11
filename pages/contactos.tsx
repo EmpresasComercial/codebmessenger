@@ -11,7 +11,10 @@ export default function ContactsInvite() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [inviteCode, setInviteCode] = useState<string>('---');
-  const [baseUrl, setBaseUrl] = useState<string>(window.location.origin);
+  const defaultDomain = typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')
+    ? window.location.origin
+    : 'https://www.telegramas.cc';
+  const [baseUrl, setBaseUrl] = useState<string>(defaultDomain);
   const [loading, setLoading] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -54,7 +57,15 @@ export default function ContactsInvite() {
         if (appLink) {
           let raw = String(appLink).trim().replace(/\/$/, '');
           if (raw && !/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
+          // Se estiver configurado com o domínio antigo join-t.me, substitui pelo domínio oficial telegramas.cc
+          if (raw.includes('join-t.me')) {
+            raw = 'https://www.telegramas.cc';
+          }
           if (raw) setBaseUrl(raw);
+        } else if (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')) {
+          setBaseUrl(window.location.origin);
+        } else {
+          setBaseUrl('https://www.telegramas.cc');
         }
       } catch {}
       finally { setLoading(false); }
