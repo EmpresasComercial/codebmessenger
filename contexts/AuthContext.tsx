@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/messager' || window.location.pathname === '/cadastro';
           if (isAuthPage) {
-            navigate('/telegramBussiness', { replace: true });
+            navigate('/org', { replace: true });
           }
         }
       }

@@ -6,11 +6,13 @@ import { usePresence } from '../contexts/PresenceContext';
 import { 
   ChevronLeft, 
   Send, 
+  Clock,
   CheckCheck, 
   Loader2, 
   Phone, 
   MoreVertical, 
   Paperclip, 
+  Camera,
   Smile, 
   Mic,
   Zap,
@@ -23,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import ChatsList from './ChatsList';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
@@ -32,6 +35,7 @@ interface Message {
   mensagem: string;
   lida: boolean;
   created_at: string;
+  status?: 'sending' | 'sent' | 'failed';
   reaction?: string;
   detalhes?: {
     imagem_url?: string;
@@ -169,15 +173,24 @@ export default function PrivateChat() {
           } catch {}
         }
         setMessages(prev => {
+          const unresolvedLocal = prev.filter(m =>
+            typeof m.id === 'string' &&
+            m.id.startsWith('local_') &&
+            (m.status === 'sending' || m.status === 'failed')
+          );
           const withoutTemp = prev.filter(m => {
             if (typeof m.id === 'string' && m.id.startsWith('local_')) {
+              if (m.status === 'sending' || m.status === 'failed') return true;
               return !data.some((d: any) => d.remetente_id === m.remetente_id && d.mensagem === m.mensagem);
             }
             return true;
           });
+          const confirmedData = data.filter((d: any) =>
+            !unresolvedLocal.some(m => m.remetente_id === d.remetente_id && m.mensagem === d.mensagem)
+          );
           const msgMap = new Map<string, any>();
           withoutTemp.forEach(m => msgMap.set(String(m.id), m));
-          data.forEach((m: any) => msgMap.set(String(m.id), m));
+          confirmedData.forEach((m: any) => msgMap.set(String(m.id), m));
           return Array.from(msgMap.values()).sort(
             (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           );
@@ -404,7 +417,8 @@ export default function PrivateChat() {
       mensagem: msg,
       lida: false,
       created_at: new Date().toISOString(),
-      detalhes: imageToSend ? { imagem_url: imageToSend, tipo_midia: 'imagem' } : undefined
+      detalhes: imageToSend ? { imagem_url: imageToSend, tipo_midia: 'imagem' } : undefined,
+      status: isUUID(contactId) ? 'sending' : 'sent'
     };
 
     setMessages(prev => [...prev, newMsg]);
@@ -454,17 +468,17 @@ export default function PrivateChat() {
         .select()
         .single();
       if (error) {
-        console.error('[PrivateChat] Erro insert sys_t110:', error.code, error.message, error.details, error.hint);
-        showToast(`Erro ao enviar: ${error.message}`, 'error');
-      } else {
-        console.log('[PrivateChat] Mensagem inserida com sucesso');
-        if (inserted) {
-          setMessages(prev => prev.map(m => m.id === tempId ? inserted : m));
-        }
+        throw error;
       }
-    } catch (err: any) {
-      console.warn('[PrivateChat] Excepção ao enviar:', err?.message || err);
-      showToast(`Erro ao enviar: ${err?.message || 'Falha na conexão'}`, 'error');
+      if (!inserted) {
+        throw new Error('A persistência não confirmou a mensagem.');
+      }
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...inserted, status: 'sent' } : m));
+      console.log('[PrivateChat] Mensagem inserida com sucesso');
+    } catch (err: unknown) {
+      console.error('[PrivateChat] Falha ao persistir mensagem:', err);
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
+      showToast('Mensagem não enviada', 'error');
     }
   };
 
@@ -512,8 +526,12 @@ export default function PrivateChat() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div 
-      className="w-full h-[100dvh] font-sans antialiased text-[#202020] select-none tg-chat-no-select flex flex-col items-stretch overflow-hidden relative tg-wallpaper transition-colors"
+    <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-[#f4f4f5] dark:bg-[#0e1621]">
+      <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
+        <ChatsList embedded />
+      </aside>
+      <div 
+      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden tg-wallpaper transition-colors"
       onContextMenu={(e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
@@ -523,10 +541,10 @@ export default function PrivateChat() {
     >
 
       {/* ── HEADER ── */}
-      <header className="w-full bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
+      <header className="w-full shrink-0 bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
         <button
-          onClick={() => navigate('/telegramBussiness')}
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto"
+          onClick={() => navigate('/org')}
+          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto md:hidden"
           aria-label="Voltar aos chats"
         >
           <ChevronLeft className="w-6 h-6 stroke-[2]" />
@@ -579,11 +597,15 @@ export default function PrivateChat() {
               </span>
             ) : (
               <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
-                {isPavel
-                  ? 'Fundador'
-                  : contactIsOnline
-                  ? (contactLevel ? `online • Subordinado Nível ${contactLevel}` : 'online')
-                  : 'offline'}
+                {isPavel ? (
+                  'Fundador'
+                ) : contactIsOnline ? (
+                  <span className="text-[#10b981] font-medium">
+                    online{contactLevel ? ` • Subordinado Nível ${contactLevel}` : ''}
+                  </span>
+                ) : (
+                  'offline'
+                )}
               </span>
             )}
           </div>
@@ -610,7 +632,7 @@ export default function PrivateChat() {
       {/* ── ÁREA DE MENSAGENS TELEGRAM (LARGURA TOTAL FLUIDA) ── */}
       <main
         ref={scrollRef}
-        className="w-full flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="w-full min-h-0 flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         onClick={() => contextMenu && closeContextMenu()}
       >
         {isLoading && messages.length === 0 && (
@@ -644,9 +666,8 @@ export default function PrivateChat() {
               )}
 
               <div
-                className={`flex items-end w-full ${isMe ? 'justify-start' : 'justify-end'} relative`}
+                className={`flex items-end w-full gap-1.5 ${isMe ? 'justify-end' : 'justify-start'} relative group`}
               >
-                <div className="relative">
                   {/* Reação existente */}
                   {m.reaction && (
                     <div
@@ -695,9 +716,7 @@ export default function PrivateChat() {
                       }
                     }}
                     className={`tg-bubble max-w-[85%] px-[10px] pt-[6px] pb-[6px] text-[#000000] dark:text-[#f3f4f6] shadow-[0_1px_2px_rgba(16,35,47,0.15)] relative cursor-pointer active:brightness-95 active:scale-[0.985] transition-all select-none ${
-                      isMe
-                        ? 'bg-[#eeffde] dark:bg-[#2b5278] rounded-[16px] rounded-bl-none'
-                        : 'bg-white dark:bg-[#182533] rounded-[16px] rounded-br-none'
+                      isMe ? 'bg-[#eeffde] dark:bg-[#2b5278] is-me' : 'bg-white dark:bg-[#182533] is-other'
                     } ${contextMenu?.message.id === m.id ? 'brightness-90 scale-[0.985]' : ''}`}
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
@@ -708,7 +727,7 @@ export default function PrivateChat() {
                         height="20"
                         viewBox="0 0 9 20"
                         className="absolute pointer-events-none"
-                        style={{ bottom: 0, left: -8, transform: 'scaleX(-1)', fill: 'currentColor' }}
+                        style={{ bottom: 0, right: -8, fill: 'currentColor' }}
                         stroke="none"
                         color="inherit"
                       >
@@ -720,7 +739,7 @@ export default function PrivateChat() {
                         height="20"
                         viewBox="0 0 9 20"
                         className="absolute pointer-events-none"
-                        style={{ bottom: 0, right: -8, fill: 'currentColor' }}
+                        style={{ bottom: 0, left: -8, transform: 'scaleX(-1)', fill: 'currentColor' }}
                       >
                         <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-white dark:fill-[#182533]" />
                       </svg>
@@ -771,9 +790,19 @@ export default function PrivateChat() {
                         <span className="font-normal leading-none mt-[1px]">
                           {formatTime(m.created_at)}
                         </span>
-                        {isMe && <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />}
+                        {isMe && (
+                          m.status === 'sending'
+                            ? <Clock className="w-[14px] h-[14px] text-[#8e8e93] stroke-[2] ml-[2px]" />
+                            : m.status === 'failed'
+                            ? <span className="text-[12px] text-[#e53e3e] font-bold ml-[2px] leading-none">!</span>
+                            : <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
+                        )}
                       </div>
-                    </div>
+                      {isMe && m.status === 'failed' && (
+                        <p className="text-[10px] text-[#e53e3e] mt-0.5 text-right font-medium select-none leading-tight">
+                          Mensagem não enviada
+                        </p>
+                      )}
                   </div>
                 </div>
               </div>
@@ -878,7 +907,7 @@ export default function PrivateChat() {
 
       {/* ── REPLY PREVIEW BAR ── */}
       {replyTo && (
-        <div className="fixed bottom-[65px] left-0 right-0 z-40 flex justify-center px-2 sm:px-6">
+        <div className="absolute bottom-[65px] left-0 right-0 z-40 flex justify-center px-2 sm:px-6">
           <div className="w-full max-w-[1000px] bg-white dark:bg-[#17212b] border-t-2 border-[#2481cc] rounded-t-xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
             <div className="w-[3px] h-full bg-[#2481cc] rounded-full self-stretch" />
             <div className="flex-1 min-w-0">
@@ -894,7 +923,7 @@ export default function PrivateChat() {
 
       {/* ── BARRA DE MENSAGEM FLUTUANTE ── */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 flex justify-center"
+        className="absolute bottom-0 left-0 right-0 z-40 flex justify-center"
         style={{
           paddingLeft: 'max(12px, env(safe-area-inset-left, 12px))',
           paddingRight: 'max(12px, env(safe-area-inset-right, 12px))',
@@ -962,6 +991,15 @@ export default function PrivateChat() {
             >
               <Paperclip className="w-5 h-5" />
             </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0 cursor-pointer"
+              title="Tirar foto ou escolher da galeria"
+              aria-label="Tirar foto ou escolher da galeria"
+            >
+              <Camera className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Botão enviar flutuante */}
@@ -1009,6 +1047,7 @@ export default function PrivateChat() {
           to   { opacity: 1; transform: scale(1);   }
         }
       `}</style>
+      </div>
     </div>
   );
 }

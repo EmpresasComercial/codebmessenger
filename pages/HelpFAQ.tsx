@@ -39,7 +39,7 @@ export default function HelpFAQ() {
             <li>{t('faq.a1_li6')}</li>
           </ol>
           <div className="pt-1">
-            <Link to="/recarregar" className="inline-flex items-center text-[#FE384F] font-normal hover:underline text-[12.5px]">
+            <Link to="/sand-pay" className="inline-flex items-center text-[#FE384F] font-normal hover:underline text-[12.5px]">
               {t('faq.a1_link')}
             </Link>
           </div>
@@ -59,7 +59,7 @@ export default function HelpFAQ() {
             <li>{t('faq.a2_li5')}</li>
           </ul>
           <div className="pt-1">
-            <Link to="/retirada" className="inline-flex items-center text-[#FE384F] font-normal hover:underline text-[12.5px]">
+            <Link to="/carteira" className="inline-flex items-center text-[#FE384F] font-normal hover:underline text-[12.5px]">
               {t('faq.a2_link')}
             </Link>
           </div>
@@ -92,7 +92,7 @@ export default function HelpFAQ() {
           <div className="bg-[#FAFAFA] p-3 border-l-2 border-[#FE384F] text-[12px] text-[#333333]">
             {t('faq.a4_note')}
           </div>
-          <Link to="/bot-pay" className="inline-flex items-center text-[#FE384F] font-normal hover:underline text-[12.5px]">
+          <Link to="/botfather" className="inline-flex items-center text-[#FE384F] font-normal hover:underline text-[12.5px]">
             {t('faq.a4_link')}
           </Link>
         </div>

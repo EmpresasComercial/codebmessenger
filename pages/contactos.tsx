@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 import { 
-  ArrowLeft, Copy, Share2, Check, 
-  QrCode, X, ExternalLink, Link2
+  ChevronLeft, Copy, Share2, Check, 
+  QrCode, X, Link2
 } from 'lucide-react';
 
 export default function ContactsInvite() {
@@ -96,7 +96,7 @@ export default function ContactsInvite() {
 
   const handleBack = () => {
     if (window.history.length > 1 && window.history.state?.idx > 0) navigate(-1);
-    else navigate('/telegramBussiness');
+    else navigate('/org');
   };
 
   if (loading) {
@@ -108,161 +108,161 @@ export default function ContactsInvite() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-[#f1f1f2] dark:bg-[#0e1621] font-sans text-black dark:text-white select-none">
+    <div className="w-full min-h-screen bg-white font-sans text-[#222222] antialiased pb-28 select-none">
 
-      {/* ── HEADER estilo grupochat ── */}
-      <header className="w-full bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
+      {/* Cabeçalho simples seguindo o layout da página About */}
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-gray-100 bg-white px-4 py-3">
         <button
           type="button"
           onClick={handleBack}
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100 active:scale-95"
           aria-label="Voltar"
         >
-          <ArrowLeft className="w-6 h-6 stroke-[2]" />
+          <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
         </button>
-
-        <div className="flex items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] pointer-events-auto">
-          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
-            <img src="/logo-tb.jpg" alt="Telegram" className="w-full h-full object-cover" />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-              Link de Convite
-            </h1>
-            <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
-              Telegram Business
-            </span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleShare}
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
-          aria-label="Partilhar"
-        >
-          <Share2 className="w-5 h-5 stroke-[2]" />
-        </button>
+        <h1 className="text-[17px] font-bold tracking-tight text-[#222222]">Telegram</h1>
       </header>
 
-      <style>{`
-        @keyframes duckBounce {
-          0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-8px) scale(1.02); }
-        }
-        .duck-bounce { animation: duckBounce 2.6s ease-in-out infinite; }
-      `}</style>
-
-      {/* ── HERO CENTRAL ── */}
-      <div className="flex flex-col items-center pt-8 pb-6 px-4 text-center">
-        <div className="w-[100px] h-[100px] mb-4 flex items-center justify-center duck-bounce">
-          <img
-            src="/tg_duck_social.png"
-            alt="Invite"
-            className="w-full h-full object-contain select-none pointer-events-none"
-            onError={(e) => { (e.target as HTMLImageElement).src = '/logo-tb.jpg'; }}
-          />
-        </div>
-        <h2 className="text-[20px] font-bold text-black dark:text-white">
-          Link de Convite Oficial
-        </h2>
-        <p className="text-[14px] text-[#707579] dark:text-[#8e9aa5] mt-1 max-w-[340px] leading-[1.5]">
-          Qualquer pessoa no Telegram pode usar este link para entrar na sua rede.
-        </p>
-      </div>
-
-      {/* ── CAMPO DO LINK FLAT (SEM CARD, SEM SOMBRA) ── */}
-      <div className="w-full bg-white dark:bg-[#17212b] border-t border-b border-[#e4e4e4] dark:border-[#1e2c3a]">
-        <div className="w-full flex items-center px-4 h-[48px] border-b border-[#e4e4e4] dark:border-[#1e2c3a]">
-          <Link2 className="w-4 h-4 text-[#2481cc] dark:text-[#5288c1] mr-3 shrink-0" />
-          <span className="flex-1 text-[14px] text-black dark:text-white truncate font-mono select-all">
-            {rawInviteLink}
-          </span>
-          <button
-            type="button"
-            onClick={() => copyToClipboard(rawInviteLink, false)}
-            className="text-[#2481cc] dark:text-[#5288c1] p-1 shrink-0 cursor-pointer active:opacity-60 transition-opacity"
-          >
-            {copiedLink
-              ? <Check className="w-4 h-4 text-[#29b85e]" />
-              : <Copy className="w-4 h-4" />
-            }
-          </button>
-        </div>
-
-        {/* Botão Copiar */}
-        <div className="px-4 py-3">
-          <button
-            type="button"
-            onClick={() => copyToClipboard(rawInviteLink, false)}
-            className="w-full h-[40px] rounded-[10px] bg-[#2481cc] hover:bg-[#1d6fa5] text-white font-medium text-[14px] flex items-center justify-center gap-2 transition cursor-pointer"
-          >
-            {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            <span>{copiedLink ? 'Copiado!' : 'Copiar Link'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── ESPAÇO ── */}
-      <div className="h-4" />
-
-      {/* ── LISTA DE AÇÕES FLAT TELEGRAM WEB ── */}
-      <div className="w-full bg-white dark:bg-[#17212b] border-t border-b border-[#e4e4e4] dark:border-[#1e2c3a] divide-y divide-[#e4e4e4] dark:divide-[#1e2c3a]">
-
-        {/* Copiar Ligação */}
-        <button
-          type="button"
-          onClick={() => copyToClipboard(rawInviteLink, false)}
-          className="w-full flex items-center h-[50px] px-4 hover:bg-[#f5f5f5] dark:hover:bg-[#1e2c3a] transition cursor-pointer text-left"
+      <main className="mx-auto w-full max-w-[860px] space-y-8 px-4 pt-8">
+        <video
+          className="block w-full"
+          controls
+          playsInline
+          preload="metadata"
+          aria-label="Vídeo sobre o programa de convites"
         >
-          <Copy className="w-[20px] h-[20px] text-[#2481cc] dark:text-[#5288c1] mr-4 shrink-0" />
-          <span className="flex-1 text-[15px] text-black dark:text-white">Copiar Ligação</span>
-          {copiedLink && <Check className="w-4 h-4 text-[#29b85e]" />}
-        </button>
+          <source src="/affiliate-programs-7s.mp4" type="video/mp4" />
+          O seu navegador não suporta a reprodução de vídeo.
+        </video>
 
-        {/* Partilhar Ligação */}
-        <button
-          type="button"
-          onClick={handleShare}
-          className="w-full flex items-center h-[50px] px-4 hover:bg-[#f5f5f5] dark:hover:bg-[#1e2c3a] transition cursor-pointer text-left"
-        >
-          <Share2 className="w-[20px] h-[20px] text-[#29b85e] mr-4 shrink-0" />
-          <span className="flex-1 text-[15px] text-black dark:text-white">Partilhar Ligação</span>
-        </button>
-
-        {/* Código QR */}
-        <button
-          type="button"
-          onClick={() => setShowQrModal(true)}
-          className="w-full flex items-center h-[50px] px-4 hover:bg-[#f5f5f5] dark:hover:bg-[#1e2c3a] transition cursor-pointer text-left"
-        >
-          <QrCode className="w-[20px] h-[20px] text-[#8b5cf6] mr-4 shrink-0" />
-          <span className="flex-1 text-[15px] text-black dark:text-white">Obter Código QR</span>
-        </button>
-
-        {/* Código de Convite */}
-        {inviteCode && inviteCode !== '---' && (
-          <button
-            type="button"
-            onClick={() => copyToClipboard(inviteCode, true)}
-            className="w-full flex items-center h-[50px] px-4 hover:bg-[#f5f5f5] dark:hover:bg-[#1e2c3a] transition cursor-pointer text-left"
-          >
-            <ExternalLink className="w-[20px] h-[20px] text-[#f59e0b] mr-4 shrink-0" />
-            <div className="flex-1">
-              <div className="text-[15px] text-black dark:text-white leading-tight">Código de Convite</div>
-              <div className="text-[12px] text-[#707579] dark:text-[#8e9aa5]">{inviteCode}</div>
+        <section className="mx-auto w-full max-w-[420px] space-y-5 px-1 text-center">
+          <div className="mx-auto flex h-[88px] w-[88px] items-center justify-center rounded-full bg-[#0878ff] text-white">
+            <Link2 className="h-10 w-10 stroke-[2.2]" aria-hidden="true" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-[24px] font-semibold leading-tight text-black">
+              Link de Indicação
+            </h2>
+            <p className="text-[15px] leading-5 text-[#333333]">
+              Partilhe este link e ganhe comissões sobre as recargas da sua equipa: 10% no nível 1, 6% no nível 2 e 2% no nível 3.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[14px] text-[#333333]">Recompensas do programa</p>
+            <div className="inline-flex flex-wrap justify-center gap-2 rounded-full bg-[#f1f1f5] px-4 py-2 text-[13px] font-medium text-[#222222]">
+              <span>300 AOA ao registar</span>
+              <span aria-hidden="true">·</span>
+              <span>500 AOA por 10 convites</span>
             </div>
-            <span className="text-[14px] text-[#2481cc] dark:text-[#5288c1] font-medium">
-              {copiedCode ? 'Copiado' : 'Copiar'}
-            </span>
-          </button>
-        )}
-      </div>
+          </div>
+          <div className="space-y-3 pt-1">
+            {inviteCode && inviteCode !== '---' && (
+              <button
+                type="button"
+                onClick={() => copyToClipboard(inviteCode, true)}
+                aria-label="Copiar código de convite"
+                className="flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] bg-[#f1f1f5] px-4 text-left font-mono text-[14px] text-[#222222] transition-colors hover:bg-[#e8e8ee]"
+              >
+                <span className="truncate">{inviteCode}</span>
+                {copiedCode
+                  ? <Check className="h-4 w-4 shrink-0 text-[#29b85e]" />
+                  : <Copy className="h-4 w-4 shrink-0 text-[#2481cc]" />
+                }
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => copyToClipboard(rawInviteLink, false)}
+              className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-[#0878ff] text-[15px] font-semibold text-white transition-colors hover:bg-[#006be6]"
+            >
+              {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              <span>{copiedLink ? 'Copiado!' : 'Copiar Link'}</span>
+            </button>
+          </div>
+        </section>
 
-      {/* ── NOTA FLAT ── */}
-      <p className="text-[13px] text-[#707579] dark:text-[#8e9aa5] px-4 py-3 leading-relaxed">
-        Qualquer utilizador com esta ligação pode aceder ao bot. Pode partilhar este link no Telegram ou em qualquer outra rede social.
-      </p>
+        <div className="flex justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleShare}
+            className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 px-4 text-[14px] text-[#2481cc] transition-colors hover:bg-gray-50"
+          >
+            <Share2 className="h-4 w-4" />
+            Partilhar
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowQrModal(true)}
+            className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 px-4 text-[14px] text-[#2481cc] transition-colors hover:bg-gray-50"
+          >
+            <QrCode className="h-4 w-4" />
+            Código QR
+          </button>
+        </div>
+
+        <section className="space-y-6 border-t border-gray-200 pt-8 text-[15px] leading-7 text-[#333333]">
+          <section id="participando-de-programas-de-afiliados" className="space-y-3">
+            <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
+              Programa de Convites Telegram Business
+            </h2>
+            <p>
+              Partilhe o seu link de convite para trazer amigos para o Telegram Business. Quando se registam pelo seu link, passam a fazer parte da sua equipa e as recargas qualificadas podem gerar comissões para si.
+            </p>
+            <img
+              src="/affiliate-programs-referral.png"
+              alt="Programa de afiliados: comissões confiáveis, transparentes e simples"
+              className="mx-auto block h-auto w-full max-w-[520px] rounded-xl"
+              loading="lazy"
+            />
+          </section>
+
+          <section id="compartilhando-link-afiliado" className="space-y-3">
+            <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
+              Convide Amigos
+            </h2>
+            <p>
+              Use o botão para copiar ou partilhar o seu link por mensagem, nas redes sociais ou onde preferir. O código de convite também pode ser partilhado para que os seus amigos se registem.
+            </p>
+          </section>
+
+          <section id="recebendo-comissoes" className="space-y-3">
+            <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
+              Recompensas e Comissões
+            </h2>
+            <img
+              src="/invite-rewards-levels.png"
+              alt="Recompensas dos convites: 10% no nível 1, 6% no nível 2, 2% no nível 3 e bônus de 500 AOA ao cadastrar 10 afiliados"
+              className="mx-auto block h-auto w-full max-w-[520px] rounded-xl"
+              loading="lazy"
+            />
+          </section>
+
+          <section id="perguntas-frequentes" className="space-y-4">
+            <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
+              Perguntas Frequentes
+            </h2>
+            <details className="border-b border-gray-200 pb-4">
+              <summary className="cursor-pointer font-medium text-[#222222]">Como recebo comissões?</summary>
+              <p className="pt-3">
+                As comissões são geradas pelas recargas da sua equipa, conforme o nível: 10% no nível 1, 6% no nível 2 e 2% no nível 3.
+              </p>
+            </details>
+            <details className="border-b border-gray-200 pb-4">
+              <summary className="cursor-pointer font-medium text-[#222222]">Qual é a recompensa por convidar 10 amigos?</summary>
+              <p className="pt-3">
+                Ao atingir 10 amigos convidados, pode receber um bônus de 500 AOA.
+              </p>
+            </details>
+            <details className="border-b border-gray-200 pb-4">
+              <summary className="cursor-pointer font-medium text-[#222222]">Posso criar mais de uma conta para participar da promoção?</summary>
+              <p className="pt-3">
+                Não. Cada pessoa pode registar apenas uma conta para participar na promoção.
+              </p>
+            </details>
+          </section>
+
+        </section>
+      </main>
 
       {/* ── MODAL QR (FLAT E SIMPLES) ── */}
       {showQrModal && (

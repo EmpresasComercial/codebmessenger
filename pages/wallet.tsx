@@ -264,7 +264,7 @@ export default function wallet() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [pendingAmount, setPendingAmount] = useState<number | null>(null);
-  const [showMenuDropdown, setShowMenuDropdown] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [lastIntent, setLastIntent] = useState<string | null>(null);
   const [lastBotResponse, setLastBotResponse] = useState<string | null>(null);
   const [showQuickHints, setShowQuickHints] = useState(false);
@@ -1175,89 +1175,138 @@ export default function wallet() {
         {/* Botão Menu */}
         <div className="relative pointer-events-auto">
           <button
-            onClick={() => setShowMenuDropdown((prev) => !prev)}
+            onClick={() => setShowHelpModal(true)}
             className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 cursor-pointer"
-            aria-label="Mais opções"
+            aria-label="Ajuda e instruções da Wallet"
+            title="Ajuda e instruções"
           >
             <MoreVertical className="w-[22px] h-[22px]" />
           </button>
-
-            {showMenuDropdown && (
-              <div
-                className="absolute right-0 top-12 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 text-[13.5px] text-gray-800 animate-in fade-in zoom-in-95 duration-100"
-                style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
-              >
-                <button
-                  onClick={() => {
-                    setShowMenuDropdown(false);
-                    handleSendMessage('/saldo');
-                  }}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
-                >
-                  <Wallet className="w-4 h-4 text-[#3390ec]" />
-                  <span>Consultar Saldo</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMenuDropdown(false);
-                    handleSendMessage('/retirar');
-                  }}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
-                >
-                  <Send className="w-4 h-4 text-[#25ae60]" />
-                  <span>Iniciar Retirada</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMenuDropdown(false);
-                    handleSendMessage('/banco');
-                  }}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
-                >
-                  <Building2 className="w-4 h-4 text-[#e67e22]" />
-                  <span>Minha Conta Bancária</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMenuDropdown(false);
-                    handleSendMessage('/historico');
-                  }}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
-                >
-                  <FileText className="w-4 h-4 text-[#8e44ad]" />
-                  <span>Histórico de Pedidos</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMenuDropdown(false);
-                    handleSendMessage('/horario');
-                  }}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
-                >
-                  <Clock className="w-4 h-4 text-[#3498db]" />
-                  <span>Horários de Operação</span>
-                </button>
-                <div className="h-px bg-gray-100 my-1" />
-                <button
-                  onClick={() => {
-                    setShowMenuDropdown(false);
-                    handleSendMessage('/limpar');
-                  }}
-                  className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2.5 cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4 text-red-500" />
-                  <span>Limpar Conversa</span>
-                </button>
-              </div>
-            )}
           </div>
       </header>
+
+      {showHelpModal && (
+        <div
+          className="fixed inset-0 z-[100] h-[100dvh] bg-[#e9eff4] dark:bg-[#0e1621] flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="wallet-help-title"
+        >
+          <header className="shrink-0 flex items-center gap-3 px-3 py-2.5 bg-[#517da2] text-white">
+            <button
+              type="button"
+              onClick={() => setShowHelpModal(false)}
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/15 transition-colors"
+              aria-label="Fechar instruções"
+            >
+              <ChevronDown className="w-6 h-6 rotate-90" />
+            </button>
+            <div className="min-w-0">
+              <h2 id="wallet-help-title" className="text-[17px] font-semibold">
+                Ajuda da Wallet
+              </h2>
+              <p className="text-[13px] text-white/75">
+                Como consultar e pedir uma retirada
+              </p>
+            </div>
+          </header>
+
+          <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-5">
+            <div className="max-w-2xl mx-auto space-y-5 pb-8">
+              <section className="overflow-hidden rounded-xl bg-white dark:bg-[#17212b] text-[#222] dark:text-[#e6e6e6]">
+                <h3 className="px-4 pt-4 pb-2 text-[15px] font-semibold text-[#2481cc]">Como funciona</h3>
+                <ol className="px-4 pb-2 text-[14px]">
+                  <li className="flex gap-3 border-b border-[#edf0f2] dark:border-white/10 py-2.5">
+                    <span className="text-[#2481cc] font-semibold">1</span>
+                    <span>Escolha um exemplo ou escreva o comando na conversa.</span>
+                  </li>
+                  <li className="flex gap-3 border-b border-[#edf0f2] dark:border-white/10 py-2.5">
+                    <span className="text-[#2481cc] font-semibold">2</span>
+                    <span>Envie a mensagem. A Wallet consulta os dados da sua conta e responde no chat.</span>
+                  </li>
+                  <li className="flex gap-3 py-2.5">
+                    <span className="text-[#2481cc] font-semibold">3</span>
+                    <span>Para retirar, confira o resumo antes de confirmar. Envie <code className="text-[#2481cc]">/cancelar</code> para interromper.</span>
+                  </li>
+                </ol>
+              </section>
+
+              <section>
+                <h3 className="px-1 mb-2 text-[14px] font-semibold uppercase tracking-wide text-[#52718a] dark:text-[#91a8bb]">Comandos e respostas</h3>
+                <div className="overflow-hidden rounded-xl bg-white dark:bg-[#17212b]">
+                  {[
+                    {
+                      command: '/saldo',
+                      title: 'Consultar saldo',
+                      response: 'Seu saldo é de [saldo atual da sua conta]. Para fazer um saque, envie /retirar ou digite o valor (ex: sacar 500).'
+                    },
+                    {
+                      command: '/retirar',
+                      title: 'Iniciar retirada',
+                      response: 'A Wallet consulta os requisitos da conta e, se estiver tudo pronto, mostra o saldo disponível e pede que escolha ou escreva um valor. Horário, conta bancária, robô ativo e limites podem afetar o pedido.'
+                    },
+                    {
+                      command: 'sacar 500',
+                      title: 'Pedir um valor específico',
+                      response: 'Se a retirada estiver disponível e cumprir os requisitos, verá um resumo com o valor, a taxa, o valor líquido e a conta bancária antes de confirmar.'
+                    },
+                    {
+                      command: '/banco',
+                      title: 'Ver conta bancária',
+                      response: 'Se já houver uma conta cadastrada, a Wallet informa o banco e o IBAN. Caso contrário, orienta a cadastrar os dados bancários.'
+                    },
+                    {
+                      command: '/historico',
+                      title: 'Consultar histórico',
+                      response: 'A Wallet apresenta os pedidos de retirada encontrados ou informa que ainda não há saques registados.'
+                    },
+                    {
+                      command: '/horario',
+                      title: 'Ver horário',
+                      response: 'Horário de retiradas: Segunda a Sexta, das 09:00 às 18:00. O estado aberto/fechado é indicado conforme o horário atual.'
+                    },
+                    {
+                      command: '/taxa',
+                      title: 'Ver taxas e limites',
+                      response: 'Taxa operacional: 10%. Valor mínimo: 100 KZ. Valor máximo: 100.000 KZ. Prazo: até 24h úteis.'
+                    }
+                  ].map(({ command, title, response }) => (
+                    <article key={command} className="px-4 py-3.5 border-b last:border-b-0 border-[#edf0f2] dark:border-white/10 text-[#222] dark:text-[#e6e6e6]">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <h4 className="text-[14px] font-medium">{title}</h4>
+                          <code className="inline-block mt-0.5 text-[14px] font-semibold text-[#2481cc]">{command}</code>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowHelpModal(false);
+                            handleSendMessage(command);
+                          }}
+                          className="shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium text-[#2481cc] hover:bg-[#2481cc]/10 active:bg-[#2481cc]/15 transition-colors"
+                        >
+                          Usar
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[13px] leading-relaxed text-[#707579] dark:text-[#aab7c4]">
+                        <span className="font-medium text-[#52718a] dark:text-[#91a8bb]">Resposta: </span>{response}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+                <p className="mt-3 px-1 text-[12px] leading-relaxed text-[#707579] dark:text-[#91a0ae]">
+                  Os valores, estado do horário, dados bancários e histórico dependem dos dados reais da sua conta. Os exemplos são ilustrativos; uma retirada só é concluída após a confirmação no chat.
+                </p>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── CORPO DO CHAT ── */}
       <main
         ref={mainChatRef}
         onScroll={handleScroll}
-        onClick={() => setShowMenuDropdown(false)}
         className="flex-1 overflow-y-auto px-2.5 pt-2 pb-24 space-y-1 relative select-text"
       >
         <div className="flex justify-center my-1 select-none">
@@ -1333,64 +1382,6 @@ export default function wallet() {
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                     <p className="mb-2">
                       Olá! Que bom ver você por aqui! 😊 Sou o <strong>WithdrawBot</strong> 💸, seu assistente inteligente e oficial de retiradas.
-                    </p>
-                    <p className="mb-2 text-gray-800">
-                      Entendo texto normal e comandos. Escolha um comando abaixo ou digite sua dúvida:
-                    </p>
-                    <p className="mb-2.5">
-                      •{' '}
-                      <span
-                        onClick={() => handleSendMessage('/saldo')}
-                        className="text-[#00c853] font-semibold cursor-pointer hover:underline"
-                      >
-                        /saldo
-                      </span>{' '}
-                      — Consulta de saldo real disponível
-                      <br />
-                      •{' '}
-                      <span
-                        onClick={() => handleSendMessage('/retirar')}
-                        className="text-[#00c853] font-semibold cursor-pointer hover:underline"
-                      >
-                        /retirar
-                      </span>{' '}
-                      — Iniciar pedido de retirada
-                      <br />
-                      •{' '}
-                      <span
-                        onClick={() => handleSendMessage('/historico')}
-                        className="text-[#00c853] font-semibold cursor-pointer hover:underline"
-                      >
-                        /historico
-                      </span>{' '}
-                      — Histórico real de retiradas em texto
-                      <br />
-                      •{' '}
-                      <span
-                        onClick={() => handleSendMessage('/banco')}
-                        className="text-[#00c853] font-semibold cursor-pointer hover:underline"
-                      >
-                        /banco
-                      </span>{' '}
-                      — Sua conta cadastrada
-                      <br />
-                      •{' '}
-                      <span
-                        onClick={() => handleSendMessage('/horario')}
-                        className="text-[#00c853] font-semibold cursor-pointer hover:underline"
-                      >
-                        /horario
-                      </span>{' '}
-                      — Horários de atendimento
-                      <br />
-                      •{' '}
-                      <span
-                        onClick={() => handleSendMessage('/taxa')}
-                        className="text-[#00c853] font-semibold cursor-pointer hover:underline"
-                      >
-                        /taxa
-                      </span>{' '}
-                      — Regras e taxas de saque
                     </p>
                     <p className="text-[13px] text-gray-600 mb-2">
                       💡 <em>Dica: você também pode digitar mensagens comuns como <strong>"qual meu saldo"</strong> ou <strong>"quero sacar 500"</strong>.</em>
@@ -1520,7 +1511,7 @@ export default function wallet() {
               {msg.type === 'no_bank' && (
                 <div className="w-full max-w-[80%] flex flex-col items-center justify-center gap-1 -mt-1.5 mb-2 pl-2">
                   <button
-                    onClick={() => navigate('/adicionar-banco?redirect=/retirada')}
+                    onClick={() => navigate('/adicionar-banco?redirect=/carteira')}
                     className="w-full bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-4 py-2 text-[14px] font-medium active:bg-opacity-90 transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
                   >
                     ➕ Cadastrar Conta Bancária
@@ -1532,7 +1523,7 @@ export default function wallet() {
               {msg.type === 'no_bots' && (
                 <div className="w-full max-w-[80%] flex flex-col items-center justify-center gap-1 -mt-1.5 mb-2 pl-2">
                   <button
-                    onClick={() => navigate('/bot-pay')}
+                    onClick={() => navigate('/botfather')}
                     className="w-full bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-4 py-2 text-[14px] font-medium active:bg-opacity-90 transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
                   >
                     🤖 Ir para o Catálogo de Robôs
@@ -1656,13 +1647,6 @@ export default function wallet() {
               className="flex-1 min-w-0 w-0 px-1 py-1 text-[14.5px] sm:text-[15px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
             />
 
-            {/* Botão Ajuda à direita dentro da cápsula */}
-            <button
-              onClick={() => handleSendMessage('/ajuda')}
-              className="text-[#2481cc] text-[12.5px] sm:text-[13.5px] font-semibold shrink-0 cursor-pointer hover:underline ml-1.5 sm:ml-2 active:scale-95 transition-transform"
-            >
-              Ajuda
-            </button>
           </div>
 
           {/* Botão circular azul Telegram */}

@@ -11,12 +11,11 @@ export const GlobalLoadingIndicator: React.FC = () => {
   const isChatPage = 
     location.pathname.startsWith('/chat') ||
     [
+      '/org',
       '/telegramBussiness',
       '/telegramBusiness',
       '/telegram-business',
-      '/comunidade-chat',
-      '/chat-comunidade',
-      '/grupochat',
+      '/webgrupo',
       '/canais',
       '/canal-oficial',
       '/pavelDurov',

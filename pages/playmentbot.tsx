@@ -15,7 +15,8 @@ import {
   Camera,
   ArrowRight,
   BarChart3,
-  Zap
+  Zap,
+  Smile
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
@@ -376,6 +377,7 @@ export default function playmentbot() {
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const fileDocInputRef = useRef<HTMLInputElement>(null);
@@ -1742,8 +1744,19 @@ export default function playmentbot() {
               <Zap className="w-5 h-5" />
             </button>
 
+            <button
+              type="button"
+              onClick={() => inputRef.current?.focus()}
+              className="text-[#707579] dark:text-[#9eaab6] p-1 shrink-0"
+              title="Emojis"
+              aria-label="Emojis"
+            >
+              <Smile className="w-5 h-5" />
+            </button>
+
             {/* Campo de texto */}
             <input
+              ref={inputRef}
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -1761,24 +1774,24 @@ export default function playmentbot() {
               className="flex-1 min-w-0 w-0 px-1 py-1 text-[14.5px] sm:text-[15px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
             />
 
+            {/* 📎 Ícone de Ficheiros */}
+            <button
+              type="button"
+              onClick={() => fileDocInputRef.current?.click()}
+              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-1"
+              title="Anexar documento ou ficheiro"
+            >
+              <Paperclip className="w-5 h-5 -rotate-45" />
+            </button>
+
             {/* 📷 Ícone de Câmara (Fotos / Galeria no lado direito) */}
             <button
               type="button"
               onClick={() => photoInputRef.current?.click()}
-              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-1"
+              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-0.5"
               title="Tirar foto ou escolher da galeria"
             >
               <Camera className="w-5 h-5" />
-            </button>
-
-            {/* 📎 Ícone de Ficheiros (PDFs e documentos depois da câmara, à direita) */}
-            <button
-              type="button"
-              onClick={() => fileDocInputRef.current?.click()}
-              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-0.5"
-              title="Anexar documento ou ficheiro"
-            >
-              <Paperclip className="w-5 h-5 -rotate-45" />
             </button>
           </div>
 

@@ -100,7 +100,7 @@ export default function Settings() {
             iconBg="bg-[#3390ec]"
             title="Pastas de Chat"
             subtitle="Aceder ao chat da comunidade"
-            onClick={() => navigate('/telegramBussiness')}
+            onClick={() => navigate('/org')}
           />
 
           <SettingsItem 
@@ -159,7 +159,7 @@ export default function Settings() {
             icon={<MessageSquare className="w-5 h-5 text-white" />}
             iconBg="bg-[#f2a93b]"
             title="Fazer uma Pergunta"
-            onClick={() => navigate('/telegramBussiness')}
+            onClick={() => navigate('/org')}
           />
 
           <SettingsItem 

@@ -17,13 +17,12 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/telegramBussiness",
+  "start_url": "/org",
   "scope": "/",
   "background_color": "#F2F2F2",
   "theme_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait"
 }
-
 
 

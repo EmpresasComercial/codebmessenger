@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Apple } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 export default function About() {
   const navigate = useNavigate();
@@ -49,86 +49,22 @@ export default function About() {
       {/* ── CONTEÚDO PRINCIPAL (SEM CARDS / SEM CONTAINERS ARTIFICIAIS) ── */}
       <main className="max-w-[860px] mx-auto px-4 pt-8 space-y-16">
 
-        {/* 1. MOCKUPS MOBILE (DIRETO NA PÁGINA) */}
-        <section className="text-center">
-          <div className="flex items-center justify-center gap-2 sm:gap-6 mb-4">
-            <img
-              src="/SiteAndroid_2x.webp"
-              alt="Telegram para Android"
-              className="w-[140px] sm:w-[220px] h-auto object-contain pointer-events-none select-none hover:scale-105 transition-transform duration-300"
-            />
-            <img
-              src="/SiteiOS_2x.webp"
-              alt="Telegram para iPhone / iPad"
-              className="w-[140px] sm:w-[220px] h-auto object-contain pointer-events-none select-none hover:scale-105 transition-transform duration-300"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-12 pt-1 text-[15px]">
-            <a
-              href="https://telegram.org/android"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-[#168acd] hover:text-[#0d699e] transition-colors"
-            >
-              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
-                <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0002s.4482-1.0002.9993-1.0002c.552 0 1.0001.4486 1.0001 1.0002 0 .5516-.4481 1.0002-1.0001 1.0002m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0002s.4482-1.0002.9993-1.0002c.552 0 1.0001.4486 1.0001 1.0002 0 .5516-.4481 1.0002-1.0001 1.0002m11.4045-6.02l1.996-3.4572c.1082-.1874.0441-.4275-.1433-.5357-.1874-.1082-.4276-.044-.5358.1433l-2.0226 3.5033C15.5398 8.4239 13.8247 8.099 12 8.099c-1.8247 0-3.5398.3249-5.1758.876L4.8016 5.4717c-.1082-.1873-.3484-.2515-.5358-.1433-.1874.1082-.2515.3483-.1433.5357l1.996 3.4572C2.6889 11.2867.3466 15.0113 0 19.467h24c-.3466-4.4557-2.6889-8.1803-6.1185-10.1456"/>
-              </svg>
-              <span>Telegram para <b className="font-bold">Android</b></span>
-            </a>
-
-            <a
-              href="https://telegram.org/dl/ios"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[#168acd] hover:text-[#0d699e] transition-colors"
-            >
-              <Apple className="w-4 h-4 fill-current" />
-              <span>Telegram para <b className="font-bold">iPhone</b> / <b className="font-bold">iPad</b></span>
-            </a>
+        <section>
+          <h2 className="mb-4 text-[26px] font-semibold leading-tight text-[#222222]">
+            O que é Telegram? O que faço aqui?
+          </h2>
+          <div className="space-y-4 text-[16px] leading-7 text-[#333333]">
+            <p>
+              O Telegram é um aplicativo de mensagens com foco em velocidade e segurança, é super-rápido, simples e gratuito. Você pode usar o Telegram em todos os seus dispositivos ao mesmo tempo — suas mensagens são sincronizadas perfeitamente em qualquer quantidade de seus telefones, tablets ou computadores. O Telegram tem mais de 1 bilhão de usuários ativos mensais e é um dos 5 aplicativos mais baixados do mundo.
+            </p>
+            <p>
+              Com o Telegram, você pode enviar mensagens, fotos, vídeos e arquivos de qualquer tipo (doc, zip, mp3, etc), além de criar grupos de até 200.000 pessoas ou canais para transmitir para públicos ilimitados. Você pode escrever para seus contatos da agenda e encontrar pessoas pelos nomes de usuário delas. Como resultado, o Telegram é como SMS e e-mail combinados – e pode cuidar de todas as suas necessidades de mensagens pessoais ou comerciais. Além disso, oferecemos suporte a chamadas de voz e videochamadas criptografadas de ponta a ponta, chamadas em grupo para até 200 participantes, e chats de voz em grupos que os membros podem entrar quando quiserem.
+            </p>
           </div>
         </section>
 
-        {/* 2. MOCKUPS DESKTOP (DIRETO NA PÁGINA) */}
-        <section className="text-center pt-2">
-          <div className="flex justify-center mb-4">
-            <img
-              src="/SiteDesktop_2x.webp"
-              alt="Telegram Desktop"
-              className="w-full max-w-[580px] h-auto object-contain pointer-events-none select-none hover:scale-[1.02] transition-transform duration-300"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-12 pt-1 text-[15px]">
-            <a
-              href="https://desktop.telegram.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#168acd] hover:text-[#0d699e] transition-colors"
-            >
-              Telegram para <b className="font-bold">PC / Linux</b>
-            </a>
-            <a
-              href="https://macos.telegram.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#168acd] hover:text-[#0d699e] transition-colors"
-            >
-              Telegram para <b className="font-bold">macOS</b>
-            </a>
-          </div>
-        </section>
-
-        {/* 3. NOVIDADES (DIRETO NA PÁGINA COM IMAGENS OFICIAIS) */}
+        {/* NOVIDADES (DIRETO NA PÁGINA COM IMAGENS OFICIAIS) */}
         <section className="pt-4">
-          <div className="text-center mb-8">
-            <h2 className="text-[28px] font-bold text-[#168acd]">
-              <a href="https://telegram.org/blog" target="_blank" rel="noopener noreferrer" className="hover:underline">
-                Novidades
-              </a>
-            </h2>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
             {/* Card 1 com a imagem oficial 0e567958d5b96a2184.webp */}
             <div className="flex flex-col text-left group">

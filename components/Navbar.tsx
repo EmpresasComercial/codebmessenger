@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { MessageCircle, Users, Bot, Settings } from 'lucide-react';
+import { MessageCircle, Users, Bot, Settings, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Navbar() {
@@ -10,8 +10,8 @@ export default function Navbar() {
   const navItems = [
     {
       name: 'Chats',
-      path: '/telegramBussiness',
-      aliasPaths: ['/telegramBussiness', '/telegramBusiness', '/telegram-business'],
+      path: '/org',
+      aliasPaths: ['/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'],
       icon: (isActive: boolean) => <MessageCircle className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />,
       badge: 3
     },
@@ -22,10 +22,10 @@ export default function Navbar() {
       icon: (isActive: boolean) => <Users className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     },
     {
-      name: 'Bots & Pay',
-      path: '/bot-pay',
-      aliasPaths: ['/bot-pay', '/operacoes'],
-      icon: (isActive: boolean) => <Bot className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
+      name: 'Botfather',
+      path: '/botfather',
+      aliasPaths: ['/botfather', '/bot-pay', '/operacoes'],
+      icon: (isActive: boolean) => <Sparkles className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     },
     {
       name: 'Definições',
@@ -36,14 +36,14 @@ export default function Navbar() {
   ];
 
   // Mostra o botão flutuante de lápis (FAB Telegram) na lista de chats ou tela inicial
-  const showFab = ['/telegramBussiness', '/telegramBusiness', '/telegram-business'].includes(location.pathname);
+  const showFab = ['/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'].includes(location.pathname);
 
   return (
     <>
       {/* ── BOTÃO DE AÇÃO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÁPIS) ── */}
       {showFab && (
         <button
-          onClick={() => navigate('/chat-comunidade')}
+          onClick={() => navigate('/webgrupo')}
           className="fixed bottom-[72px] right-4 sm:right-6 z-40 w-14 h-14 rounded-full bg-[#50a8eb] dark:bg-[#50a8eb] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(80,168,235,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
           title="Nova Mensagem"
           aria-label="Nova Mensagem"

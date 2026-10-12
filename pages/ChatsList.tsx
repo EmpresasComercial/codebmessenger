@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePresence } from '../contexts/PresenceContext';
 import { 
   Search, 
+  Menu,
   CheckCheck, 
   Loader2, 
   X, 
@@ -14,8 +15,12 @@ import {
   Bot,
   ArrowDownToLine,
   ArrowDownLeft,
+  Users,
   MessageCircle,
-  Users
+  Settings,
+  ChevronDown,
+  UserRoundPlus,
+  Info
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
@@ -33,7 +38,7 @@ const OfficialVerifiedBadge = ({ className = "w-[16px] h-[16px]" }: { className?
   </svg>
 );
 
-export default function ChatsList() {
+export default function ChatsList({ embedded = false }: { embedded?: boolean }) {
   const navigate = useNavigate();
   const { session } = useAuth();
   const user = session?.user;
@@ -44,6 +49,9 @@ export default function ChatsList() {
   // typingUsers: Map<contactId, true> — contatos que estão digitando agora
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const typingTimers = useRef<Record<string, NodeJS.Timeout>>({});
+  const [communityTypingUser, setCommunityTypingUser] = useState<string | null>(null);
+  const communityTypingTimer = useRef<NodeJS.Timeout | null>(null);
+  const notifiedCommunityMessageIds = useRef<Set<string>>(new Set());
 
   const outletContext = useOutletContext<{ openAutoMessages?: () => void }>();
 
@@ -68,6 +76,40 @@ export default function ChatsList() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [isNavigationDrawerOpen, setIsNavigationDrawerOpen] = useState(false);
+  const [drawerPhone, setDrawerPhone] = useState(
+    user?.phone || user?.user_metadata?.telefone || user?.user_metadata?.phone || "",
+  );
+  const drawerName = user?.user_metadata?.nome_exibicao
+    || user?.user_metadata?.full_name
+    || user?.user_metadata?.name
+    || [user?.user_metadata?.first_name, user?.user_metadata?.last_name].filter(Boolean).join(" ")
+    || user?.phone
+    || "Utilizador";
+  const drawerAvatar = user?.user_metadata?.avatar_url
+    || user?.user_metadata?.photo_url
+    || user?.user_metadata?.picture
+    || "";
+
+  useEffect(() => {
+    if (!isNavigationDrawerOpen || !user) return;
+    let active = true;
+
+    const loadDrawerPhone = async () => {
+      const { data, error } = await supabase.rpc("get_my_account_data");
+      if (error) {
+        console.error("Erro ao carregar o telefone do perfil:", error);
+        return;
+      }
+      const accountPhone = (data as any)?.[0]?.telefone;
+      if (active && accountPhone) setDrawerPhone(accountPhone);
+    };
+
+    void loadDrawerPhone();
+    return () => {
+      active = false;
+    };
+  }, [isNavigationDrawerOpen, user]);
   const [communityLastMessage, setCommunityLastMessage] = useState<{
     text: string;
     sender: string;
@@ -190,9 +232,68 @@ export default function ChatsList() {
 
     fetchCommunityLastMessage();
 
+    const notifyCommunityMessage = async (message: any) => {
+      if (
+        !message?.id ||
+        !user ||
+        message.uid_emissor === user.id ||
+        !document.hidden ||
+        !('Notification' in window) ||
+        Notification.permission !== 'granted' ||
+        !('serviceWorker' in navigator)
+      ) return;
+
+      const messageId = String(message.id);
+      if (notifiedCommunityMessageIds.current.has(messageId)) return;
+      notifiedCommunityMessageIds.current.add(messageId);
+      if (notifiedCommunityMessageIds.current.size > 100) {
+        const oldestId = notifiedCommunityMessageIds.current.values().next().value;
+        if (oldestId) notifiedCommunityMessageIds.current.delete(oldestId);
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('sys_t500')
+          .select('nome_exibicao, telefone')
+          .eq('id', message.uid_emissor)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        let details: any = message.detalhes || {};
+        if (typeof details === 'string') {
+          try {
+            details = JSON.parse(details);
+          } catch {
+            details = {};
+          }
+        }
+
+        const senderName = profile?.nome_exibicao
+          || (profile?.telefone ? formatSenderPhone(profile.telefone) : 'Membro');
+        const messageText = typeof message.mensagem === 'string' ? message.mensagem.trim() : '';
+        const body = messageText || (details.imagem_url || details.photo_url ? 'Enviou uma foto' : 'Enviou uma mensagem');
+        const registration = await navigator.serviceWorker.ready;
+        if (!document.hidden) return;
+
+        await registration.showNotification(senderName, {
+          body: body.slice(0, 240),
+          icon: '/logo-tb.jpg',
+          badge: '/logo-tb.jpg',
+          tag: `community-message-${messageId}`,
+          data: { url: '/webgrupo' }
+        });
+      } catch (error) {
+        console.error('Não foi possível mostrar a notificação da comunidade:', error);
+      }
+    };
+
     const commChannel = supabase.channel('chatslist_community_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_gruop' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_gruop' }, (payload: any) => {
         fetchCommunityLastMessage();
+        if (payload.eventType === 'INSERT') {
+          void notifyCommunityMessage(payload.new);
+        }
       })
       .subscribe();
 
@@ -376,6 +477,17 @@ export default function ChatsList() {
       .on('broadcast', { event: 'typing' }, (payload: any) => {
         const senderId: string = payload?.payload?.userId;
         const targetId: string = payload?.payload?.targetId;
+        if (senderId && targetId === 'community') {
+          const senderName = payload?.payload?.name || 'Alguém';
+          setCommunityTypingUser(senderName);
+          if (communityTypingTimer.current) clearTimeout(communityTypingTimer.current);
+          communityTypingTimer.current = setTimeout(() => {
+            setCommunityTypingUser(null);
+            communityTypingTimer.current = null;
+          }, 3000);
+          return;
+        }
+
         // Só processa se o evento é direcionado ao utilizador atual
         if (!senderId || targetId !== user.id) return;
 
@@ -400,6 +512,7 @@ export default function ChatsList() {
       supabase.removeChannel(channel);
       // Limpa todos os timers pendentes
       Object.values(typingTimers.current).forEach(t => clearTimeout(t));
+      if (communityTypingTimer.current) clearTimeout(communityTypingTimer.current);
     };
   }, [user]);
 
@@ -474,14 +587,14 @@ export default function ChatsList() {
             <img src="/logo-tb.jpg" alt="Telegram" className="w-full h-full object-cover" />
           </div>
         ),
-        onClick: () => navigate('/chat-comunidade')
+        onClick: () => navigate('/webgrupo')
       },
       {
         id: 'pavel-durov',
         folder: 'channels' as ChatFolder,
         name: 'Pavel Durov',
         isVerified: true,
-        lastMessage: 'Novo sistema de monetização por Telegram Stars e Mini Apps lançado oficialmente.',
+        lastMessage: 'Fundador',
         senderPrefix: null,
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 20),
         timestamp: Date.now() - 1000 * 60 * 60 * 20,
@@ -527,7 +640,7 @@ export default function ChatsList() {
             />
           </div>
         ),
-        onClick: () => navigate('/recarregar')
+        onClick: () => navigate('/sand-pay')
       },
       {
         id: 'withdrawal-bot',
@@ -552,7 +665,7 @@ export default function ChatsList() {
             />
           </div>
         ),
-        onClick: () => navigate('/retirada')
+        onClick: () => navigate('/carteira')
       },
 
       {
@@ -570,7 +683,7 @@ export default function ChatsList() {
         nivel: null,
         actionBtn: (
           <button
-            onClick={(e) => { e.stopPropagation(); navigate('/bot-pay'); }}
+            onClick={(e) => { e.stopPropagation(); navigate('/botfather'); }}
             className="shrink-0 px-3.5 py-1 rounded-full bg-[#2481cc] text-white text-[13px] font-medium leading-none cursor-pointer hover:bg-[#1e6eb0] active:bg-[#1a5e9a] transition-colors"
           >
             Abrir
@@ -588,7 +701,7 @@ export default function ChatsList() {
             />
           </div>
         ),
-        onClick: () => navigate('/bot-pay')
+        onClick: () => navigate('/botfather')
       }
     ];
 
@@ -676,7 +789,9 @@ export default function ChatsList() {
 
   return (
     <div 
-      className="w-full min-h-[100dvh] bg-white dark:bg-[#17212b] font-sans antialiased flex flex-col transition-colors select-none tg-chat-no-select"
+      className={`relative w-full bg-white dark:bg-[#17212b] font-sans antialiased flex flex-col transition-colors select-none tg-chat-no-select ${
+        embedded ? "h-full min-h-0" : "min-h-[100dvh]"
+      }`}
       onContextMenu={(e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
@@ -684,7 +799,7 @@ export default function ChatsList() {
         }
       }}
     >
-      
+      <div className={`flex min-h-0 flex-1 flex-col ${embedded ? "" : "md:w-[350px] md:shrink-0 md:border-r md:border-gray-200 dark:md:border-[#202b36]"}`}>
       {/* ── TOP APP BAR OFICIAL DO TELEGRAM ── */}
       <header className="sticky top-0 z-40 bg-white dark:bg-[#242f3d] shadow-[0_1px_0_rgba(0,0,0,0.08)] select-none transition-colors">
         <div className="h-[56px] px-2 flex items-center justify-between gap-1">
@@ -733,9 +848,20 @@ export default function ChatsList() {
                   </h1>
                 </div>
               ) : (
-                <h1 className="text-[22px] font-bold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
-                  Telegram
-                </h1>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsNavigationDrawerOpen(true)}
+                    className="mr-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#707579] transition-colors hover:bg-black/5 dark:text-[#9eaab6] dark:hover:bg-white/5"
+                    aria-label="Abrir menu de navegação"
+                    aria-expanded={isNavigationDrawerOpen}
+                  >
+                    <Menu className="h-6 w-6" />
+                  </button>
+                  <h1 className="text-[22px] font-bold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
+                    Telegram
+                  </h1>
+                </>
               )}
             </div>
           )}
@@ -767,6 +893,80 @@ export default function ChatsList() {
             </button>
           </div>
         </div>
+
+        {isNavigationDrawerOpen && (
+          <div className="fixed inset-0 z-[100]" role="presentation">
+            <button
+              type="button"
+              className="absolute inset-0 h-full w-full cursor-default bg-black/40"
+              onClick={() => setIsNavigationDrawerOpen(false)}
+              aria-label="Fechar menu"
+            />
+            <nav
+              className="absolute inset-y-0 left-0 flex w-[280px] flex-col bg-white shadow-xl dark:bg-[#17212b]"
+              aria-label="Navegação principal"
+            >
+              <div className="border-b border-gray-100 bg-[#2481cc] px-4 pb-3 pt-5 text-white dark:border-[#202b36] dark:bg-[#1c242f]">
+                <div className="mb-3 flex items-start justify-between">
+                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[20px] font-semibold">
+                    {drawerAvatar ? (
+                      <img src={drawerAvatar} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      drawerName.trim().charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <span className="pt-1 text-xl" aria-hidden="true">☼</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-semibold">{drawerName}</p>
+                    <p className="mt-0.5 truncate text-[13px] text-white/75">
+                      {drawerPhone || "Telefone não disponível"}
+                    </p>
+                  </div>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-white/80" />
+                </div>
+              </div>
+              {[
+                { label: "Grupo Telegram", path: "/webgrupo", icon: MessageCircle },
+                { label: "Contactos", path: "/contactos", icon: Users },
+                { label: "Botfather", path: "/botfather", icon: Bot },
+                { label: "Definições", path: "/definicoes", icon: Settings },
+              ].map(({ label, path, icon: Icon }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    setIsNavigationDrawerOpen(false);
+                    navigate(path);
+                  }}
+                  className="flex h-12 items-center gap-4 px-5 text-left text-[15px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
+                >
+                  <Icon className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" />
+                  {label}
+                </button>
+              ))}
+              <div className="my-2 border-t border-gray-100 dark:border-[#202b36]" />
+              {[
+                { label: "Convidar amigos", path: "/contactos", icon: UserRoundPlus },
+                { label: "Sobre o Telegram", path: "/sobre-telegram business", icon: Info },
+              ].map(({ label, path, icon: Icon }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    setIsNavigationDrawerOpen(false);
+                    navigate(path);
+                  }}
+                  className="flex h-12 items-center gap-4 px-5 text-left text-[15px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
+                >
+                  <Icon className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
 
         {/* ── ABAS SUPERIORES ── */}
         <div className="flex overflow-x-auto no-scrollbar px-2 bg-white dark:bg-[#242f3d] border-t border-[#e8e8e8] dark:border-white/10">
@@ -803,7 +1003,7 @@ export default function ChatsList() {
       </header>
 
       {/* ── CORPO PRINCIPAL DE CHATS (ORDENAÇÃO DINÂMICA SEM CONVERSAS FIXAS) ── */}
-      <main className="w-full flex-1 overflow-y-auto pb-20">
+      <main className={`w-full flex-1 overflow-y-auto ${embedded ? "pb-2" : "pb-20"}`}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-8 space-y-2">
             <Loader2 className="w-7 h-7 text-[#2481cc] animate-spin" />
@@ -826,12 +1026,6 @@ export default function ChatsList() {
                 >
                   <div className="relative shrink-0">
                     {chat.avatar}
-                    {isOnline && (
-                      <span
-                        className={`absolute ${isSub && nv ? 'top-0 right-0' : 'bottom-0 right-0'} w-3.5 h-3.5 bg-[#10b981] rounded-full border-2 border-white dark:border-[#17212b] shadow-xs z-10`}
-                        title="Online agora"
-                      />
-                    )}
                   </div>
 
                   <div className="flex-1 min-w-0 py-0.5">
@@ -840,15 +1034,13 @@ export default function ChatsList() {
                         <h3 className="text-[15.5px] font-medium text-[#111] dark:text-white truncate leading-tight">
                           {chat.name}
                         </h3>
+                        {isOnline && (
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-[#10b981]" title="Online agora" />
+                        )}
                         {chat.isVerified && <OfficialVerifiedBadge />}
                         {chat.tag && (
                           <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-sm bg-[#2481cc] text-white">
                             {chat.tag}
-                          </span>
-                        )}
-                        {isOnline && (
-                          <span className="text-[10.5px] font-medium px-1.5 py-0.5 rounded-full bg-[#10b981]/15 text-[#10b981] shrink-0">
-                            online
                           </span>
                         )}
                       </div>
@@ -865,10 +1057,13 @@ export default function ChatsList() {
 
                     <div className="flex items-center justify-between gap-2">
                       {(() => {
+                        const isCommunityTyping = chat.id === 'community-chat' && communityTypingUser;
                         const isTyping = rawId ? Boolean(typingUsers[rawId]) : false;
                         return (
                           <p className="text-[13.5px] truncate leading-snug overflow-hidden whitespace-nowrap">
-                            {isTyping ? (
+                            {isCommunityTyping ? (
+                              <span className="text-[#4dcd5e] font-medium italic">{communityTypingUser} está digitando...</span>
+                            ) : isTyping ? (
                               <span className="text-[#4dcd5e] font-medium italic">digitando...</span>
                             ) : (
                               <span className="text-[#707579] dark:text-[#9eaab6]">
@@ -918,13 +1113,6 @@ export default function ChatsList() {
                           {label}
                         </div>
 
-                        {isOnline && (
-                          <span
-                            className={`absolute ${isSub && nv ? 'top-0 right-0' : 'bottom-0 right-0'} w-3.5 h-3.5 bg-[#10b981] rounded-full border-2 border-white dark:border-[#17212b] shadow-xs z-10`}
-                            title="Online agora"
-                          />
-                        )}
-
                         {isSub && nv && (
                           <div
                             className={`absolute bottom-0 right-0 w-[18px] h-[18px] rounded-full border-2 border-white dark:border-[#17212b] flex items-center justify-center text-[10px] font-bold text-white shadow-xs ${
@@ -944,9 +1132,7 @@ export default function ChatsList() {
                               {contact.nome_exibicao || formatSenderPhone(contact.telefone)}
                             </h3>
                             {isOnline && (
-                              <span className="text-[10.5px] font-medium px-1.5 py-0.5 rounded-full bg-[#10b981]/15 text-[#10b981] shrink-0">
-                                online
-                              </span>
+                              <span className="h-2 w-2 shrink-0 rounded-full bg-[#10b981]" title="Online agora" />
                             )}
                           </div>
                         </div>
@@ -954,8 +1140,6 @@ export default function ChatsList() {
                         <p className="text-[13px] leading-snug mt-[1px] truncate">
                           {typingUsers[contact.id] ? (
                             <span className="text-[#4dcd5e] font-medium italic">digitando...</span>
-                          ) : isOnline ? (
-                            <span className="text-[#4dcd5e] font-medium">online</span>
                           ) : (
                             <span className="text-[#707579] dark:text-[#9eaab6]">
                               visto às {timeStr}
@@ -991,15 +1175,15 @@ export default function ChatsList() {
       <button
         onClick={() => {
           showToast('Iniciando novo chat...', 'info');
-          navigate('/chat-comunidade');
+          navigate('/webgrupo');
         }}
-        className="fixed bottom-[74px] right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-tr from-[#1e96c8] to-[#50a2e9] text-white flex items-center justify-center shadow-[0_4px_16px_rgba(36,129,204,0.45)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+        className={`${embedded ? "absolute bottom-4 right-4 md:fixed md:bottom-6 md:right-6" : "fixed bottom-[74px] right-4"} z-40 w-12 h-12 rounded-full bg-gradient-to-tr from-[#1e96c8] to-[#50a2e9] text-white flex items-center justify-center shadow-[0_4px_16px_rgba(36,129,204,0.45)] hover:scale-105 active:scale-95 transition-all cursor-pointer`}
         title="Nova Conversa"
         aria-label="Nova Conversa"
       >
-        <Edit3 className="w-6 h-6 stroke-[2.2]" />
+        <Edit3 className="w-5 h-5 stroke-[1.8]" />
       </button>
-
+      </div>
     </div>
   );
 }

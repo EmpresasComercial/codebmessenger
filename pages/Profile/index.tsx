@@ -7,14 +7,11 @@ import {
   MessageSquare,
   ShieldAlert,
   Volume2,
-  Building2,
   MessagesSquare,
   Smartphone,
   Globe,
   ChevronRight,
   Star,
-  Store,
-  Gift,
   HelpCircle,
   Lightbulb,
   Lock,
@@ -23,8 +20,6 @@ import {
   ChevronLeft,
   Edit3,
   Download,
-  Phone,
-  Settings,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -116,10 +111,6 @@ export default function Profile() {
     };
   }, [fetchData]);
 
-  const scrollToSettings = () => {
-    settingsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -133,26 +124,27 @@ export default function Profile() {
   return (
     <div className="w-full min-h-screen bg-white dark:bg-[#17212b] font-sans text-black dark:text-white flex flex-col pb-24">
 
-      {/* ── TOP BAR TELEGRAM WEB FULL-WIDTH (8px MARGIN NAS BORDAS) ── */}
-      <header className="w-full bg-[#517da2] dark:bg-[#242f3d] text-white px-2 py-3 sticky top-0 z-30 flex justify-between items-center shadow-xs">
+      {/* ── CABEÇALHO NO ESTILO OFICIAL DO TELEGRAM ── */}
+      <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-3 text-[#222222] dark:border-[#202b36] dark:bg-[#17212b] dark:text-white">
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => navigate('/telegramBussiness')}
-            className="p-1 rounded-full hover:bg-white/15 active:bg-white/25 transition-colors cursor-pointer" 
+            onClick={() => navigate('/org')}
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#2481cc] transition-colors hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-[#202b36] dark:active:bg-[#293847]" 
             aria-label="Voltar"
           >
-            <ChevronLeft className="w-6 h-6 text-white stroke-[2.2]" />
+            <ChevronLeft className="h-6 w-6 stroke-[2.2]" />
           </button>
-          <h1 className="text-[18px] md:text-[20px] font-semibold text-white tracking-tight">Definições</h1>
+          <h1 className="text-[17px] font-semibold tracking-tight">Definições</h1>
         </div>
 
         <div className="flex items-center gap-1">
           <button 
             onClick={() => setShowEditProfile(true)}
-            className="p-1.5 rounded-full hover:bg-white/15 active:bg-white/25 transition-colors cursor-pointer text-white" 
-            title="Editar Perfil"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#2481cc] transition-colors hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-[#202b36] dark:active:bg-[#293847]"
+            aria-label="Editar perfil"
+            title="Editar perfil"
           >
-            <Settings className="w-5 h-5" />
+            <Edit3 className="h-5 w-5" />
           </button>
         </div>
       </header>
@@ -188,23 +180,6 @@ export default function Profile() {
       {/* ── LISTA DE ITENS FLAT (GRUDADO NA ESQUERDA E DIREITA COM 8px DE MARGEM) ── */}
       <main className="w-full flex-1 flex flex-col divide-y divide-gray-100/80 dark:divide-gray-800/80">
 
-        {/* SEÇÃO 1: CONTATO */}
-        <div className="w-full bg-white dark:bg-[#17212b]">
-          <div className="w-full flex items-center px-2 py-3 hover:bg-gray-50/80 dark:hover:bg-white/5 active:bg-gray-100 cursor-pointer transition-colors">
-            <div className="w-[34px] h-[34px] rounded-[10px] bg-[#34c759] flex items-center justify-center shrink-0 mr-3.5 shadow-2xs">
-              <Phone className="w-5 h-5 text-white fill-white" />
-            </div>
-            <div className="flex-1 flex flex-col justify-center py-0.5 min-w-0">
-              <span className="text-[15px] font-medium text-black dark:text-white leading-tight mb-0.5 truncate">
-                {phone || "+244 941 465 064"}
-              </span>
-              <span className="text-[13px] font-normal text-[#8e8e93] leading-tight truncate">
-                Phone
-              </span>
-            </div>
-          </div>
-        </div>
-
         {/* DIVISOR DE SEÇÃO */}
         <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
 
@@ -213,31 +188,16 @@ export default function Profile() {
           <SettingsItem
             icon={<Wallet className="w-5 h-5 text-white" />}
             iconBg="bg-[#0284c7]"
-            title="Retirar"
+            title="Carteira wallet"
             subtitle="Solicite o levantamento dos seus fundos"
-            onClick={() => navigate("/retirada")}
+            onClick={() => navigate("/carteira")}
           />
           <SettingsItem
             icon={<PlusCircle className="w-5 h-5 text-white" />}
             iconBg="bg-[#10b981]"
-            title="Carregar"
+            title="Payment Wallet"
             subtitle="Faça um depósito na sua conta"
-            onClick={() => navigate("/recarregar")}
-          />
-          <SettingsItem
-            icon={<Store className="w-5 h-5 text-white" />}
-            iconBg="bg-[#f2a93b]"
-            title="Meus Bots"
-            subtitle="Faça a gestão dos seus robôs"
-            onClick={() => navigate("/minhas-compras")}
-          />
-          <SettingsItem
-            icon={<Gift className="w-5 h-5 text-white" />}
-            iconBg="bg-[#e95171]"
-            title="Prémios"
-            subtitle="Consulte as suas recompensas e bónus"
-            isLast={true}
-            onClick={scrollToSettings}
+            onClick={() => navigate("/sand-pay")}
           />
         </div>
 
@@ -263,7 +223,7 @@ export default function Profile() {
             iconBg="bg-[#f2a93b]"
             title="Chat da comunidade"
             subtitle="Converse com membros da comunidade"
-            onClick={() => navigate("/telegramBussiness")}
+            onClick={() => navigate("/org")}
           />
 
           <SettingsItem
@@ -282,25 +242,15 @@ export default function Profile() {
           <SettingsItem
             icon={<Download className="w-5 h-5 text-white" />}
             iconBg="bg-[#e95171]"
-            title="Download Telegram Business"
-            subtitle="Página comercial e ferramentas"
-            onClick={() => {
-              const promptEvent = (window as any).deferredPwaPrompt;
-              if (promptEvent) {
-                promptEvent.prompt();
-                promptEvent.userChoice.then(() => {
-                  (window as any).deferredPwaPrompt = null;
-                });
-              } else {
-                showToast("Instalação automática indisponível. Para instalar, toque no menu do seu navegador (⋮) e selecione 'Adicionar à Tela Inicial' ou 'Instalar Aplicativo'.", "info");
-              }
-            }}
+            title="Download APK"
+            subtitle="Baixe e instale o aplicativo"
+            onClick={() => navigate("/android?setln=pt")}
           />
 
           <SettingsItem
             icon={<MessagesSquare className="w-5 h-5 text-white" />}
             iconBg="bg-[#3390ec]"
-            title="Anúncio telegram postes"
+            title="Canal postes"
             subtitle="Aceder aos anúncios do Telegram e às provas de retirada"
             onClick={() => navigate("/canal-oficial")}
           />
@@ -308,19 +258,11 @@ export default function Profile() {
           <SettingsItem
             icon={<CreditCard className="w-5 h-5 text-white" />}
             iconBg="bg-[#3390ec]"
-            title="Conta"
+            title="Carteira bancária"
             subtitle="Adicionar cartão bancário"
             onClick={() => navigate("/adicionar-banco")}
           />
 
-          <SettingsItem
-            icon={<Building2 className="w-5 h-5 text-white" />}
-            iconBg="bg-[#3390ec]"
-            title="Informações Bancárias"
-            subtitle="Ver conta bancária adicionada"
-            isLast={true}
-            onClick={() => navigate("/informacao-bancaria")}
-          />
         </div>
 
         {/* DIVISOR DE SEÇÃO */}
@@ -359,7 +301,7 @@ export default function Profile() {
           <SettingsItem
             icon={<Smartphone className="w-5 h-5 text-white" />}
             iconBg="bg-[#46c2ca]"
-            title="Termos de uso e privacidade"
+            title="Termo e privacidade"
             subtitle="Ver versão e actualizar a aplicação"
             isLast={true}
             onClick={() => navigate("/devices")}
@@ -378,7 +320,7 @@ export default function Profile() {
             <div className="w-[34px] h-[34px] rounded-[10px] bg-red-500 flex items-center justify-center shrink-0 mr-3.5">
               <LogOut className="w-5 h-5 text-white" />
             </div>
-            <span className="text-[15px] font-semibold text-red-600 dark:text-red-400">Sair da Conta</span>
+            <span className="text-[15px] font-semibold text-red-600 dark:text-red-400">Terminar sessão</span>
           </button>
         </div>
 

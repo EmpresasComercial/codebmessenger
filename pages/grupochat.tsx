@@ -9,6 +9,7 @@ import { cn } from "../lib/utils";
 import { 
   ChevronLeft, 
   Paperclip, 
+  Camera,
   Send, 
   X, 
   CheckCheck,
@@ -30,9 +31,12 @@ import {
   Copy,
   Trash2,
   ChevronRight,
-  Loader2
+  Loader2,
+  FileText,
+  Link2
 } from 'lucide-react';
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
+import ChatsList from "./ChatsList";
 
 const FORBIDDEN_WORDS = Array.from(new Set([
   "burla", "burlas", "fraude", "fraudes", "scam", "scams", "golpe", "golpes", 
@@ -79,13 +83,13 @@ const ESCAPED_FORBIDDEN = FORBIDDEN_WORDS.map(w => w.replace(/[.*+?^${}()|[\]\\]
 const FORBIDDEN_REGEX = new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${ESCAPED_FORBIDDEN.join('|')})(?:[^\\p{L}\\p{N}]|$)`, 'iu');
 
 const CONTEXT_GROUPS: Record<string, { path: string, keywords: string[] }> = {
-  TelegramBusiness: { path: "/telegramBussiness", keywords: ["telegram business", "negÃ³cios", "conversas", "chats", "painel", "inÃ­cio", "inicio"] },
-  Withdraw: { path: "/retirada", keywords: ["saque", "sacar", "retirada", "retirar", "levantamento", "levantar dinheiro", "withdraw", "withdrawal", "retrait", "retirer"] },
-  Recharge: { path: "/recarregar", keywords: ["recarga", "recarregar", "depÃ³sito", "depositar", "recharge"] },
+  TelegramBusiness: { path: "/org", keywords: ["telegram business", "negÃ³cios", "conversas", "chats", "painel", "inÃ­cio", "inicio"] },
+  Withdraw: { path: "/carteira", keywords: ["saque", "sacar", "retirada", "retirar", "levantamento", "levantar dinheiro", "withdraw", "withdrawal", "retrait", "retirer"] },
+  Recharge: { path: "/sand-pay", keywords: ["recarga", "recarregar", "depÃ³sito", "depositar", "recharge"] },
   Invite: { path: "/convite", keywords: ["convite", "convidar", "amigo", "afiliado", "indicar"] },
-  Support: { path: "/telegramBussiness", keywords: ["suporte", "ajuda", "atendimento", "help"] },
+  Support: { path: "/org", keywords: ["suporte", "ajuda", "atendimento", "help"] },
   Operations: { path: "/operacoes", keywords: ["operaÃ§Ãµes", "operacoes", "trabalho", "tarefa", "tarefas"] },
-  ProductDetails: { path: "/bot-pay", keywords: ["produto", "investimento", "plano", "lucro"] }
+  ProductDetails: { path: "/botfather", keywords: ["produto", "investimento", "plano", "lucro"] }
 };
 
 const KEYWORD_TO_PATH: Record<string, string> = {};
@@ -365,10 +369,26 @@ const COMMUNITY_QUICK_REACTIONS = ['👍', '❤️', '🔥', '🥰', '👏', '�
 type GroupTab = 'members' | 'media' | 'files' | 'links';
 const GROUP_TABS: { id: GroupTab; label: string }[] = [
   { id: 'members', label: 'Membros' },
-  { id: 'media', label: 'MÃ­dia' },
+  { id: 'media', label: 'Mídia' },
   { id: 'files', label: 'Ficheiros' },
   { id: 'links', label: 'Links' },
 ];
+
+const getMessageDetails = (message: any): Record<string, any> => {
+  const details = message?.detalhes;
+  if (details && typeof details === 'object' && !Array.isArray(details)) return details;
+  if (typeof details === 'string') {
+    try {
+      const parsed = JSON.parse(details);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+};
+
+const cleanSharedUrl = (value: string) => value.trim().replace(/[.,;!?)]+$/, '');
 
 interface MessageItemProps {
   message: any;
@@ -486,6 +506,11 @@ const MessageItem = React.memo(({
                   : <CheckCheck className="w-3 h-3 text-white stroke-[2.4]" />
               )}
             </div>
+            {isMe && m.status === 'failed' && (
+              <p className="absolute -bottom-5 right-0 text-[10px] text-[#e53e3e] font-medium select-none leading-tight whitespace-nowrap">
+                Mensagem não enviada
+              </p>
+            )}
             {Object.keys(reactions).length > 0 && (
               <div className="absolute -bottom-5 left-0 flex flex-wrap gap-1">
                 {Object.entries(reactions).map(([emoji, users]: [string, any]) => (
@@ -660,9 +685,12 @@ export default function grupochat() {
   const [editingMessage, setEditingMessage] = useState<any | null>(null);
   
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
+  const [onlineCount, setOnlineCount] = useState<number | null>(null);
+  const [registeredUserCount, setRegisteredUserCount] = useState<number | null>(null);
   const typingTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const lastTypingBroadcastRef = useRef<number>(0);
   const typingChannelRef = useRef<any>(null);
+  const groupListTypingChannelRef = useRef<any>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
@@ -973,13 +1001,53 @@ export default function grupochat() {
   }, []);
 
   useEffect(() => {
+    let isActive = true;
+
+    const loadRegisteredUserCount = async () => {
+      const { count, error } = await supabase
+        .from('sys_t500')
+        .select('id', { count: 'exact', head: true });
+
+      if (error) {
+        console.error("Não foi possível carregar o total de utilizadores:", error);
+        if (isActive) showToast("Não foi possível carregar o total de membros.", "error");
+        return;
+      }
+
+      if (isActive && count !== null) setRegisteredUserCount(count);
+    };
+
+    void loadRegisteredUserCount();
+
+    const membersChannel = supabase
+      .channel('community_registered_members')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sys_t500' }, () => {
+        void loadRegisteredUserCount();
+      })
+      .subscribe((status) => {
+        if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && isActive) {
+          console.error("Não foi possível acompanhar alterações no total de utilizadores:", status);
+        }
+      });
+
+    return () => {
+      isActive = false;
+      void supabase.removeChannel(membersChannel);
+    };
+  }, [showToast]);
+
+  useEffect(() => {
     if (!user) return;
 
     const typingChannel = supabase.channel("typing_community_chat", {
       config: {
-        broadcast: { ack: false }
+        broadcast: { ack: false },
+        presence: { key: user.id }
       }
     })
+      .on("presence", { event: "sync" }, () => {
+        setOnlineCount(Object.keys(typingChannel.presenceState()).length);
+      })
       .on("broadcast", { event: "typing" }, (payload: any) => {
         const { userId, name } = payload.payload || {};
         if (!userId || userId === user.id) return;
@@ -1005,7 +1073,25 @@ export default function grupochat() {
         
         typingTimeoutsRef.current.set(userId, timeoutId);
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          typingChannel.track({ userId: user.id }).then((trackStatus) => {
+            if (trackStatus !== "ok") {
+              console.error("Não foi possível atualizar a presença online:", trackStatus);
+            }
+          });
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          setOnlineCount(null);
+        }
+      });
+
+    const groupListTypingChannel = supabase
+      .channel('chatslist_typing_global', { config: { broadcast: { ack: false } } })
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error("Não foi possível transmitir a digitação do grupo para a lista:", status);
+        }
+      });
 
     const channel = supabase.channel("tg_community_chat_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_gruop" }, (payload) => {
@@ -1056,6 +1142,20 @@ export default function grupochat() {
                 });
               }
 
+              if (
+                payload.eventType === "INSERT" &&
+                data.uid_emissor === user?.id &&
+                c.some(m =>
+                  typeof m.id === 'number' &&
+                  m.id > 1000000000000 &&
+                  m.uid_emissor === data.uid_emissor &&
+                  m.mensagem === data.mensagem &&
+                  m.status === 'sending'
+                )
+              ) {
+                return c;
+              }
+
               const withoutTemp = c.filter(m => !(
                 typeof m.id === 'number' &&
                 m.id > 1000000000000 &&
@@ -1079,10 +1179,14 @@ export default function grupochat() {
       }).subscribe();
       
     typingChannelRef.current = typingChannel;
+    groupListTypingChannelRef.current = groupListTypingChannel;
 
     return () => { 
       supabase.removeChannel(channel); 
       supabase.removeChannel(typingChannel);
+      supabase.removeChannel(groupListTypingChannel);
+      typingChannelRef.current = null;
+      groupListTypingChannelRef.current = null;
       // Limpa os timers
       Array.from(typingTimeoutsRef.current.values()).forEach(clearTimeout);
       typingTimeoutsRef.current.clear();
@@ -1099,17 +1203,18 @@ export default function grupochat() {
         event: 'typing',
         payload: {
           userId: user.id,
-          name: phoneCache[user.id] || user.phone || "Membro"
+          name: phoneCache[user.id] || user.user_metadata?.nome_exibicao || user.phone || "Membro"
         }
       });
-      // Opcional: Emite globalmente tambÃ©m
-      try {
-        supabase.channel('chatslist_typing_global').send({
-          type: 'broadcast',
-          event: 'typing',
-          payload: { userId: user.id, targetId: 'community' }
-        });
-      } catch (e) {}
+      groupListTypingChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: {
+          userId: user.id,
+          name: phoneCache[user.id] || user.user_metadata?.nome_exibicao || user.phone || "Membro",
+          targetId: 'community'
+        }
+      });
     }
   };
 
@@ -1264,9 +1369,8 @@ export default function grupochat() {
       scrollToBottom();
     } catch (err: any) { 
       console.error("Ops! mensagem nÃ£o enviada", err);
-      setPublicMessages(prev => prev.filter(m => m.id !== tempId));
-      const errorMsg = err?.message || err?.error_description || "Ops! mensagem nÃ£o enviada";
-      showToast(`Erro ao enviar: ${errorMsg}`, "error"); 
+      setPublicMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' as const } : m));
+      showToast('Mensagem não enviada', 'error'); 
     } finally { 
       setIsSending(false); 
     }
@@ -1404,9 +1508,64 @@ export default function grupochat() {
     }] : [])
   ] : [];
 
+  const sharedPhotos = publicMessages.flatMap((message: any, index: number) => {
+    const details = getMessageDetails(message);
+    const url = details.imagem_url || details.photo_url;
+    return typeof url === 'string' && url
+      ? [{ id: `${message.id}-photo-${index}`, url }]
+      : [];
+  }).reverse();
+
+  const sharedFiles = publicMessages.flatMap((message: any, index: number) => {
+    const details = getMessageDetails(message);
+    const messageFiles = Array.isArray(details.arquivos) ? details.arquivos : [details];
+    return messageFiles.flatMap((file: any, fileIndex: number) => {
+      const url = file?.arquivo_url || file?.file_url || file?.document_url || file?.documento_url || file?.attachment_url;
+      if (typeof url !== 'string' || !url) return [];
+      return [{
+        id: `${message.id}-file-${index}-${fileIndex}`,
+        url,
+        name: file.nome_arquivo || file.file_name || file.filename || file.name || 'Ficheiro',
+        type: file.tipo_mime || file.mime_type || file.content_type || ''
+      }];
+    });
+  }).reverse();
+
+  const sharedLinks = Array.from(new Map(publicMessages.flatMap((message: any) => {
+    const details = getMessageDetails(message);
+    const linksInDetails = [
+      details.link_url,
+      ...(Array.isArray(details.links) ? details.links : [])
+    ].filter((link): link is string => typeof link === 'string');
+    const linksInText = typeof message.mensagem === 'string'
+      ? message.mensagem.match(URL_REGEX) || []
+      : [];
+
+    return [...linksInDetails, ...linksInText].flatMap((rawUrl) => {
+      const cleaned = cleanSharedUrl(rawUrl);
+      const href = cleaned.startsWith('www.') ? `https://${cleaned}` : cleaned;
+      try {
+        const parsedUrl = new URL(href);
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') return [];
+        return [[href, {
+          url: href,
+          label: parsedUrl.hostname.replace(/^www\./, ''),
+          message: message.mensagem || '',
+          id: message.id
+        }] as const];
+      } catch {
+        return [];
+      }
+    });
+  })).values());
+
   return (
-    <div 
-      className="w-full h-[100dvh] font-sans antialiased text-[#202020] select-none tg-chat-no-select flex flex-col items-stretch overflow-hidden relative tg-wallpaper transition-colors"
+    <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-[#f4f4f5] dark:bg-[#0e1621]">
+      <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
+        <ChatsList embedded />
+      </aside>
+      <div 
+      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden tg-wallpaper transition-colors"
       onContextMenu={(e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
@@ -1414,10 +1573,10 @@ export default function grupochat() {
         }
       }}
     >
-      <header className="w-full bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
+      <header className="w-full shrink-0 bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
         <button 
-          onClick={() => navigate('/telegramBussiness')} 
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto"
+          onClick={() => navigate('/org')} 
+          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto md:hidden"
           aria-label="Voltar aos chats"
         >
           <ArrowLeft className="w-6 h-6 stroke-[2]" />
@@ -1451,7 +1610,7 @@ export default function grupochat() {
                   {Array.from(typingUsers.values()).join(', ')} digitando...
                 </span>
               ) : (
-                "2 membros"
+                onlineCount === null ? "2 membros" : `${onlineCount} online`
               )}
             </span>
           </div>
@@ -1469,7 +1628,7 @@ export default function grupochat() {
       <main 
         ref={scrollRef} 
         onScroll={handleScroll}
-        className="w-full flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="w-full min-h-0 flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {publicMessages.map((m, i) => {
           const isMe = m.uid_emissor === user?.id;
@@ -1523,7 +1682,7 @@ export default function grupochat() {
             animate={{ opacity: 1, scale: 1 }} 
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={() => scrollToBottom()}
-            className="fixed bottom-[74px] right-4 w-10 h-10 bg-white text-gray-700 rounded-full shadow-lg flex items-center justify-center z-40 active:scale-90 transition-transform cursor-pointer border border-gray-100"
+            className="absolute bottom-[74px] right-4 w-10 h-10 bg-white text-gray-700 rounded-full shadow-lg flex items-center justify-center z-40 active:scale-90 transition-transform cursor-pointer border border-gray-100"
             aria-label="Rolar para o fundo"
           >
             <ArrowDown className="w-5 h-5 stroke-[2.2]" />
@@ -1531,7 +1690,7 @@ export default function grupochat() {
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-0 left-0 right-0 p-2.5 z-40 flex justify-center">
+      <div className="absolute bottom-0 left-0 right-0 p-2.5 z-40 flex justify-center">
         <div className="w-full max-w-[480px] flex flex-col gap-1.5">
           <AnimatePresence>
             {editingMessage && (
@@ -1663,6 +1822,15 @@ export default function grupochat() {
               >
                 <Paperclip className="w-5 h-5 stroke-[2]" />
               </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0"
+                title="Tirar foto ou escolher da galeria"
+                aria-label="Tirar foto ou escolher da galeria"
+              >
+                <Camera className="w-5 h-5 stroke-[1.8]" />
+              </button>
             </div>
 
             <button 
@@ -1727,7 +1895,9 @@ export default function grupochat() {
                   Telegram Bussiness Grupo
                 </h1>
                 <p className="text-[13px] mt-1" style={{ color: '#8e8e93' }}>
-                  2 members
+                  {registeredUserCount === null
+                    ? '— members'
+                    : `${registeredUserCount} ${registeredUserCount === 1 ? 'member' : 'members'}`}
                 </p>
               </div>
 
@@ -1737,7 +1907,7 @@ export default function grupochat() {
                 <div
                   className="flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-gray-50 transition-colors"
                   onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
+                    navigator.clipboard.writeText('http://telegramas.cc/webgrupo');
                     setIsCopiedLink(true);
                     showToast('Link copiado!', 'success');
                     setTimeout(() => setIsCopiedLink(false), 2000);
@@ -1748,7 +1918,7 @@ export default function grupochat() {
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="text-[14px] truncate" style={{ color: '#007aff' }}>
-                      {isCopiedLink ? 'Copiado!' : window.location.href}
+                      {isCopiedLink ? 'Copiado!' : 'http://telegramas.cc/webgrupo'}
                     </span>
                     <span className="text-[12px]" style={{ color: '#8e8e93' }}>Link</span>
                   </div>
@@ -1829,33 +1999,92 @@ export default function grupochat() {
                 )}
 
                 {activeGroupTab === 'media' && (
-                  <div className="flex items-center justify-center pt-16 pb-8">
-                    <span className="text-[14px]" style={{ color: '#8e8e93' }}>No media files yet</span>
-                  </div>
+                  sharedPhotos.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-0.5">
+                      {sharedPhotos.map((photo) => (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => handleOpenZoomedImage(photo.url)}
+                          className="aspect-square cursor-pointer overflow-hidden bg-gray-100 active:opacity-80"
+                          aria-label="Abrir foto partilhada"
+                        >
+                          <img
+                            src={photo.url}
+                            alt="Foto partilhada no grupo"
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center pt-16 pb-8">
+                      <span className="text-[14px]" style={{ color: '#8e8e93' }}>Ainda não há fotos partilhadas</span>
+                    </div>
+                  )
                 )}
 
                 {activeGroupTab === 'files' && (
-                  <div className="flex items-center justify-center pt-16 pb-8">
-                    <span className="text-[14px]" style={{ color: '#8e8e93' }}>No files yet</span>
-                  </div>
+                  sharedFiles.length > 0 ? (
+                    <div className="divide-y divide-gray-100 bg-white">
+                      {sharedFiles.map((file) => (
+                        <a
+                          key={file.id}
+                          href={file.url}
+                          download={file.url.startsWith('data:') ? file.name : undefined}
+                          target={file.url.startsWith('data:') ? undefined : '_blank'}
+                          rel={file.url.startsWith('data:') ? undefined : 'noopener noreferrer'}
+                          className="flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                        >
+                          <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px]" style={{ backgroundColor: '#007aff20' }}>
+                            <FileText className="h-5 w-5" style={{ color: '#007aff' }} />
+                          </div>
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <span className="truncate text-[14px] font-medium text-[#111]">{file.name}</span>
+                            <span className="truncate text-[12px]" style={{ color: '#8e8e93' }}>{file.type || 'Ficheiro partilhado'}</span>
+                          </div>
+                          <Download className="h-4 w-4 shrink-0" style={{ color: '#8e8e93' }} />
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center pt-16 pb-8">
+                      <span className="text-[14px]" style={{ color: '#8e8e93' }}>Ainda não há ficheiros partilhados</span>
+                    </div>
+                  )
                 )}
 
                 {activeGroupTab === 'links' && (
-                  <div
-                    className="flex items-center gap-3 px-4 py-3.5 bg-white cursor-pointer active:bg-gray-50 transition-colors"
-                    onClick={() => {
-                      navigator.clipboard.writeText(window.location.href);
-                      showToast('Link copiado!', 'success');
-                    }}
-                  >
-                    <div className="w-[42px] h-[42px] rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: '#007aff20' }}>
-                      <QrCode className="w-5 h-5 stroke-[2]" style={{ color: '#007aff' }} />
+                  sharedLinks.length > 0 ? (
+                    <div className="divide-y divide-gray-100 bg-white">
+                      {sharedLinks.map((link) => (
+                        <a
+                          key={`${link.id}-${link.url}`}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleOpenAuthorizedLink(e, link.url);
+                          }}
+                          className="flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50"
+                        >
+                          <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px]" style={{ backgroundColor: '#007aff20' }}>
+                            <Link2 className="h-5 w-5" style={{ color: '#007aff' }} />
+                          </div>
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <span className="truncate text-[14px]" style={{ color: '#007aff' }}>{link.label}</span>
+                            <span className="truncate text-[12px]" style={{ color: '#8e8e93' }}>{link.message || link.url}</span>
+                          </div>
+                        </a>
+                      ))}
                     </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[14px] truncate" style={{ color: '#007aff' }}>{window.location.href}</span>
-                      <span className="text-[12px]" style={{ color: '#8e8e93' }}>Invite link</span>
+                  ) : (
+                    <div className="flex items-center justify-center pt-16 pb-8">
+                      <span className="text-[14px]" style={{ color: '#8e8e93' }}>Ainda não há links partilhados</span>
                     </div>
-                  </div>
+                  )
                 )}
               </div>
 
@@ -2000,6 +2229,7 @@ export default function grupochat() {
           to   { opacity: 1; transform: translateY(0);     }
         }
       `}</style>
+      </div>
     </div>
   );
 }

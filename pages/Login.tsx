@@ -150,7 +150,7 @@ export default function Login() {
           localStorage.setItem('saved_country_name', selectedCountry.name);
         } catch {}
         showToast('Bem-vindo de volta!', 'success');
-        navigate('/telegramBussiness');
+        navigate('/org');
       } else {
         showToast('Não foi possível iniciar sessão. Verifique os seus dados.', 'error');
       }
@@ -299,4 +299,3 @@ export default function Login() {
     </div>
   );
 }
-

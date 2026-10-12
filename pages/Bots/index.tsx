@@ -974,13 +974,6 @@ export default function TelegramBotsChat() {
               <Zap className="w-5 h-5" />
             </button>
 
-            {/* Meus Bots à esquerda */}
-            <button
-              onClick={() => handleSendMessage("/meusbots")}
-              className="text-[#2481cc] text-[12.5px] sm:text-[13px] font-semibold shrink-0 cursor-pointer hover:underline mr-1.5 sm:mr-2 active:scale-95 transition-transform whitespace-nowrap"
-            >
-              Meus Bots
-            </button>
             <input
               type="text"
               value={inputText}
@@ -994,13 +987,6 @@ export default function TelegramBotsChat() {
               placeholder="Mensagem"
               className="flex-1 min-w-0 w-0 px-1 py-1 text-[14.5px] sm:text-[15px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] font-normal leading-snug"
             />
-            {/* Ajuda à direita */}
-            <button
-              onClick={() => handleSendMessage("/ajuda")}
-              className="text-[#2481cc] text-[12.5px] sm:text-[13.5px] font-semibold shrink-0 cursor-pointer hover:underline ml-1.5 sm:ml-2 active:scale-95 transition-transform whitespace-nowrap"
-            >
-              Ajuda
-            </button>
           </div>
           <button
             onClick={() => handleSendMessage()}
