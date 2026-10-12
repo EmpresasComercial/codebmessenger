@@ -13,7 +13,6 @@ import {
   FileText,
   RotateCcw,
   Camera,
-  ArrowRight,
   BarChart3,
   Zap,
   Smile
@@ -356,7 +355,6 @@ export default function playmentbot() {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [copiedIban, setCopiedIban] = useState(false);
-  const [copiedAmount, setCopiedAmount] = useState(false);
   const [showQuickHints, setShowQuickHints] = useState(false);
 
   const quickReplies = [
@@ -509,9 +507,7 @@ export default function playmentbot() {
     try {
       await navigator.clipboard.writeText(text);
       if (isAmount) {
-        setCopiedAmount(true);
         showToast('Valor copiado com sucesso!', 'success');
-        setTimeout(() => setCopiedAmount(false), 2000);
       } else {
         setCopiedIban(true);
         showToast('IBAN copiado com sucesso!', 'success');
@@ -1016,7 +1012,7 @@ export default function playmentbot() {
         setDepositAmount(nlp.amount);
         setLastIntent('valor_deposito');
         botReply(() => createBotMsg('bank_selector',
-          `Depósito de ${formatCurrency(nlp.amount!, 'KZ')}. Escolha o banco abaixo:`,
+          `Olá, por favor, selecione o método de pagamento para concluir a transferência de ${formatCurrency(nlp.amount!, 'KZ')}.`,
           { amount: nlp.amount, banks: collectionBanks }
         ));
         return;
@@ -1044,7 +1040,7 @@ export default function playmentbot() {
         setDepositAmount(numericVal);
         setLastIntent('valor_deposito');
         botReply(() => createBotMsg('bank_selector',
-          `Depósito de ${formatCurrency(numericVal, 'KZ')}. Escolha o banco para onde vai transferir:`,
+          `Olá, por favor, selecione o método de pagamento para concluir a transferência de ${formatCurrency(numericVal, 'KZ')}.`,
           { amount: numericVal, banks: collectionBanks }
         ));
         return;
@@ -1164,7 +1160,6 @@ export default function playmentbot() {
         <div className="flex items-center gap-2.5 bg-white rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] pointer-events-auto">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
             <img src="/logo-tb.jpg" alt="Payments Bot" className="w-full h-full object-cover" />
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#2481cc] rounded-full border-2 border-white" />
           </div>
 
           <div className="flex flex-col min-w-0">
@@ -1290,6 +1285,9 @@ export default function playmentbot() {
 
         {messages.map((msg) => {
           const isUser = msg.sender === 'user';
+          const ibanReference = msg.type === 'deposit_instructions'
+            ? String(msg.payload?.bank?.iban || '').replace(/^AO\d{2}/i, '')
+            : '';
           if (isUser) {
             const isCmd = msg.text?.trim().startsWith('/');
             const isValid = isCmd && isRecognizedCommand(msg.text || '');
@@ -1395,26 +1393,43 @@ export default function playmentbot() {
                     {msg.type === 'bank_selector' && msg.payload && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                         {msg.text && renderBotText(msg.text)}
-                        <div className="mt-3 flex flex-col gap-1.5 select-none">
+                        <div className="mt-3 flex flex-col select-none">
                           {msg.payload.banks && msg.payload.banks.length > 0 ? (
                             msg.payload.banks.map((b: CollectionBank) => (
                               <button
                                 key={b.id}
                                 onClick={() => createRechargeOrder(msg.payload.amount, b)}
-                                className="w-full text-left p-2.5 rounded-lg bg-gray-50 hover:bg-blue-50 border border-gray-200 flex items-center justify-between text-[#2481cc] active:scale-[0.99] transition-all cursor-pointer"
+                                className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
                               >
-                                <div className="flex items-center gap-2">
-                                  <Building2 className="w-4 h-4 text-[#3390ec] shrink-0" />
-                                  <span className="font-bold text-[14px] text-black">{b.nome_banco}</span>
-                                </div>
-                                <span className="text-[12px] font-medium text-[#3390ec] flex items-center gap-1">
-                                  Escolher <ArrowRight className="w-3.5 h-3.5" />
-                                </span>
+                                <span>{b.nome_banco}</span>
+                                <span className="text-[12px] text-[#3390ec]">Selecionar</span>
                               </button>
                             ))
                           ) : (
-                            <p className="text-[13px] text-gray-600">Nenhum banco carregado no momento.</p>
+                            <p className="py-1.5 text-[13px] text-gray-600">Não há bancos disponíveis neste momento.</p>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => botReply(() => createBotMsg(
+                              'text',
+                              'O pagamento via Multicaixa Express está em preparação e ficará disponível em breve.'
+                            ))}
+                            className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
+                          >
+                            <span>Multicaixa Express</span>
+                            <span className="text-[11px] font-medium text-gray-500 text-right">Em breve</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => botReply(() => createBotMsg(
+                              'text',
+                              'O pagamento com carteira digital USDT está em preparação e ficará disponível em breve. Não envie fundos para um endereço que não tenha sido fornecido oficialmente.'
+                            ))}
+                            className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
+                          >
+                            <span>Carteira digital USDT</span>
+                            <span className="text-[11px] font-medium text-gray-500 text-right">Em breve</span>
+                          </button>
                         </div>
                       </div>
                     )}
@@ -1422,73 +1437,51 @@ export default function playmentbot() {
                     {msg.type === 'deposit_instructions' && msg.payload && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                         <p className="font-bold text-[15px] text-[#2481cc] mb-2">
-                          Tudo pronto! Aqui estão os dados oficiais para você realizar o seu depósito: 🏦✨
+                          Dados para transferência
                         </p>
-                        <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200 text-[13.5px] space-y-2 my-2">
-                          <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-gray-200/60">
-                            <div>
-                              <span className="text-[12px] text-gray-500 block">Valor a depositar:</span>
-                              <span className="text-[#25ae60] font-bold text-[15px]">
-                                {formatCurrency(msg.payload.amount, 'KZ')}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => copyToClipboard(String(msg.payload.amount), true)}
-                              className="px-2.5 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 active:scale-95 transition-all text-[12px] font-semibold shrink-0 flex items-center gap-1 cursor-pointer shadow-2xs"
-                            >
-                              {copiedAmount ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-green-600" />
-                                  <span className="text-green-700">Copiado</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5 text-gray-600" />
-                                  <span>Copiar Valor</span>
-                                </>
-                              )}
-                            </button>
+                        <div className="text-[13.5px] space-y-2 my-2">
+                          <div>
+                            <p>
+                              Por favor, conclua a transferência para <strong>{msg.payload.bank?.nome_proprietario || 'Conta Oficial'}</strong>
+                              {' '}no banco <strong>{msg.payload.bank?.nome_banco}</strong>, no valor de{' '}
+                              <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                                <strong className="text-[#25ae60] text-[15px]">{formatCurrency(msg.payload.amount, 'KZ')}</strong>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(String(msg.payload.amount), true)}
+                                  className="text-[#2481cc] hover:text-[#1f72b5] cursor-pointer"
+                                  title="Copiar valor"
+                                  aria-label={`Copiar valor ${formatCurrency(msg.payload.amount, 'KZ')}`}
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </button>
+                              </span>.
+                            </p>
                           </div>
 
-                          <p>
-                            • <strong>Banco Destinatário:</strong> {msg.payload.bank?.nome_banco}
-                          </p>
-                          <p>
-                            • <strong>Titular da Conta:</strong>{' '}
-                            {msg.payload.bank?.nome_proprietario || 'Conta Oficial'}
-                          </p>
-
-                          <div className="pt-1 flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <span className="text-[12px] text-gray-500 block">IBAN:</span>
-                              <code className="font-mono text-[13px] text-[#2481cc] font-bold select-all break-all">
-                                {msg.payload.bank?.iban}
-                              </code>
-                            </div>
+                          <div className="flex items-start gap-2">
+                            <p className="min-w-0 break-all">
+                              <strong>Referência (IBAN):</strong>{' '}
+                              <span className="select-all">{ibanReference}</span>
+                            </p>
                             <button
-                              onClick={() => copyToClipboard(msg.payload.bank?.iban, false)}
-                              className="px-2.5 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 active:scale-95 transition-all text-[12px] font-semibold shrink-0 flex items-center gap-1 cursor-pointer shadow-2xs"
+                              type="button"
+                              onClick={() => copyToClipboard(ibanReference, false)}
+                              className="mt-0.5 shrink-0 text-[#2481cc] hover:text-[#1f72b5] cursor-pointer"
+                              title={copiedIban ? 'Referência copiada' : 'Copiar referência'}
+                              aria-label={copiedIban ? 'Referência copiada' : 'Copiar referência'}
                             >
                               {copiedIban ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-green-600" />
-                                  <span className="text-green-700">Copiado</span>
-                                </>
+                                <Check className="w-4 h-4 text-green-600" />
                               ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5 text-gray-600" />
-                                  <span>Copiar IBAN</span>
-                                </>
+                                <Copy className="w-4 h-4" />
                               )}
                             </button>
                           </div>
                         </div>
-                        <p className="mt-2 text-[13px] text-gray-800 leading-normal">
-                          📝 <strong>Instruções simples:</strong>
-                          <br />
-                          Por favor, dirija-se a um <strong>ATM (Multicaixa)</strong>, use o aplicativo do seu banco ou vá a um <strong>Kiosk</strong> e faça a transferência ou depósito desse valor exato.
-                          <br /><br />
-                          Após fazer o depósito, clique no botão verde abaixo para enviar a captura do comprovativo! Estarei aqui te aguardando ansiosamente para liberar o seu saldo, tá bom? 😊
+                        <p className="mt-2 text-[13px] text-gray-800 leading-normal italic">
+                          Dirija-se a um ATM ou use o aplicativo do seu banco para concluir a transferência.
+                          {' '}Depois, envie aqui uma captura do comprovativo.
                         </p>
                       </div>
                     )}

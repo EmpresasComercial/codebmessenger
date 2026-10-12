@@ -17,7 +17,7 @@ export default function Layout() {
   ];
 
   const isChatRoom = location.pathname.startsWith('/chat/') || 
-                     location.pathname === '/webgrupo';
+                     location.pathname === '/web';
 
   const showNavbar = !isChatRoom && mainTabPaths.includes(location.pathname);
 

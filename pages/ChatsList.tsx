@@ -20,10 +20,38 @@ import {
   Settings,
   ChevronDown,
   UserRoundPlus,
-  Info
+  Info,
+  Wallet,
+  PlusCircle,
+  Lightbulb,
+  Download,
+  CreditCard,
+  Globe
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+
+const hasImageAttachment = (message: any) => {
+  let details = message?.detalhes;
+  if (typeof details === 'string') {
+    try {
+      details = JSON.parse(details);
+    } catch {
+      details = {};
+    }
+  }
+
+  return Boolean(
+    details?.imagem_url ||
+    details?.photo_url ||
+    message?.imagem_url ||
+    message?.photo_url ||
+    ['imagem', 'image', 'foto', 'photo'].includes(
+      String(details?.tipo_midia || message?.tipo_midia || '').toLowerCase(),
+    ),
+  );
+};
+
 // Selo de verificação oficial da empresa (Telegram Blue)
 const OfficialVerifiedBadge = ({ className = "w-[16px] h-[16px]" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={`shrink-0 inline-block align-middle ml-1 select-none ${className}`}>
@@ -195,7 +223,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         if (latestMsg) {
           let senderLabel = "Membro";
           if (user && latestMsg.uid_emissor === user.id) {
-            senderLabel = "Você";
+            senderLabel = "Tu";
           } else {
             const { data: prof } = await supabase
               .from('sys_t500')
@@ -209,8 +237,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             }
           }
 
-          const parsedData: any = (latestMsg.detalhes && typeof latestMsg.detalhes === 'object') ? latestMsg.detalhes : {};
-          const text = latestMsg.mensagem || (parsedData.imagem_url ? "📷 Foto" : "Mensagem");
+          const text = hasImageAttachment(latestMsg) ? "Foto" : latestMsg.mensagem || "Mensagem";
           const msgTimestamp = new Date(latestMsg.data_registrada).getTime();
 
           const newMsg = {
@@ -281,7 +308,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           icon: '/logo-tb.jpg',
           badge: '/logo-tb.jpg',
           tag: `community-message-${messageId}`,
-          data: { url: '/webgrupo' }
+          data: { url: '/web' }
         });
       } catch (error) {
         console.error('Não foi possível mostrar a notificação da comunidade:', error);
@@ -408,7 +435,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   const msgTime = new Date(msg.created_at).getTime();
                   uniqueContacts.set(otherId, {
                     ...existing,
-                    lastMessage: msg.mensagem,
+                    lastMessage: hasImageAttachment(msg) ? "Foto" : msg.mensagem,
                     lastMessageTime: formatTelegramTime(msgTime),
                     lastMessageTimestamp: msgTime,
                     isMe: msg.remetente_id === user.id
@@ -571,7 +598,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       {
         id: 'community-chat',
         folder: 'groups' as ChatFolder,
-        name: 'Telegram Bussiness Grupo',
+        name: 'Telegram Empresa',
         isVerified: true,
         lastMessage: communityLastMessage.text,
         senderPrefix: `${communityLastMessage.sender}: `,
@@ -587,7 +614,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             <img src="/logo-tb.jpg" alt="Telegram" className="w-full h-full object-cover" />
           </div>
         ),
-        onClick: () => navigate('/webgrupo')
+        onClick: () => navigate('/web')
       },
       {
         id: 'pavel-durov',
@@ -903,34 +930,43 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               aria-label="Fechar menu"
             />
             <nav
-              className="absolute inset-y-0 left-0 flex w-[280px] flex-col bg-white shadow-xl dark:bg-[#17212b]"
+              className="absolute inset-y-0 left-0 flex w-[280px] flex-col overflow-y-auto bg-white shadow-xl dark:bg-[#17212b]"
               aria-label="Navegação principal"
             >
               <div className="border-b border-gray-100 bg-[#2481cc] px-4 pb-3 pt-5 text-white dark:border-[#202b36] dark:bg-[#1c242f]">
-                <div className="mb-3 flex items-start justify-between">
-                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[20px] font-semibold">
-                    {drawerAvatar ? (
-                      <img src={drawerAvatar} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      drawerName.trim().charAt(0).toUpperCase()
-                    )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsNavigationDrawerOpen(false);
+                    navigate("/perfil");
+                  }}
+                  className="block w-full cursor-pointer text-left"
+                  aria-label="Editar perfil"
+                >
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[20px] font-semibold">
+                      {drawerAvatar ? (
+                        <img src={drawerAvatar} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        drawerName.trim().charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <span className="pt-1 text-xl" aria-hidden="true">☼</span>
                   </div>
-                  <span className="pt-1 text-xl" aria-hidden="true">☼</span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-[15px] font-semibold">{drawerName}</p>
-                    <p className="mt-0.5 truncate text-[13px] text-white/75">
-                      {drawerPhone || "Telefone não disponível"}
-                    </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-semibold">{drawerName}</p>
+                      <p className="mt-0.5 truncate text-[13px] text-white/75">
+                        {drawerPhone || "Telefone não disponível"}
+                      </p>
+                    </div>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-white/80" />
                   </div>
-                  <ChevronDown className="h-4 w-4 shrink-0 text-white/80" />
-                </div>
+                </button>
               </div>
               {[
-                { label: "Grupo Telegram", path: "/webgrupo", icon: MessageCircle },
+                { label: "Grupo Telegram", path: "/web", icon: MessageCircle },
                 { label: "Contactos", path: "/contactos", icon: Users },
-                { label: "Botfather", path: "/botfather", icon: Bot },
                 { label: "Definições", path: "/definicoes", icon: Settings },
               ].map(({ label, path, icon: Icon }) => (
                 <button
@@ -940,7 +976,33 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     setIsNavigationDrawerOpen(false);
                     navigate(path);
                   }}
-                  className="flex h-12 items-center gap-4 px-5 text-left text-[15px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
+                  className={`flex h-12 items-center gap-4 px-5 text-left text-[15px] transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
+                    label === "Botfather" ? "text-[#2481cc] dark:text-[#2481cc]" : "text-[#222] dark:text-white"
+                  }`}
+                >
+                  <Icon className={`h-5 w-5 ${
+                    label === "Botfather" ? "text-[#2481cc]" : "text-[#707579] dark:text-[#9eaab6]"
+                  }`} />
+                  {label}
+                </button>
+              ))}
+              <div className="my-2 border-t border-gray-100 dark:border-[#202b36]" />
+              {[
+                { label: "Carteira wallet", path: "/carteira", icon: Wallet },
+                { label: "Payment Wallet", path: "/sand-pay", icon: PlusCircle },
+                { label: "Introdução ao Telegram", path: "/sobre-telegram business", icon: Lightbulb },
+                { label: "Download APK", path: "/android?setln=pt", icon: Download },
+                { label: "Carteira bancária", path: "/bank", icon: CreditCard },
+                { label: "Idioma", path: "/definicoes", icon: Globe, state: { openLanguage: true } },
+              ].map(({ label, path, icon: Icon, state }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    setIsNavigationDrawerOpen(false);
+                    navigate(path, state ? { state } : undefined);
+                  }}
+                  className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
                 >
                   <Icon className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" />
                   {label}
@@ -1171,18 +1233,22 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         )}
       </main>
 
-      {/* ── BOTÃO DE AÇÃO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÁPIS) ── */}
-      <button
-        onClick={() => {
-          showToast('Iniciando novo chat...', 'info');
-          navigate('/webgrupo');
-        }}
-        className={`${embedded ? "absolute bottom-4 right-4 md:fixed md:bottom-6 md:right-6" : "fixed bottom-[74px] right-4"} z-40 w-12 h-12 rounded-full bg-gradient-to-tr from-[#1e96c8] to-[#50a2e9] text-white flex items-center justify-center shadow-[0_4px_16px_rgba(36,129,204,0.45)] hover:scale-105 active:scale-95 transition-all cursor-pointer`}
-        title="Nova Conversa"
-        aria-label="Nova Conversa"
-      >
-        <Edit3 className="w-5 h-5 stroke-[1.8]" />
-      </button>
+      {!embedded && (
+        <>
+          {/* ── BOTÃO DE AÇÃO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÁPIS) ── */}
+          <button
+            onClick={() => {
+              showToast('Iniciando novo chat...', 'info');
+              navigate('/web');
+            }}
+            className="fixed bottom-[74px] right-4 z-40 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-gradient-to-tr from-[#1e96c8] to-[#50a2e9] text-white shadow-[0_4px_16px_rgba(36,129,204,0.45)] transition-all hover:scale-105 active:scale-95"
+            title="Nova Conversa"
+            aria-label="Nova Conversa"
+          >
+            <Edit3 className="h-5 w-5 stroke-[1.8]" />
+          </button>
+        </>
+      )}
       </div>
     </div>
   );

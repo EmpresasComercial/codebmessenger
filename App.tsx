@@ -190,7 +190,8 @@ export default function App() {
                     <Route path="definicoes"              element={<Profile />} />
                     <Route path="perfil"                  element={<PavelDurov />} />
                     <Route path="settings"                element={<Navigate to="/Definições" replace />} />
-                    <Route path="adicionar-banco"         element={<AddBank />} />
+                    <Route path="bank"                   element={<AddBank />} />
+                    <Route path="adicionar-banco"         element={<Navigate to="/bank" replace />} />
                     <Route path="alterar-senha"           element={<ChangePassword />} />
                     <Route path="configuracoes-conta"     element={<Navigate to="/Definições" replace />} />
                     <Route path="sand-pay"                element={<Playmentbot />} />
@@ -219,11 +220,12 @@ export default function App() {
                     <Route path="telegramBussiness"       element={<Navigate to="/org" replace />} />
                     <Route path="telegramBusiness"        element={<Navigate to="/org" replace />} />
                     <Route path="telegram-business"       element={<Navigate to="/org" replace />} />
-                    <Route path="webgrupo"                element={<GrupoChat />} />
-                    <Route path="chat-comunidade"         element={<Navigate to="/webgrupo" replace />} />
-                    <Route path="chat/comunidade"         element={<Navigate to="/webgrupo" replace />} />
-                    <Route path="comunidade-chat"         element={<Navigate to="/webgrupo" replace />} />
-                    <Route path="grupochat"               element={<Navigate to="/webgrupo" replace />} />
+                    <Route path="web"                     element={<GrupoChat />} />
+                    <Route path="webgrupo"                element={<Navigate to="/web" replace />} />
+                    <Route path="chat-comunidade"         element={<Navigate to="/web" replace />} />
+                    <Route path="chat/comunidade"         element={<Navigate to="/web" replace />} />
+                    <Route path="comunidade-chat"         element={<Navigate to="/web" replace />} />
+                    <Route path="grupochat"               element={<Navigate to="/web" replace />} />
                     <Route path="chat/:contactId"         element={<PrivateChat />} />
                     <Route path="devices"                 element={<DevicesPrivacy />} />
                     <Route path="telegram-premium"        element={<Navigate to="/Contactos" replace />} />

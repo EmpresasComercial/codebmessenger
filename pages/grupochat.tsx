@@ -444,10 +444,10 @@ const MessageItem = React.memo(({
         </div>
       )}
 
-      <div className={`flex items-end w-full gap-1.5 ${isMe ? "justify-end" : "justify-start"} relative group`}>
+      <div className={`flex ${isMe ? "items-end" : "items-start"} w-full gap-1.5 ${isMe ? "justify-end" : "justify-start"} relative group`}>
         {!isMe && (
           <div 
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-bold shrink-0 mb-0.5 shadow-xs overflow-hidden select-none"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-bold shrink-0 mt-[2px] shadow-xs overflow-hidden select-none"
             style={{ backgroundColor: authorColor }}
           >
             {displayName.slice(0, 2).toUpperCase()}
@@ -554,7 +554,7 @@ const MessageItem = React.memo(({
             onClick={onClickBubble}
             className={cn(
               "tg-bubble max-w-[85%] px-[10px] pt-[6px] pb-[6px] text-[#000000] dark:text-[#f3f4f6] shadow-[0_1px_2px_rgba(16,35,47,0.15)] relative cursor-pointer active:brightness-95 active:scale-[0.985] transition-all select-none",
-              isMe ? "bg-[#eeffde] dark:bg-[#2b5278] is-me" : "bg-white dark:bg-[#182533] is-other",
+              isMe ? "bg-[#eeffde] dark:bg-[#2b5278] is-me" : "bg-white dark:bg-[#182533] is-other is-other-top",
               isSelectedInContextMenu && "brightness-90 scale-[0.985]"
             )}
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
@@ -577,9 +577,9 @@ const MessageItem = React.memo(({
                 height="20"
                 viewBox="0 0 9 20"
                 className="absolute pointer-events-none"
-                style={{ bottom: 0, left: -8, transform: 'scaleX(-1)', fill: 'currentColor' }}
+                style={{ top: 0, left: -8, fill: 'currentColor' }}
               >
-                <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-white dark:fill-[#182533]" />
+                <path d="M9 0H0C4.5 0 8 4 9 12V0Z" className="fill-white dark:fill-[#182533]" />
               </svg>
             )}
 
@@ -778,11 +778,35 @@ export default function grupochat() {
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   // IDs de mensagens com reaÃ§Ãµes em voo (impede o realtime de sobrescrever estado otimista)
   const pendingReactionIds = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    const composer = composerRef.current;
+    const messageList = scrollRef.current;
+    if (!composer || !messageList) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      const reservedSpace = Math.max(96, Math.ceil(composer.getBoundingClientRect().height + 12));
+
+      messageList.style.paddingBottom = `${reservedSpace}px`;
+
+      requestAnimationFrame(() => {
+        messageList.scrollTop = messageList.scrollHeight;
+        requestAnimationFrame(() => {
+          messageList.scrollTop = messageList.scrollHeight;
+        });
+      });
+    });
+
+    resizeObserver.observe(composer);
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     requestAnimationFrame(() => {
@@ -1267,9 +1291,11 @@ export default function grupochat() {
 
       setEditingMessage(null);
       setPublicInput("");
+      setIsComposerExpanded(false);
       if (inputRef.current) {
         inputRef.current.value = "";
         inputRef.current.style.height = "auto";
+        inputRef.current.style.overflowY = "hidden";
       }
 
       // AtualizaÃ§Ã£o otimista local imediata
@@ -1316,11 +1342,13 @@ export default function grupochat() {
     if (tempReply) { detalhes.resposta_para_id = tempReply.id; detalhes.reply = { id: tempReply.id, text: tempReply.mensagem, sender: tempReply.perfil?.nome_exibicao || tempReply.perfil?.telefone || '' }; }
 
     setPublicInput("");
+    setIsComposerExpanded(false);
     setImagePreview(null);
     setReplyTo(null);
     if (inputRef.current) {
       inputRef.current.value = "";
       inputRef.current.style.height = "auto";
+      inputRef.current.style.overflowY = "hidden";
       inputRef.current.focus();
     }
 
@@ -1491,7 +1519,11 @@ export default function grupochat() {
           if (inputRef.current) {
             inputRef.current.focus();
             inputRef.current.style.height = "auto";
-            inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 100)}px`;
+            const maxHeight = 120;
+            const nextHeight = Math.min(inputRef.current.scrollHeight, maxHeight);
+            inputRef.current.style.height = `${nextHeight}px`;
+            inputRef.current.style.overflowY = inputRef.current.scrollHeight > maxHeight ? "auto" : "hidden";
+            setIsComposerExpanded(nextHeight > 46);
             inputRef.current.selectionStart = inputRef.current.value.length;
             inputRef.current.selectionEnd = inputRef.current.value.length;
           }
@@ -1573,7 +1605,8 @@ export default function grupochat() {
         }
       }}
     >
-      <header className="w-full shrink-0 bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
+      <div className="h-[68px] shrink-0 md:hidden" aria-hidden="true" />
+      <header className="fixed left-0 right-0 top-0 z-40 flex w-full shrink-0 select-none items-center justify-between bg-transparent px-3 py-3 pointer-events-none sm:px-4 md:sticky md:left-auto md:right-auto md:top-0">
         <button 
           onClick={() => navigate('/org')} 
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto md:hidden"
@@ -1597,7 +1630,7 @@ export default function grupochat() {
 
           <div className="flex flex-col min-w-0">
             <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-              Telegram Bussiness Grupo
+              Telegram Empresa
             </h1>
             <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate flex items-center gap-1">
               {statusText ? (
@@ -1628,7 +1661,7 @@ export default function grupochat() {
       <main 
         ref={scrollRef} 
         onScroll={handleScroll}
-        className="w-full min-h-0 flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="w-full min-h-0 flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative [overflow-anchor:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {publicMessages.map((m, i) => {
           const isMe = m.uid_emissor === user?.id;
@@ -1691,7 +1724,7 @@ export default function grupochat() {
       </AnimatePresence>
 
       <div className="absolute bottom-0 left-0 right-0 p-2.5 z-40 flex justify-center">
-        <div className="w-full max-w-[480px] flex flex-col gap-1.5">
+        <div ref={composerRef} className="w-full max-w-[480px] flex flex-col gap-1.5">
           <AnimatePresence>
             {editingMessage && (
               <motion.div 
@@ -1764,7 +1797,7 @@ export default function grupochat() {
               onChange={handleImageSelect} 
             />
 
-            <div className="flex-1 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center px-3.5 py-1.5 min-h-[46px] border border-gray-100/80">
+            <div className={`flex-1 bg-white ${isComposerExpanded ? 'rounded-[24px] items-end' : 'rounded-full items-center'} shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex px-3.5 py-1.5 min-h-[46px] border border-gray-100/80`}>
               <button 
                 type="button" 
                 className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0"
@@ -1792,7 +1825,11 @@ export default function grupochat() {
                 onChange={(e) => {
                   setPublicInput(e.target.value);
                   e.target.style.height = "auto";
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+                  const maxHeight = 120;
+                  const nextHeight = Math.min(e.target.scrollHeight, maxHeight);
+                  e.target.style.height = `${nextHeight}px`;
+                  e.target.style.overflowY = e.target.scrollHeight > maxHeight ? "auto" : "hidden";
+                  setIsComposerExpanded(nextHeight > 46);
                   sendTypingBroadcast();
                 }}
                 onKeyDown={(e) => { 
@@ -1803,14 +1840,16 @@ export default function grupochat() {
                     e.preventDefault();
                     setEditingMessage(null);
                     setPublicInput("");
+                    setIsComposerExpanded(false);
                     if (inputRef.current) {
                       inputRef.current.value = "";
                       inputRef.current.style.height = "auto";
+                      inputRef.current.style.overflowY = "hidden";
                     }
                   }
                 }}
                 placeholder={editingMessage ? "Editar mensagem..." : "Mensagem"}
-                className="w-full px-2 py-1.5 text-[15px] bg-transparent resize-none outline-none max-h-[100px] text-black placeholder:text-gray-400 font-normal leading-snug"
+                className="w-full min-h-[24px] px-2 py-1.5 text-[15px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black placeholder:text-gray-400 font-normal leading-snug"
                 rows={1}
               />
 
@@ -1892,7 +1931,7 @@ export default function grupochat() {
                   <img src="/logo-tb.jpg" alt="Telegram" className="w-full h-full object-cover" />
                 </div>
                 <h1 className="text-[18px] font-bold text-[#111] text-center leading-tight">
-                  Telegram Bussiness Grupo
+                  Telegram Empresa
                 </h1>
                 <p className="text-[13px] mt-1" style={{ color: '#8e8e93' }}>
                   {registeredUserCount === null
@@ -1907,7 +1946,7 @@ export default function grupochat() {
                 <div
                   className="flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-gray-50 transition-colors"
                   onClick={() => {
-                    navigator.clipboard.writeText('http://telegramas.cc/webgrupo');
+                    navigator.clipboard.writeText('http://telegramas.cc/web');
                     setIsCopiedLink(true);
                     showToast('Link copiado!', 'success');
                     setTimeout(() => setIsCopiedLink(false), 2000);
@@ -1918,7 +1957,7 @@ export default function grupochat() {
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="text-[14px] truncate" style={{ color: '#007aff' }}>
-                      {isCopiedLink ? 'Copiado!' : 'http://telegramas.cc/webgrupo'}
+                      {isCopiedLink ? 'Copiado!' : 'http://telegramas.cc/web'}
                     </span>
                     <span className="text-[12px]" style={{ color: '#8e8e93' }}>Link</span>
                   </div>
@@ -2111,10 +2150,20 @@ export default function grupochat() {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-2" 
+            className="fixed inset-0 z-[300] bg-black flex h-[100dvh] w-screen items-center justify-center overflow-hidden" 
             onClick={() => setZoomedImage(null)}
           >
-            <img src={zoomedImage} className="max-w-full max-h-full object-contain rounded-[12px]" alt="Zoom" />
+            <img
+              src={zoomedImage}
+              className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl"
+              alt=""
+              aria-hidden="true"
+            />
+            <img
+              src={zoomedImage}
+              className="relative z-10 h-auto w-auto max-h-full max-w-full object-contain"
+              alt="Zoom"
+            />
             <div className="absolute top-4 right-4 flex items-center gap-2">
               <button 
                 type="button"

@@ -1511,7 +1511,7 @@ export default function wallet() {
               {msg.type === 'no_bank' && (
                 <div className="w-full max-w-[80%] flex flex-col items-center justify-center gap-1 -mt-1.5 mb-2 pl-2">
                   <button
-                    onClick={() => navigate('/adicionar-banco?redirect=/carteira')}
+                    onClick={() => navigate('/bank?redirect=/carteira')}
                     className="w-full bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-4 py-2 text-[14px] font-medium active:bg-opacity-90 transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
                   >
                     ➕ Cadastrar Conta Bancária

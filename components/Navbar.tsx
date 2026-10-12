@@ -43,7 +43,7 @@ export default function Navbar() {
       {/* ── BOTÃO DE AÇÃO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÁPIS) ── */}
       {showFab && (
         <button
-          onClick={() => navigate('/webgrupo')}
+          onClick={() => navigate('/web')}
           className="fixed bottom-[72px] right-4 sm:right-6 z-40 w-14 h-14 rounded-full bg-[#50a8eb] dark:bg-[#50a8eb] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(80,168,235,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
           title="Nova Mensagem"
           aria-label="Nova Mensagem"

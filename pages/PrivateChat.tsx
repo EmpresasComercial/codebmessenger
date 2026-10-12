@@ -21,7 +21,8 @@ import {
   Pencil,
   Trash2,
   X,
-  ChevronRight
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
@@ -97,6 +98,15 @@ export default function PrivateChat() {
   // Context Menu state
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [showAllReactions, setShowAllReactions] = useState(false);
+  const [showContactProfile, setShowContactProfile] = useState(false);
+  const [contactProfile, setContactProfile] = useState<any>({
+    name: contactDisplayName || rawContactPhone || 'Contato',
+    phone: rawContactPhone || 'Não informado',
+    avatarUrl: '',
+    hierarchy: contactLevel || 'L1',
+    invitedAt: null,
+    registeredAt: null,
+  });
 
   // ── Indicador de Digitando em Tempo Real (Supabase Broadcast) ──
   const [isContactTyping, setIsContactTyping] = useState(false);
@@ -106,6 +116,7 @@ export default function PrivateChat() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -284,17 +295,33 @@ export default function PrivateChat() {
   // Busca telefone do contacto
   useEffect(() => {
     if (!contactId || contactId.startsWith('pavel')) return;
+    let isMounted = true;
     (async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('sys_t500')
-          .select('telefone, nome_exibicao')
+          .select('*')
           .eq('id', contactId)
           .maybeSingle();
-        if (data) setContactDisplayName(data.nome_exibicao || data.telefone);
+
+        if (!isMounted || error || !data) return;
+
+        const nextProfile = {
+          name: data.nome_exibicao || data.nome || data.display_name || data.telefone || contactDisplayName || rawContactPhone || 'Contato',
+          phone: data.telefone || rawContactPhone || 'Não informado',
+          avatarUrl: data.avatar_url || data.foto_url || data.photo_url || data.avatar || data.imagem || '',
+          hierarchy: data.nivel || data.level || data.hierarquia || data.hierarchy || contactLevel || 'L1',
+          invitedAt: data.data_convite || data.invited_at || data.convidado_em || data.invite_date || null,
+          registeredAt: data.data_cadastro || data.registered_at || data.criado_em || data.created_at || data.createdAt || null,
+        };
+
+        setContactDisplayName(nextProfile.name);
+        setContactProfile(nextProfile);
       } catch {}
     })();
-  }, [contactId]);
+
+    return () => { isMounted = false; };
+  }, [contactId, contactDisplayName, rawContactPhone, contactLevel]);
 
   // Fecha menu ao clicar fora
   useEffect(() => {
@@ -407,7 +434,11 @@ export default function PrivateChat() {
     setInputText('');
     setImagePreview(null);
     setReplyTo(null);
-    if (inputRef.current) inputRef.current.style.height = 'auto';
+    setIsComposerExpanded(false);
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.overflowY = 'hidden';
+    }
 
     const tempId = `local_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const newMsg: Message = {
@@ -506,6 +537,27 @@ export default function PrivateChat() {
     return val;
   };
 
+  const formatProfileDate = (value: string | null | undefined) => {
+    if (!value) return 'Não informado';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Não informado';
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(date);
+  };
+
+  const getHierarchyLabel = (value: any) => {
+    const normalized = String(value ?? contactLevel ?? 'L1').trim().toUpperCase();
+    if (/^L[123]$/.test(normalized)) return normalized;
+    if (/^[123]$/.test(normalized)) return `L${normalized}`;
+    if (/NIVEL\s*1|NÍVEL\s*1/.test(normalized)) return 'L1';
+    if (/NIVEL\s*2|NÍVEL\s*2/.test(normalized)) return 'L2';
+    if (/NIVEL\s*3|NÍVEL\s*3/.test(normalized)) return 'L3';
+    return 'L1';
+  };
+
   const getUserColor = (str: string) => {
     const colors = ['#229ED9', '#E56555', '#8E44AD', '#27AE60', '#D35400', '#16A085', '#C0392B', '#2980B9'];
     let hash = 0;
@@ -541,7 +593,8 @@ export default function PrivateChat() {
     >
 
       {/* ── HEADER ── */}
-      <header className="w-full shrink-0 bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
+      <div className="h-[68px] shrink-0 md:hidden" aria-hidden="true" />
+      <header className="fixed left-0 right-0 top-0 z-40 flex w-full shrink-0 select-none items-center justify-between bg-transparent px-3 py-3 pointer-events-none sm:px-4 md:sticky md:left-auto md:right-auto md:top-0">
         <button
           onClick={() => navigate('/org')}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto md:hidden"
@@ -601,7 +654,7 @@ export default function PrivateChat() {
                   'Fundador'
                 ) : contactIsOnline ? (
                   <span className="text-[#10b981] font-medium">
-                    online{contactLevel ? ` • Subordinado Nível ${contactLevel}` : ''}
+                    online{contactLevel ? ` • Afiliado Nível ${contactLevel}` : ''}
                   </span>
                 ) : (
                   'offline'
@@ -613,14 +666,14 @@ export default function PrivateChat() {
 
         <div className="flex items-center gap-1.5 pointer-events-auto">
           <button
-            onClick={() => showToast('Iniciando chamada de voz segura...', 'info')}
+            onClick={() => setShowContactProfile(true)}
             className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0"
-            aria-label="Chamar"
+            aria-label="Perfil do contato"
           >
             <Phone className="w-5 h-5" />
           </button>
           <button
-            onClick={() => showToast('Opções do chat Telegram', 'info')}
+            onClick={() => setShowContactProfile(true)}
             className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0"
             aria-label="Mais opções"
           >
@@ -628,6 +681,121 @@ export default function PrivateChat() {
           </button>
         </div>
       </header>
+
+      {showContactProfile && (
+        <div
+          className="fixed inset-0 z-[250] flex flex-col select-none"
+          style={{ backgroundColor: '#efeff4' }}
+          onClick={() => setShowContactProfile(false)}
+        >
+          <div
+            className="w-full flex items-center justify-between px-4 pt-3 pb-3 sticky top-0 z-10"
+            style={{ backgroundColor: '#efeff4' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowContactProfile(false)}
+              className="w-9 h-9 flex items-center justify-center text-[#8e8e93] active:opacity-50 transition-opacity cursor-pointer"
+              aria-label="Fechar"
+            >
+              <X className="w-5 h-5 stroke-[2.5]" />
+            </button>
+            <span className="text-[17px] font-semibold text-[#111] tracking-tight">
+              Informações
+            </span>
+            <div className="w-9 h-9" />
+          </div>
+
+          <div className="flex-1 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col items-center pt-6 pb-5 px-4">
+              <div className="relative mb-4 h-[80px] w-[80px] overflow-hidden rounded-full">
+                {contactProfile.avatarUrl ? (
+                  <img
+                    src={contactProfile.avatarUrl}
+                    alt={contactProfile.name}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-[#2481cc] text-[20px] font-bold text-white">
+                    {(contactProfile.name || 'C').slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                {contactIsOnline && (
+                  <span className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#34c759]" />
+                )}
+              </div>
+
+              <h1 className="text-center text-[18px] font-bold text-[#111] leading-tight">
+                {contactProfile.name || formatPhoneClean(rawContactPhone)}
+              </h1>
+              <p className="mt-1 text-[13px]" style={{ color: '#8e8e93' }}>
+                {contactIsOnline ? 'online agora' : 'offline'}
+              </p>
+            </div>
+
+            <div className="mx-4 mb-4 overflow-hidden rounded-[12px] bg-white shadow-xs">
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[8px]" style={{ backgroundColor: '#007aff' }}>
+                  <Phone className="h-[17px] w-[17px] text-white stroke-[2]" />
+                </div>
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-[14px]" style={{ color: '#007aff' }}>
+                    {formatPhoneClean(contactProfile.phone || rawContactPhone)}
+                  </span>
+                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>Telefone</span>
+                </div>
+              </div>
+
+              <div className="h-px ml-[56px]" style={{ backgroundColor: '#c8c7cc' }} />
+
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[8px]" style={{ backgroundColor: '#34c759' }}>
+                  <span className="text-[12px] font-bold text-white">L</span>
+                </div>
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-[14px] text-[#111]">
+                    Afiliado {getHierarchyLabel(contactProfile.hierarchy || contactLevel || 'L1')}
+                  </span>
+                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>Hierarquia</span>
+                </div>
+              </div>
+
+              <div className="h-px ml-[56px]" style={{ backgroundColor: '#c8c7cc' }} />
+
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[8px]" style={{ backgroundColor: '#ff9500' }}>
+                  <Calendar className="h-[17px] w-[17px] text-white stroke-[2]" />
+                </div>
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-[14px] text-[#111]">
+                    {formatProfileDate(contactProfile.invitedAt)}
+                  </span>
+                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>Convidado em</span>
+                </div>
+              </div>
+
+              <div className="h-px ml-[56px]" style={{ backgroundColor: '#c8c7cc' }} />
+
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[8px]" style={{ backgroundColor: '#af52de' }}>
+                  <CheckCheck className="h-[17px] w-[17px] text-white stroke-[2]" />
+                </div>
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-[14px] text-[#111]">
+                    {formatProfileDate(contactProfile.registeredAt)}
+                  </span>
+                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>Cadastro</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── ÁREA DE MENSAGENS TELEGRAM (LARGURA TOTAL FLUIDA) ── */}
       <main
@@ -933,7 +1101,7 @@ export default function PrivateChat() {
       >
         <div className="w-full max-w-[1000px] flex items-end gap-2">
           {/* Pill flutuante */}
-          <div className="flex-1 bg-white dark:bg-[#202b36] rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.18)] flex items-center px-3.5 py-1 min-h-[46px]">
+          <div className={`flex-1 bg-white dark:bg-[#202b36] ${isComposerExpanded ? 'rounded-[24px] items-end' : 'rounded-full items-center'} shadow-[0_4px_20px_rgba(0,0,0,0.18)] flex px-3.5 py-1 min-h-[46px]`}>
             <button
               type="button"
               onClick={() => inputRef.current?.focus()}
@@ -965,13 +1133,17 @@ export default function PrivateChat() {
                 setInputText(val);
                 sendTypingBroadcast();
                 e.target.style.height = 'auto';
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+                const maxHeight = 120;
+                const nextHeight = Math.min(e.target.scrollHeight, maxHeight);
+                e.target.style.height = `${nextHeight}px`;
+                e.target.style.overflowY = e.target.scrollHeight > maxHeight ? 'auto' : 'hidden';
+                setIsComposerExpanded(nextHeight > 46);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
               placeholder={replyTo ? 'Escreva uma resposta...' : 'Mensagem...'}
-              className="w-full px-2 py-2 text-[15px] bg-transparent resize-none outline-none max-h-[100px] text-black dark:text-white placeholder:text-gray-400 font-normal leading-snug"
+              className="w-full min-h-[24px] px-2 py-2 text-[15px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-gray-400 font-normal leading-snug"
               rows={1}
             />
 
@@ -1019,11 +1191,21 @@ export default function PrivateChat() {
       {/* ── Modal de Zoom da Imagem (Visualização Completa) ── */}
       {zoomedImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-[300] flex h-[100dvh] w-screen flex-col items-center justify-center overflow-hidden bg-black animate-in fade-in duration-150"
           onClick={() => setZoomedImage(null)}
         >
-          <div className="relative max-w-full max-h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <img src={zoomedImage} className="max-w-full max-h-[85vh] object-contain rounded-[12px] shadow-2xl" alt="Zoom" />
+          <div className="relative flex h-full w-full items-center justify-center">
+            <img
+              src={zoomedImage}
+              className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl"
+              alt=""
+              aria-hidden="true"
+            />
+            <img
+              src={zoomedImage}
+              className="relative z-10 h-auto w-auto max-h-full max-w-full object-contain"
+              alt="Zoom"
+            />
             <button 
               type="button"
               onClick={() => setZoomedImage(null)}

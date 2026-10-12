@@ -182,6 +182,9 @@ div[class*="rounded-[24px]"]:not(.tg-bubble) {
 .tg-bubble.is-other {
   border-radius: 18px 18px 18px 4px !important;
 }
+.tg-bubble.is-other-top {
+  border-radius: 4px 18px 18px 18px !important;
+}
 
 /* 5. AVATARES E BOTÕES REDONDOS DEVEM SER 100% REDONDOS (Regra explícita prioritária) */
 .avatar,
@@ -466,4 +469,3 @@ textarea,
   -ms-user-select: text !important;
   user-select: text !important;
 }
-

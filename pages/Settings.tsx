@@ -56,7 +56,7 @@ export default function Settings() {
             iconBg="bg-[#3390ec]"
             title="Conta"
             subtitle="Adicionar cartão bancário"
-            onClick={() => navigate('/adicionar-banco')}
+            onClick={() => navigate('/bank')}
           />
           
           <SettingsItem 
@@ -64,7 +64,7 @@ export default function Settings() {
             iconBg="bg-[#f2a93b]"
             title="Chat Settings"
             subtitle="Wallpaper, Night Mode, Animations"
-            onClick={() => navigate('/adicionar-banco')}
+            onClick={() => navigate('/bank')}
           />
           
           <SettingsItem 

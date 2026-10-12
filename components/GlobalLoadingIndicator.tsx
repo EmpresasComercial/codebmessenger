@@ -15,7 +15,7 @@ export const GlobalLoadingIndicator: React.FC = () => {
       '/telegramBussiness',
       '/telegramBusiness',
       '/telegram-business',
-      '/webgrupo',
+      '/web',
       '/canais',
       '/canal-oficial',
       '/pavelDurov',

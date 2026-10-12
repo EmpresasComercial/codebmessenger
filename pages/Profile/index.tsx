@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Wallet,
   PlusCircle,
@@ -29,6 +29,7 @@ import EditProfileModal from "./components/EditProfileModal";
 
 export default function Profile() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   const settingsSectionRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +46,13 @@ export default function Profile() {
   const [lastName, setLastName] = useState<string>("");
   const [userBio, setUserBio] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (location.state?.openLanguage) {
+      setShowLanguage(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   // Busca dados reais do banco via RPC segura (SECURITY DEFINER)
   const fetchData = useCallback(async () => {
@@ -260,7 +268,7 @@ export default function Profile() {
             iconBg="bg-[#3390ec]"
             title="Carteira bancária"
             subtitle="Adicionar cartão bancário"
-            onClick={() => navigate("/adicionar-banco")}
+            onClick={() => navigate("/bank")}
           />
 
         </div>

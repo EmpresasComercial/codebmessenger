@@ -634,6 +634,9 @@ export default function pavelDurov() {
       >
         {posts.map((post) => {
           const isProofPost = post.isProof || !!post.amount || post.id.startsWith('sp-') || post.id.startsWith('proof-');
+          const displayedContent = isProofPost
+            ? post.content.replace(/visto\s+comprovativo\s+autenticado\s+na\s+plataforma[.!]?/gi, '').trim()
+            : post.content;
 
           let displayViews = post.views;
           let displayReactions = post.reactions;
@@ -669,20 +672,23 @@ export default function pavelDurov() {
           }
 
           return (
-            <div key={post.id} className="flex items-end justify-start gap-2 relative">
+            <div key={post.id} className="flex items-end justify-start gap-2 relative min-w-0">
               
-              {/* Balão Branco do Post Telegram (FLAT - COMPACTO E SEM CONTAINER NA IMAGEM) */}
-              <div className="max-w-[88%] sm:max-w-[82%] bg-white dark:bg-[#182533] rounded-[16px] rounded-tl-[4px] px-3.5 pt-3 pb-2 border border-[#e4e4e4] dark:border-[#1e2c3a] relative">
+              <div className={`max-w-[88%] sm:max-w-[82%] min-w-0 relative ${
+                isProofPost
+                  ? 'flex flex-col gap-1.5'
+                  : 'bg-white dark:bg-[#182533] rounded-[16px] rounded-tl-[4px] px-3.5 pt-3 pb-2 border border-[#e4e4e4] dark:border-[#1e2c3a]'
+              }`}>
                 
                 {/* 1. Nome/Número do Membro */}
                 {post.forwardedFrom && (
-                  <div className="mb-1.5">
+                  <div className={isProofPost ? 'px-1' : 'mb-1.5'}>
                     <div className="flex items-center gap-1.5">
                       {post.forwardedFrom.avatar ? (
                         <img 
                           src={post.forwardedFrom.avatar} 
                           alt="Avatar do Membro"
-                          className="w-5 h-5 rounded-full object-cover shrink-0 border border-orange-200"
+                          className="w-6 h-6 rounded-full object-cover shrink-0 border border-orange-200"
                           onError={(e) => {
                             (e.target as any).src = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=80&h=80&fit=crop";
                           }}
@@ -702,14 +708,16 @@ export default function pavelDurov() {
                 {/* 2. Imagem em cima — clique abre fullscreen */}
                 {post.image && (
                   <div
-                    className="relative group cursor-zoom-in"
+                    className={`relative group cursor-zoom-in ${isProofPost ? 'w-full' : ''}`}
                     onClick={() => setFullscreenImage(post.image!)}
                     title="Toque para ampliar"
                   >
                     <img
                       src={post.image}
                       alt={post.title || "Comprovativo"}
-                      className="w-full h-auto max-h-[550px] object-contain block my-2 rounded-[12px] select-none transition-opacity group-active:opacity-80"
+                      className={`w-full h-auto max-h-[550px] object-contain block select-none transition-opacity group-active:opacity-80 ${
+                        isProofPost ? 'my-0 rounded-[12px]' : 'my-2 rounded-[12px]'
+                      }`}
                       onError={(e) => {
                         (e.target as any).src = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=350&fit=crop";
                       }}
@@ -720,9 +728,15 @@ export default function pavelDurov() {
                   </div>
                 )}
 
-                {/* 3. Título de valor em baixo (ex: Retirada Concluída: 20.000 Kz) */}
-                {post.title && (
-                  <h2 className="text-[15px] font-bold mt-2 mb-1 leading-snug">
+                <div className={isProofPost
+                  ? 'bg-white dark:bg-[#182533] rounded-[14px] px-3 py-2 border border-[#e4e4e4] dark:border-[#1e2c3a]'
+                  : ''
+                }>
+                  {/* 3. Título de valor em baixo (ex: Retirada Concluída: 20.000 Kz) */}
+                  {post.title && (
+                  <h2 className={`text-[15px] font-bold leading-snug ${
+                    isProofPost ? 'mb-1' : 'mt-2 mb-1'
+                  }`}>
                     {post.title.includes(':') ? (
                       <>
                         <span className="text-[#111827] dark:text-white">
@@ -738,15 +752,17 @@ export default function pavelDurov() {
                   </h2>
                 )}
 
-                {/* 4. Descrição / Comentário em baixo */}
-                {post.content && (
+                  {/* 4. Descrição / Comentário em baixo */}
+                  {displayedContent && (
                   <p className="text-[14px] text-[#111827] dark:text-[#f3f4f6] leading-relaxed break-words whitespace-pre-line font-normal mb-1 pr-2">
-                    {post.content}
+                    {displayedContent}
                   </p>
                 )}
 
                 {/* 5. Rodapé da Mensagem (Reações + Visualizações e Hora) */}
-                <div className="flex items-center justify-between mt-2 pt-1">
+                <div className={`flex items-center justify-between ${
+                  isProofPost ? 'mt-1' : 'mt-2 pt-1'
+                }`}>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {displayReactions.map((r) => (
                       <button
@@ -771,6 +787,7 @@ export default function pavelDurov() {
                     <span className="ml-1">{post.time}</span>
                   </div>
                 </div>
+                </div>
               </div>
 
               {/* Botão de Encaminhar Rápido (FLAT) */}
@@ -789,11 +806,11 @@ export default function pavelDurov() {
       </main>
 
       {/* ── BARRA INFERIOR FLUTUANTE FLAT (A JUSTADA PARA TELAS MÓVEIS / SEM CORTAR) ── */}
-      <footer className="fixed bottom-0 left-0 right-0 p-2 pb-3 z-40 flex justify-center bg-transparent pointer-events-none">
-        <div className="w-full max-w-[650px] flex items-center gap-2 pointer-events-auto px-2">
+      <footer className="fixed bottom-0 left-0 right-0 px-1.5 sm:p-2 pb-3 z-40 flex justify-center bg-transparent pointer-events-none">
+        <div className="w-full max-w-[650px] flex items-center gap-1.5 sm:gap-2 pointer-events-auto px-1 sm:px-2 min-w-0">
           
           {/* Pílula de Input: Texto à esquerda + Clipe de Anexo & Notificação à direita */}
-          <div className="flex-1 bg-white dark:bg-[#182533] rounded-full flex items-center px-3 py-1.5 min-h-[46px] border border-[#e4e4e4] dark:border-[#1e2c3a] transition-colors min-w-0">
+          <div className="flex-1 bg-white dark:bg-[#182533] rounded-full flex items-center px-2.5 sm:px-3 py-1.5 min-h-[46px] border border-[#e4e4e4] dark:border-[#1e2c3a] transition-colors min-w-0">
             <input
               type="text"
               value={inputText}
@@ -804,16 +821,6 @@ export default function pavelDurov() {
               placeholder="Partilhe provas de retirada"
               className="flex-1 min-w-0 px-1 py-1 text-[14.5px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
             />
-
-            {/* Ícone de Anexo (📎) ao lado da Notificação (🔔) */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-1"
-              title="Anexar comprovativo de retirada"
-            >
-              <Paperclip className="w-5 h-5 -rotate-45" />
-            </button>
 
             {/* Sino de Notificação (🔔) */}
             <button
@@ -829,22 +836,28 @@ export default function pavelDurov() {
             >
               {isMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
             </button>
+
+            {/* Anexo junto ao controlo de notificações */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-0.5"
+              title="Anexar comprovativo de retirada"
+              aria-label="Anexar comprovativo de retirada"
+            >
+              <Paperclip className="w-5 h-5 -rotate-45" />
+            </button>
           </div>
 
-          {/* Botão Circular Azul Telegram: ÍCONE DE ENVIAR (SEND) SEMPRE */}
+          {/* Botão circular para selecionar e enviar um ficheiro */}
           <button
             type="button"
-            onClick={() => {
-              if (inputText.trim()) {
-                handleSendBroadcast();
-              } else {
-                fileInputRef.current?.click();
-              }
-            }}
-            className="w-[46px] h-[46px] sm:w-[48px] sm:h-[48px] rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 cursor-pointer"
-            title={inputText.trim() ? "Enviar mensagem" : "Partilhar prova de retirada"}
+            onClick={() => fileInputRef.current?.click()}
+            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 cursor-pointer"
+            title="Enviar ficheiro"
+            aria-label="Enviar ficheiro"
           >
-            <Send className="w-5 h-5 text-white ml-0.5" />
+            <Upload className="w-5 h-5 text-white" />
           </button>
         </div>
       </footer>
