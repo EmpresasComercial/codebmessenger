@@ -15,7 +15,6 @@ import {
   Bot,
   ArrowDownToLine,
   ArrowDownLeft,
-  Users,
   MessageCircle,
   Settings,
   ChevronDown,
@@ -26,10 +25,17 @@ import {
   Lightbulb,
   Download,
   CreditCard,
-  Globe
+  Globe,
+  Bell,
+  MessagesSquare,
+  HelpCircle,
+  ShieldAlert,
+  Smartphone,
+  LogOut
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { COUNTRIES, detectCountryFromPhone } from '../lib/countries';
 
 const hasImageAttachment = (message: any) => {
   let details = message?.detalhes;
@@ -118,6 +124,27 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     || user?.user_metadata?.photo_url
     || user?.user_metadata?.picture
     || "";
+  const formatDrawerPhone = (phone: string) => {
+    const trimmedPhone = phone.trim();
+    const detected = detectCountryFromPhone(trimmedPhone);
+    if (detected.country && detected.nationalNumber) {
+      return `${detected.country.dial_code} ${detected.nationalNumber}`;
+    }
+
+    const metadataCountryCode = user?.user_metadata?.country_code;
+    const savedCountryCode = localStorage.getItem('saved_country_code');
+    const countryCode = typeof metadataCountryCode === 'string' ? metadataCountryCode : savedCountryCode;
+    const country = COUNTRIES.find((item) => item.code === countryCode?.toUpperCase());
+    if (!country) return trimmedPhone;
+
+    const digits = trimmedPhone.replace(/\D/g, '');
+    const parsedInternational = detectCountryFromPhone(`+${digits}`);
+    const nationalNumber = parsedInternational.country?.code === country.code
+      ? parsedInternational.nationalNumber
+      : digits;
+
+    return `${country.dial_code} ${nationalNumber}`;
+  };
 
   useEffect(() => {
     if (!isNavigationDrawerOpen || !user) return;
@@ -922,7 +949,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         </div>
 
         {isNavigationDrawerOpen && (
-          <div className="fixed inset-0 z-[100]" role="presentation">
+          <div className="fixed inset-x-0 top-0 bottom-14 z-[100] md:inset-0" role="presentation">
             <button
               type="button"
               className="absolute inset-0 h-full w-full cursor-default bg-black/40"
@@ -930,7 +957,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               aria-label="Fechar menu"
             />
             <nav
-              className="absolute inset-y-0 left-0 flex w-[280px] flex-col overflow-y-auto bg-white shadow-xl dark:bg-[#17212b]"
+              className="absolute inset-y-0 left-0 flex w-[280px] flex-col overflow-y-auto overscroll-contain bg-white pb-4 shadow-xl dark:bg-[#17212b] md:pb-4"
               aria-label="Navegação principal"
             >
               <div className="border-b border-gray-100 bg-[#2481cc] px-4 pb-3 pt-5 text-white dark:border-[#202b36] dark:bg-[#1c242f]">
@@ -957,7 +984,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-semibold">{drawerName}</p>
                       <p className="mt-0.5 truncate text-[13px] text-white/75">
-                        {drawerPhone || "Telefone não disponível"}
+                        {drawerPhone ? formatDrawerPhone(drawerPhone) : "Telefone não disponível"}
                       </p>
                     </div>
                     <ChevronDown className="h-4 w-4 shrink-0 text-white/80" />
@@ -966,8 +993,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               </div>
               {[
                 { label: "Grupo Telegram", path: "/web", icon: MessageCircle },
-                { label: "Contactos", path: "/contactos", icon: Users },
-                { label: "Definições", path: "/definicoes", icon: Settings },
+                { label: "Convidar amigos", path: "/contactos", icon: UserRoundPlus },
               ].map(({ label, path, icon: Icon }) => (
                 <button
                   key={label}
@@ -976,7 +1002,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     setIsNavigationDrawerOpen(false);
                     navigate(path);
                   }}
-                  className={`flex h-12 items-center gap-4 px-5 text-left text-[15px] transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
+                  className={`flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
                     label === "Botfather" ? "text-[#2481cc] dark:text-[#2481cc]" : "text-[#222] dark:text-white"
                   }`}
                 >
@@ -986,21 +1012,42 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   {label}
                 </button>
               ))}
-              <div className="my-2 border-t border-gray-100 dark:border-[#202b36]" />
+              <div className="my-2 shrink-0 border-t border-gray-100 dark:border-[#202b36]" />
               {[
                 { label: "Carteira wallet", path: "/carteira", icon: Wallet },
                 { label: "Payment Wallet", path: "/sand-pay", icon: PlusCircle },
                 { label: "Introdução ao Telegram", path: "/sobre-telegram business", icon: Lightbulb },
                 { label: "Download APK", path: "/android?setln=pt", icon: Download },
                 { label: "Carteira bancária", path: "/bank", icon: CreditCard },
+                { label: "Notificações", action: "notifications", icon: Bell },
+                { label: "Canal postes", path: "/canal-oficial", icon: MessagesSquare },
+                { label: "Perguntas Frequentes", path: "/help-faq", icon: HelpCircle },
+                { label: "Redefinir Senha", path: "/alterar-senha", icon: ShieldAlert },
+                { label: "Definições", path: "/definicoes", icon: Settings },
                 { label: "Idioma", path: "/definicoes", icon: Globe, state: { openLanguage: true } },
+                { label: "Termo e privacidade", path: "/devices", icon: Smartphone },
               ].map(({ label, path, icon: Icon, state }) => (
                 <button
                   key={label}
                   type="button"
                   onClick={() => {
                     setIsNavigationDrawerOpen(false);
-                    navigate(path, state ? { state } : undefined);
+                    if (label === "Notificações") {
+                      if ("Notification" in window) {
+                        Notification.requestPermission().then((permission) => {
+                          showToast(
+                            permission === "granted"
+                              ? "Notificações ativadas"
+                              : "Permissão para notificações não concedida",
+                            permission === "granted" ? "success" : "info"
+                          );
+                        }).catch(() => showToast("Não foi possível atualizar as notificações", "error"));
+                      } else {
+                        showToast("Notificações não disponíveis neste dispositivo", "info");
+                      }
+                      return;
+                    }
+                    if (path) navigate(path, state ? { state } : undefined);
                   }}
                   className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
                 >
@@ -1008,9 +1055,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   {label}
                 </button>
               ))}
-              <div className="my-2 border-t border-gray-100 dark:border-[#202b36]" />
+              <div className="my-2 shrink-0 border-t border-gray-100 dark:border-[#202b36]" />
               {[
-                { label: "Convidar amigos", path: "/contactos", icon: UserRoundPlus },
                 { label: "Sobre o Telegram", path: "/sobre-telegram business", icon: Info },
               ].map(({ label, path, icon: Icon }) => (
                 <button
@@ -1020,12 +1066,30 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     setIsNavigationDrawerOpen(false);
                     navigate(path);
                   }}
-                  className="flex h-12 items-center gap-4 px-5 text-left text-[15px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
+                  className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
                 >
                   <Icon className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" />
                   {label}
                 </button>
               ))}
+              <div className="my-2 shrink-0 border-t border-gray-100 dark:border-[#202b36]" />
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsNavigationDrawerOpen(false);
+                  const { error } = await supabase.auth.signOut();
+                  if (error) {
+                    showToast("Não foi possível terminar a sessão", "error");
+                    return;
+                  }
+                  showToast("Sessão terminada com sucesso", "success");
+                  navigate("/login");
+                }}
+                className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+              >
+                <LogOut className="h-5 w-5" />
+                Terminar sessão
+              </button>
             </nav>
           </div>
         )}

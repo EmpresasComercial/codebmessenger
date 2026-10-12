@@ -37,6 +37,8 @@ import {
 } from 'lucide-react';
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import ChatsList from "./ChatsList";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
+import { COUNTRIES } from "../lib/countries";
 
 const FORBIDDEN_WORDS = Array.from(new Set([
   "burla", "burlas", "fraude", "fraudes", "scam", "scams", "golpe", "golpes", 
@@ -226,13 +228,42 @@ function getUserColor(str: string): string {
   return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
 }
 
-const formatSenderPhone = (p?: string | null) => {
-  if (!p || p === "Membro") return 'Membro';
-  const clean = p.replace(/^\+?244\s*/, '').trim();
-  if (/^\d{9}$/.test(clean)) {
-    return `${clean.slice(0, 3)} ${clean.slice(3, 6)} ${clean.slice(6)}`;
-  }
-  return clean || 'Contacto';
+type SenderProfile = {
+  telefone: string | null;
+  nome_exibicao: string | null;
+  countryCode?: string;
+};
+
+const getProfileCountryCode = (metadata: unknown): string | undefined => {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return undefined;
+  const values = metadata as Record<string, unknown>;
+  const countryCode = values.country_code ?? values.countryCode;
+  return typeof countryCode === "string" ? countryCode.toUpperCase() : undefined;
+};
+
+const formatSenderPhone = (phone?: string | null, countryCode?: string) => {
+  const rawPhone = phone?.trim();
+  if (!rawPhone || rawPhone === "Telefone Desconhecido") return "Telefone desconhecido";
+
+  const country = COUNTRIES.find((item) => item.code === countryCode);
+  const internationalPhone = rawPhone.startsWith("+")
+    ? rawPhone
+    : /^00/.test(rawPhone)
+      ? `+${rawPhone.slice(2).replace(/\D/g, "")}`
+      : country
+        ? `${country.dial_code}${rawPhone.replace(/\D/g, "")}`
+        : undefined;
+  const parsed = internationalPhone
+    ? parsePhoneNumberFromString(internationalPhone)
+    : undefined;
+
+  return parsed?.formatInternational() || rawPhone;
+};
+
+const getSenderLabel = (profile?: Partial<SenderProfile> | null) => {
+  const phone = formatSenderPhone(profile?.telefone, profile?.countryCode);
+  const name = profile?.nome_exibicao?.trim();
+  return name && name !== "Membro" ? `${name} · ${phone}` : phone;
 };
 
 const formatTime = (ts: string) => ts ? new Date(ts).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }) : "";
@@ -294,7 +325,7 @@ const compressImage = (file: File, maxWidth = 1280, maxHeight = 1280, quality = 
   });
 };
 
-const phoneCache: Record<string, string> = {};
+const phoneCache: Record<string, SenderProfile> = {};
 
 const GROUP_MEMBERS = [
   {
@@ -394,6 +425,7 @@ interface MessageItemProps {
   message: any;
   isMe: boolean;
   displayName: string;
+  displayPhone?: string;
   authorColor: string;
   showDate: boolean;
   dateLabel: string;
@@ -414,6 +446,7 @@ const MessageItem = React.memo(({
   message: m,
   isMe,
   displayName,
+  displayPhone,
   authorColor,
   showDate,
   dateLabel,
@@ -585,10 +618,13 @@ const MessageItem = React.memo(({
 
             {!isMe && (
               <p 
-                className="text-[13px] font-medium mb-[2px] cursor-pointer truncate"
+                className="flex min-w-0 items-center gap-1 text-[13px] font-medium mb-[2px] cursor-pointer"
                 style={{ color: authorColor }}
               >
-                {displayName}
+                <span className="truncate">{displayName}</span>
+                {displayPhone && (
+                  <span className="shrink-0 text-[11px] font-normal opacity-80">{displayPhone}</span>
+                )}
               </p>
             )}
 
@@ -928,8 +964,11 @@ export default function grupochat() {
         const dataWithPhones = data.map((m: any) => ({
           ...m,
           perfil: { 
-            telefone: phoneCache[m.uid_emissor] || "Telefone Desconhecido",
-            nome_exibicao: phoneCache[m.uid_emissor] || "Membro"
+            ...phoneCache[m.uid_emissor],
+            telefone: phoneCache[m.uid_emissor]?.telefone || "Telefone Desconhecido",
+            nome_exibicao: phoneCache[m.uid_emissor]?.nome_exibicao || "Membro",
+            countryCode: phoneCache[m.uid_emissor]?.countryCode
+              || getProfileCountryCode({ country_code: m.detalhes?.sender_country_code }),
           }
         }));
 
@@ -965,20 +1004,31 @@ export default function grupochat() {
             try {
               const { data: profiles } = await supabase
                 .from('sys_t500')
-                .select('id, telefone, nome_exibicao')
+                .select('id, telefone, nome_exibicao, metadados')
                 .in('id', uncachedIds);
               if (profiles && profiles.length > 0) {
                 profiles.forEach((p: any) => {
-                  phoneCache[p.id] = p.nome_exibicao || p.telefone || "Telefone Desconhecido";
+                  phoneCache[p.id] = {
+                    telefone: p.telefone || null,
+                    nome_exibicao: p.nome_exibicao || null,
+                    countryCode: getProfileCountryCode(p.metadados),
+                  };
                 });
                 setPublicMessages(prev => prev.map(m => {
-                  if (phoneCache[m.uid_emissor] && m.perfil?.nome_exibicao !== phoneCache[m.uid_emissor]) {
+                  const profile = phoneCache[m.uid_emissor];
+                  const enrichedProfile = profile && {
+                    ...profile,
+                    countryCode: profile.countryCode
+                      || getProfileCountryCode({ country_code: m.detalhes?.sender_country_code }),
+                  };
+                  if (profile && (
+                    m.perfil?.nome_exibicao !== profile.nome_exibicao
+                    || m.perfil?.telefone !== profile.telefone
+                    || m.perfil?.countryCode !== enrichedProfile.countryCode
+                  )) {
                     return {
                       ...m,
-                      perfil: {
-                        telefone: phoneCache[m.uid_emissor],
-                        nome_exibicao: phoneCache[m.uid_emissor]
-                      }
+                      perfil: enrichedProfile
                     };
                   }
                   return m;
@@ -1126,21 +1176,24 @@ export default function grupochat() {
         if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
           const data: any = payload.new;
           if (data && data.id) { 
-            let tel = phoneCache[data.uid_emissor] || null;
-            if (!tel && data.uid_emissor) {
+            const senderProfile = phoneCache[data.uid_emissor] || null;
+            if (!senderProfile && data.uid_emissor) {
               supabase
                 .from('sys_t500')
-                .select('telefone, nome_exibicao')
+                .select('telefone, nome_exibicao, metadados')
                 .eq('id', data.uid_emissor)
                 .maybeSingle()
                 .then(({ data: prof }) => {
                   if (prof) {
-                    const resolvedTel = prof.nome_exibicao || prof.telefone || "Telefone Desconhecido";
-                    phoneCache[data.uid_emissor] = resolvedTel;
-                    setPublicMessages(prev => prev.map(m => 
-                      m.uid_emissor === data.uid_emissor && m.perfil?.nome_exibicao !== resolvedTel
-                        ? { ...m, perfil: { telefone: resolvedTel, nome_exibicao: resolvedTel } }
-                        : m
+                    const resolvedProfile: SenderProfile = {
+                      telefone: prof.telefone || null,
+                      nome_exibicao: prof.nome_exibicao || null,
+                      countryCode: getProfileCountryCode(prof.metadados),
+                    };
+                    phoneCache[data.uid_emissor] = resolvedProfile;
+                    setPublicMessages(prev => prev.map(m => m.uid_emissor === data.uid_emissor
+                      ? { ...m, perfil: resolvedProfile }
+                      : m
                     ));
                   }
                 });
@@ -1148,8 +1201,10 @@ export default function grupochat() {
             const dataWithPhone = { 
               ...data, 
               perfil: { 
-                telefone: tel || "Telefone Desconhecido",
-                nome_exibicao: tel || "Membro"
+                telefone: senderProfile?.telefone || "Telefone Desconhecido",
+                nome_exibicao: senderProfile?.nome_exibicao || "Membro",
+                countryCode: senderProfile?.countryCode
+                  || getProfileCountryCode({ country_code: data.detalhes?.sender_country_code }),
               } 
             };
             setPublicMessages((c) => {
@@ -1220,6 +1275,10 @@ export default function grupochat() {
   const sendTypingBroadcast = () => {
     if (!user) return;
     const now = Date.now();
+    const typingName = phoneCache[user.id]?.nome_exibicao
+      || user.user_metadata?.nome_exibicao
+      || user.phone
+      || "Membro";
     if (now - lastTypingBroadcastRef.current > 1800 && typingChannelRef.current) {
       lastTypingBroadcastRef.current = now;
       typingChannelRef.current.send({
@@ -1227,7 +1286,7 @@ export default function grupochat() {
         event: 'typing',
         payload: {
           userId: user.id,
-          name: phoneCache[user.id] || user.user_metadata?.nome_exibicao || user.phone || "Membro"
+          name: typingName
         }
       });
       groupListTypingChannelRef.current?.send({
@@ -1235,7 +1294,7 @@ export default function grupochat() {
         event: 'typing',
         payload: {
           userId: user.id,
-          name: phoneCache[user.id] || user.user_metadata?.nome_exibicao || user.phone || "Membro",
+          name: typingName,
           targetId: 'community'
         }
       });
@@ -1338,8 +1397,14 @@ export default function grupochat() {
     const tempImg = imagePreview;
     const tempReply = replyTo;
     const detalhes: Record<string, any> = {};
+    if (typeof user?.user_metadata?.country_code === "string") {
+      detalhes.sender_country_code = user.user_metadata.country_code;
+    }
     if (tempImg) { detalhes.imagem_url = tempImg; detalhes.tipo_midia = 'imagem'; }
-    if (tempReply) { detalhes.resposta_para_id = tempReply.id; detalhes.reply = { id: tempReply.id, text: tempReply.mensagem, sender: tempReply.perfil?.nome_exibicao || tempReply.perfil?.telefone || '' }; }
+    if (tempReply) {
+      detalhes.resposta_para_id = tempReply.id;
+      detalhes.reply = { id: tempReply.id, text: tempReply.mensagem, sender: getSenderLabel(tempReply.perfil) };
+    }
 
     setPublicInput("");
     setIsComposerExpanded(false);
@@ -1387,8 +1452,8 @@ export default function grupochat() {
         setPublicMessages(prev => prev.map(m => m.id === tempId ? {
           ...insertedMsg,
           perfil: { 
-            telefone: phoneCache[user.id] || "Eu",
-            nome_exibicao: phoneCache[user.id] || "Eu"
+            telefone: phoneCache[user.id]?.telefone || "Eu",
+            nome_exibicao: phoneCache[user.id]?.nome_exibicao || "Eu"
           },
           status: 'sent' as const
         } : m));
@@ -1665,9 +1730,11 @@ export default function grupochat() {
       >
         {publicMessages.map((m, i) => {
           const isMe = m.uid_emissor === user?.id;
-          const displayName = isMe 
-            ? "Eu" 
-            : (m.perfil?.nome_exibicao || formatSenderPhone(m.perfil?.telefone));
+          const savedName = m.perfil?.nome_exibicao?.trim();
+          const hasSavedName = Boolean(savedName && savedName !== "Membro");
+          const senderPhone = formatSenderPhone(m.perfil?.telefone, m.perfil?.countryCode);
+          const displayName = isMe ? "Eu" : hasSavedName ? savedName : senderPhone;
+          const displayPhone = !isMe && hasSavedName ? senderPhone : undefined;
           const prevDate = i > 0 ? formatDateLabel(publicMessages[i - 1].data_registrada) : "";
           const currDate = formatDateLabel(m.data_registrada);
           const showDate = i === 0 || currDate !== prevDate;
@@ -1679,6 +1746,7 @@ export default function grupochat() {
               message={m}
               isMe={isMe}
               displayName={displayName}
+              displayPhone={displayPhone}
               authorColor={authorColor}
               showDate={showDate}
               dateLabel={currDate}
@@ -1771,7 +1839,7 @@ export default function grupochat() {
               >
                 <div className="truncate flex-1">
                   <p className="text-[11px] font-bold text-[#2481cc]">
-                    A responder a {replyTo.perfil?.nome_exibicao || formatSenderPhone(replyTo.perfil?.telefone)}
+                    A responder a {getSenderLabel(replyTo.perfil)}
                   </p>
                   <p className="text-[11px] text-[#777777] truncate italic">
                     <TranslatedMessage text={replyTo.mensagem} language={language} renderFormatted={(t: string) => t || 'Foto'} />
