@@ -1563,6 +1563,7 @@ export default function grupochat() {
         setPublicMessages(prev => {
           const updated = prev.map(m => m.id === tempId ? {
             ...insertedMsg,
+            perfil: {
               telefone: phoneCache[user.id]?.telefone || "Eu",
               nome_exibicao: phoneCache[user.id]?.nome_exibicao || "Eu"
             },
