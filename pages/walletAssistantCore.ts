@@ -69,7 +69,7 @@ const responses = {
     'Precisa cadastrar a sua conta? Use Adicionar conta bancária. Para consultar os dados cadastrados, escolha Consultar dados bancários.',
   ],
   como_sacar: [
-    'Para solicitar um saque, precisa ter uma conta bancária (IBAN) cadastrada e um robô ativo. Digite /retirar ou informe o valor desejado para iniciar! 💸',
+    'Para solicitar um saque, precisa ter uma conta bancária (IBAN) cadastrada e um Bot ativo. Digite /retirar ou informe o valor desejado para iniciar! 💸',
     'É fácil: tenha o banco cadastrado, esteja dentro do horário de atendimento (segunda a sexta, 09:00–18:00) e envie /retirar. 😊',
     'Pode retirar o saldo disponível para a sua conta bancária. Envie /retirar ou informe o valor desejado para começar! 🚀',
   ],
@@ -84,14 +84,14 @@ const responses = {
     'Tranquilo! 😊 Qualquer dúvida sobre saques ou conta bancária, é só falar.',
   ],
   recusado_erro: [
-    'Se o saque foi recusado, confira se o IBAN e os dados bancários estão corretos e se possui robô ativo. Consulte o /historico ou o suporte oficial. 😕',
+    'Se o saque foi recusado, confira se o IBAN e os dados bancários estão corretos e se possui um Bot ativo. Consulte o /historico ou o suporte oficial. 😕',
     'O saque pode ser rejeitado se os dados bancários estiverem incorretos ou houver uma pendência de verificação. Use Consultar dados bancários para conferir o IBAN. 🏦',
     'Se um saque falhar, consulte o /historico para confirmar o estado e contacte o suporte antes de tentar novamente.',
   ],
-  requisitos_robo: [
-    'Para realizar retiradas na plataforma, é necessário possuir ao menos um plano ou robô ativo gerando rendimentos. Acesse a área de produtos para ativar! 🤖✨',
-    'A política de saques requer robôs ativos na conta. Se ainda não tem robôs, acesse o catálogo no menu principal. 🚀',
-    'Para solicitar saques, a conta precisa cumprir os requisitos de verificação e ter robôs em operação. Confira os seus bots ativos no painel principal! 💼',
+  requisitos_bot: [
+    'Para realizar retiradas na plataforma, é necessário possuir ao menos um Bot ativo gerando rendimentos. Acesse a área de produtos para ativar! 🤖✨',
+    'A política de saques requer Bots ativos na conta. Se ainda não tem Bots, acesse o catálogo no menu principal. 🚀',
+    'Para solicitar saques, a conta precisa cumprir os requisitos de verificação e ter Bots em operação. Confira os seus Bots ativos no painel principal! 💼',
   ],
   status_historico: [
     'Para acompanhar o andamento dos seus saques, consulte o histórico. Lá verá se a retirada está pendente, aprovada ou paga. 📋😊',
@@ -136,7 +136,7 @@ const topicPatterns: Array<[ResponseTopic, string[]]> = [
   ['taxas', ['taxa', 'taxas', 'desconto', 'quanto desconta', 'comissao']],
   ['horarios', ['horario', 'horarios', 'que horas', 'quando abre', 'quando fecha', 'fim de semana', 'sabado', 'domingo']],
   ['seguranca', ['seguro', 'seguranca', 'protegido', 'protecao', 'confiavel', 'fraude', 'senha']],
-  ['requisitos_robo', ['preciso de robo', 'precisa de robo', 'requisito para sacar', 'requisitos para sacar', 'robo ativo', 'plano ativo']],
+  ['requisitos_bot', ['preciso de bot', 'precisa de bot', 'requisito para sacar', 'requisitos para sacar', 'bot ativo', 'plano ativo']],
   ['como_sacar', ['como sacar', 'como retiro', 'como retirar', 'como levantar', 'como faco para sacar', 'como fazer saque']],
   ['banco_iban', ['iban', 'banco', 'conta bancaria', 'dados bancarios', 'conta cadastrada']],
   ['status_historico', ['status', 'estado do saque', 'estado da retirada', 'acompanhar saque', 'acompanhar retirada']],

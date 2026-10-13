@@ -1212,14 +1212,14 @@ export default function wallet() {
           return;
         }
 
-        // Validação 4: Robô de rendimento ATIVO e não expirado
+        // Validação 4: Bot de rendimento ativo e não expirado
         if (!hasBots) {
           botReply(() => ({
             id: 'bot-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'no_bots',
-            text: 'Para liberar retiradas, você precisa ter pelo menos um robô ativo na plataforma.',
+            text: 'Para liberar retiradas, você precisa ter pelo menos um Bot ativo na plataforma.',
           }));
           return;
         }
@@ -1796,7 +1796,7 @@ export default function wallet() {
                   </div>
                 )}
 
-                {/* ALERTA: SEM ROBÔS COMPRADOS */}
+                {/* ALERTA: SEM BOTS ATIVOS */}
                 {msg.type === 'no_bots' && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                     {msg.text && renderBotText(msg.text)}
@@ -1870,14 +1870,14 @@ export default function wallet() {
                 </div>
               )}
 
-              {/* BOTÃO DE AÇÃO: COMPRAR ROBÔ */}
+              {/* BOTÃO DE AÇÃO: ATIVAR BOT */}
               {msg.type === 'no_bots' && (
                 <div className="w-full max-w-[80%] flex flex-col items-center justify-center gap-1 -mt-1.5 mb-2 pl-2">
                   <button
                     onClick={() => navigate('/botfather')}
                     className="w-full bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-4 py-2 text-[14px] font-medium active:bg-opacity-90 transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
                   >
-                    🤖 Ir para o Catálogo de Robôs
+                    🤖 Ir para o Catálogo de Bots
                   </button>
                 </div>
               )}

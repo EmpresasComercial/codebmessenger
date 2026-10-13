@@ -26,7 +26,7 @@ BEGIN
         up.data_fim, 
         GREATEST(0, EXTRACT(DAY FROM (up.data_fim - now()))::integer) as dias_restantes,
         CASE WHEN up.data_fim <= now() THEN false ELSE up.ativo END as ativo,
-        COALESCE(p.nome, 'Robô de Renda')::text as produto_nome,
+        COALESCE(p.nome, 'Bot de Renda')::text as produto_nome,
         ''::text as produto_imagem,
         ''::text as url_download_setup,
         'Cloud'::text as storage_size

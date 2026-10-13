@@ -1,9 +1,9 @@
 -- ==============================================================================
--- CRON JOB: CRÉDITO AUTOMÁTICO DE RENDA DIÁRIA DOS ROBÔS A CADA 6 HORAS
+-- CRON JOB: CRÉDITO AUTOMÁTICO DE RENDA DIÁRIA DOS BOTS A CADA 6 HORAS
 -- Telegram Business Platform
 -- ==============================================================================
 
--- 1. Cria ou atualiza a função de processamento de renda dos robôs
+-- 1. Cria ou atualiza a função de processamento de renda dos Bots
 CREATE OR REPLACE FUNCTION public.processar_renda_diaria_bots()
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -15,24 +15,24 @@ DECLARE
     v_total_processados INTEGER := 0;
     v_total_valor NUMERIC := 0;
 BEGIN
-    -- 1. Desativar robôs cujo período de vigência já encerrou
+    -- 1. Desativar Bots cujo período de vigência já encerrou
     UPDATE public.sys_600
     SET ativo = false,
         dias_restantes = 0
     WHERE ativo = true AND data_fim <= now();
 
-    -- 2. Atualizar contagem regressiva de dias restantes nos robôs ativos
+    -- 2. Atualizar contagem regressiva de dias restantes nos Bots ativos
     UPDATE public.sys_600
     SET dias_restantes = GREATEST(0, EXTRACT(DAY FROM (data_fim - now()))::integer)
     WHERE ativo = true;
 
-    -- 3. Iterar por todos os robôs ativos e creditar 1/4 da renda diária (ciclo de 6 horas)
+    -- 3. Iterar por todos os Bots ativos e creditar 1/4 da renda diária (ciclo de 6 horas)
     FOR v_rec IN
         SELECT 
             s.id AS user_produto_id,
             s.user_id,
             s.renda_diaria,
-            COALESCE(p.nome, 'Robô de Renda') AS produto_nome
+            COALESCE(p.nome, 'Bot de Renda') AS produto_nome
         FROM public.sys_600 s
         LEFT JOIN public.produtos p ON s.produto_id = p.id
         WHERE s.ativo = true AND s.data_fim > now()

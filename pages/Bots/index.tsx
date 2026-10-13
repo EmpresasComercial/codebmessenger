@@ -54,7 +54,7 @@ interface ChatMessage {
 /* ─── Lista de Comandos Válidos ─── */
 const VALID_COMMANDS = new Set([
   "/start", "/inicio", "/início", "/help", "/ajuda", "/menu",
-  "/bots", "/catalogo", "/catálogo", "/comprar", "/loja", "/produtos", "/robos", "/robôs",
+  "/bots", "/catalogo", "/catálogo", "/comprar", "/loja", "/produtos",
   "/meusbots", "/mybots", "/ativos", "/compras", "/minhascompras",
   "/saldo", "/carteira", "/rendas", "/historico", "/histórico",
   "/limites", "/limite", "/limpar", "/reset", "/clear",
@@ -97,6 +97,14 @@ function formatCountdown(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
   return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
+}
+
+function displayBotName(name: string): string {
+  return name.replace(/\brob[oô]s?\b/gi, (term) => {
+    const isCapitalized = term[0] === term[0].toUpperCase();
+    const isPlural = /s$/i.test(term);
+    return `${isCapitalized ? "B" : "b"}ot${isPlural ? "s" : ""}`;
+  });
 }
 
 function PurchasedBotCountdown({ dataInicio }: { dataInicio: string }) {
@@ -206,11 +214,14 @@ export default function TelegramBotsChat() {
   const [showCommandsModal, setShowCommandsModal] = useState(false);
 
   const quickReplies = [
-    { shortcut: "/bots", text: "Ver catálogo completo de robôs de rendimento" },
-    { shortcut: "/meusbots", text: "Consultar robôs ativos e ganhos diários" },
+    { shortcut: "/bots", text: "Ver catálogo completo de Bots de rendimento" },
+    { shortcut: "/meusbots", text: "Consultar Bots ativos e ganhos diários" },
     { shortcut: "/saldo", text: "Ver saldo em conta e lucros acumulados" },
+    { shortcut: "/rendas", text: "Consultar rendimentos diários" },
+    { shortcut: "/limites", text: "Ver limites de compra" },
     { shortcut: "/cupons", text: "Resgatar código promocional ou cupom" },
     { shortcut: "/ajuda", text: "Instruções de ativação e suporte do BotFather" },
+    { shortcut: "/limpar", text: "Limpar conversa" },
   ];
   const [awaitingCoupon, setAwaitingCoupon] = useState(false);
   const [isRedeemingCoupon, setIsRedeemingCoupon] = useState(false);
@@ -272,7 +283,7 @@ export default function TelegramBotsChat() {
             data_fim: b.data_fim,
             dias_restantes: b.dias_restantes !== undefined ? Number(b.dias_restantes) : 0,
             ativo: Boolean(b.ativo),
-            produto_nome: b.produto_nome || "Robô de Renda",
+            produto_nome: b.produto_nome || "Bot de Renda",
             produto_imagem: b.produto_imagem || "",
             storage_size: b.storage_size || "Cloud"
           }));
@@ -305,7 +316,7 @@ export default function TelegramBotsChat() {
                 data_fim: b.data_fim,
                 dias_restantes: b.dias_restantes !== undefined ? Number(b.dias_restantes) : diffDays,
                 ativo: isStillActive,
-                produto_nome: b.produtos?.nome || b.produto_nome || "Robô de Renda",
+                produto_nome: b.produtos?.nome || b.produto_nome || "Bot de Renda",
                 produto_imagem: "",
                 storage_size: "Cloud"
               };
@@ -422,7 +433,7 @@ export default function TelegramBotsChat() {
       if (
         normalized === "bots" || normalized === "catalogo" || normalized === "catálogo" ||
         normalized === "comprar" || normalized === "newbot" || normalized === "produtos" ||
-        normalized === "loja" || normalized === "robos" || normalized === "robôs"
+        normalized === "loja"
       ) {
         simulateBotReply(() => ({
           id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "catalog", payload: { products }
@@ -460,13 +471,13 @@ export default function TelegramBotsChat() {
             const bought = getPurchasedCountForProduct(prod);
             const maxLimit = prod.limite_compra || 1;
             const status = bought >= maxLimit ? "Esgotado" : `${maxLimit - bought} disponível(is)`;
-            return `• ${prod.nome}: ${bought}/${maxLimit} comprados (${status})`;
+            return `• ${displayBotName(prod.nome)}: ${bought}/${maxLimit} comprados (${status})`;
           })
           .join("\n");
 
         simulateBotReply(() => ({
           id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-          text: `Limites de compra por robô:\n\n${limitsText}\n\nEnvie /bots para ver o catálogo.`
+          text: `Limites de compra por Bot:\n\n${limitsText}\n\nEnvie /bots para ver o catálogo.`
         }));
         return;
       }
@@ -485,18 +496,18 @@ export default function TelegramBotsChat() {
         if (activeBots.length === 0) {
           simulateBotReply(() => ({
             id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-            text: `Você não possui robôs ativos no momento. Envie /bots para ver as opções disponíveis.`
+            text: `Você ainda não tem Bots ativos. Envie /bots para ver as opções disponíveis.`
           }));
           return;
         }
 
         const botsSummary = activeBots
-          .map((b) => `• ${b.produto_nome}: +${formatCurrency(b.renda_diaria, "KZ")}/dia (${b.dias_restantes} dias restantes)`)
+          .map((b) => `• ${displayBotName(b.produto_nome)}: +${formatCurrency(b.renda_diaria, "KZ")}/dia (${b.dias_restantes} dias restantes)`)
           .join("\n");
 
         simulateBotReply(() => ({
           id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-          text: `Rendimentos ativos:\n• Robôs ativos: ${activeBots.length}\n• Renda diária total: +${formatCurrency(totalDaily, "KZ")}/dia\n• Total investido: ${formatCurrency(totalInvested, "KZ")}\n\nDetalhamento:\n${botsSummary}`
+          text: `Rendimentos ativos:\n• Bots ativos: ${activeBots.length}\n• Renda diária total: +${formatCurrency(totalDaily, "KZ")}/dia\n• Total investido: ${formatCurrency(totalInvested, "KZ")}\n\nDetalhamento:\n${botsSummary}`
         }));
         return;
       }
@@ -628,7 +639,7 @@ export default function TelegramBotsChat() {
           setMessages((prev) => [
             ...prev,
             { id: "err-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-              text: isNoBalance ? `Saldo insuficiente. O robô custa ${formatCurrency(product.preco, "KZ")} e seu saldo atual é de ${formatCurrency(userBalance, "KZ")}. Recarregue sua carteira para continuar.` : `Erro: ${raw}` }
+              text: isNoBalance ? `Saldo insuficiente. O Bot custa ${formatCurrency(product.preco, "KZ")} e seu saldo atual é de ${formatCurrency(userBalance, "KZ")}. Recarregue sua carteira para continuar.` : `Erro: ${raw}` }
           ]);
           showToast(isNoBalance ? "Saldo insuficiente, recarregue primeiro." : raw, "error");
         }
@@ -637,7 +648,7 @@ export default function TelegramBotsChat() {
         const raw = (err.message || "Erro de conexão ao comprar bot.").replace(/[*#]/g, "");
         setMessages((prev) => [
           ...prev,
-          { id: "err-catch-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text", text: `Erro ao ativar robô: ${raw}` }
+          { id: "err-catch-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text", text: `Erro ao ativar Bot: ${raw}` }
         ]);
         showToast(raw, "error");
       } finally {
@@ -648,7 +659,7 @@ export default function TelegramBotsChat() {
   );
 
   function renderTextWithLinks(text: string) {
-    return text.replace(/[*#]/g, "").split("\n").map((line, lIdx, arr) => {
+    return displayBotName(text.replace(/[*#]/g, "")).split("\n").map((line, lIdx, arr) => {
       const parts = line.split(/(\/[-_a-zA-Z0-9]+)/g);
       return (
         <span key={lIdx}>
@@ -674,33 +685,43 @@ export default function TelegramBotsChat() {
     >
       {/* ── MODAL DE COMANDOS ── */}
       {showCommandsModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowCommandsModal(false)}>
-          <div className="absolute inset-0 bg-black/35" />
-          <div className="relative bg-white w-full max-w-md rounded-t-[20px] px-4 pt-4 pb-8 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[16px] font-bold text-gray-900">Comandos</span>
-              <button onClick={() => setShowCommandsModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 cursor-pointer">
-                <X className="w-4 h-4" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+          onClick={() => setShowCommandsModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="botfather-commands-title"
+            className="w-full max-w-sm max-h-[min(70dvh,32rem)] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-3 shadow-xl dark:border-gray-700 dark:bg-[#182533]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-2 flex items-center justify-between px-1">
+              <span id="botfather-commands-title" className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+                <Zap className="h-4 w-4 text-[#2481cc]" /> Comandos rápidos
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowCommandsModal(false)}
+                aria-label="Fechar comandos rápidos"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-black dark:hover:bg-[#242f3d] dark:hover:text-white"
+              >
+                <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-1">
-              {[
-                { cmd: "/bots", label: "Ver catálogo de robôs" },
-                { cmd: "/meusbots", label: "Meus robôs ativos" },
-                { cmd: "/saldo", label: "Consultar saldo" },
-                { cmd: "/rendas", label: "Rendimentos diários" },
-                { cmd: "/limites", label: "Limites de compra" },
-                { cmd: "/cupons", label: "Resgatar cupom de saldo" },
-                { cmd: "/ajuda", label: "Lista de comandos" },
-                { cmd: "/limpar", label: "Limpar conversa" },
-              ].map(({ cmd, label }) => (
+            <div className="grid grid-cols-2 gap-1.5">
+              {quickReplies.map(({ shortcut, text }) => (
                 <button
-                  key={cmd}
-                  onClick={() => { setShowCommandsModal(false); handleSendMessage(cmd); }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer text-left"
+                  key={shortcut}
+                  type="button"
+                  onClick={() => {
+                    setShowCommandsModal(false);
+                    handleSendMessage(shortcut);
+                  }}
+                  className="flex min-h-14 flex-col items-start justify-center rounded-xl bg-gray-50 px-2.5 py-2 text-left transition-colors hover:bg-gray-100 active:bg-gray-200 dark:bg-[#202d3b] dark:hover:bg-[#2a3949] dark:active:bg-[#33465a]"
                 >
-                  <span className="text-[#1a7ac7] font-medium text-[14px] min-w-[100px]">{cmd}</span>
-                  <span className="text-gray-500 text-[13.5px]">{label}</span>
+                  <span className="font-mono text-xs font-semibold text-[#2481cc]">{shortcut}</span>
+                  <span className="mt-0.5 line-clamp-1 text-[11px] text-gray-600 dark:text-gray-300">{text}</span>
                 </button>
               ))}
             </div>
@@ -770,30 +791,22 @@ export default function TelegramBotsChat() {
               <BotBubble time={msg.time}>
                 {msg.type === "welcome" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="mb-2 text-[14px] text-[#1c1c1e]">
-                      Olá, eu sou o BOTFATHER! Posso te ajudar a consultar seu saldo, histórico de rendimentos, compras e suporte.
-                    </p>
-                    <p className="text-[13.5px]">
-                      <span onClick={() => handleSendMessage("/bots")} className="text-[#1a7ac7] underline cursor-pointer">Catálogo</span>{" · "}
-                      <span onClick={() => handleSendMessage("/saldo")} className="text-[#1a7ac7] underline cursor-pointer">Saldo</span>{" · "}
-                      <span onClick={() => handleSendMessage("/meusbots")} className="text-[#1a7ac7] underline cursor-pointer">Meus Bots</span>{" · "}
-                      <span onClick={() => handleSendMessage("/rendas")} className="text-[#1a7ac7] underline cursor-pointer">Rendimentos</span>{" · "}
-                      <span onClick={() => handleSendMessage("/limites")} className="text-[#1a7ac7] underline cursor-pointer">Limites</span>{" · "}
-                      <span onClick={() => handleSendMessage("/ajuda")} className="text-[#1a7ac7] underline cursor-pointer">Ajuda</span>
+                    <p className="text-[14px] text-[#1c1c1e]">
+                      Olá! Sou o BotFather. Posso ajudar-te com os teus Bots, o saldo e os rendimentos. Como posso ajudar?
                     </p>
                   </div>
                 )}
 
                 {msg.type === "my_bots" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="font-bold text-[14.5px] mb-1.5">Robôs em Execução ({msg.payload?.bots?.length || 0}):</p>
+                    <p className="font-bold text-[14.5px] mb-1.5">Bots em Execução ({msg.payload?.bots?.length || 0}):</p>
                     {!msg.payload?.bots || msg.payload.bots.length === 0 ? (
-                      <p className="text-[#3a3a3c]">Você não possui robôs comprados. Envie /bots para abrir o catálogo.</p>
+                      <p className="text-[#3a3a3c]">Você ainda não tem Bots ativos. Envie /bots para abrir o catálogo.</p>
                     ) : (
                       <div className="space-y-3">
                         {msg.payload.bots.map((bot: PurchasedBotItem, idx: number) => (
                           <div key={bot.id || idx} className="text-[13.5px] border-b border-gray-100 pb-2.5 last:border-0 last:pb-0">
-                            <p className="font-bold text-[#1c1c1e] mb-0.5">{idx + 1}. {bot.produto_nome} <span className="text-[#25ae60] text-[12px] font-semibold">● Ativo</span></p>
+                            <p className="font-bold text-[#1c1c1e] mb-0.5">{idx + 1}. {displayBotName(bot.produto_nome)} <span className="text-[#25ae60] text-[12px] font-semibold">● Ativo</span></p>
                             <p className="text-[#3a3a3c] text-[13px] space-y-0.5">
                               ID: <span className="font-mono text-[12px]">{bot.id?.slice(0, 8).toUpperCase()}</span><br />
                               Renda Diária: <span className="text-[#25ae60] font-semibold">+{formatCurrency(bot.renda_diaria, "KZ")}/dia</span><br />
@@ -816,11 +829,11 @@ export default function TelegramBotsChat() {
 
                 {msg.type === "catalog" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="font-bold text-[14.5px] mb-1.5">Robôs Disponíveis para Compra:</p>
+                    <p className="font-bold text-[14.5px] mb-1.5">Bots Disponíveis para Compra:</p>
                     <div className="space-y-3">
                       {msg.payload?.products?.map((prod: ProductItem, idx: number) => (
                         <div key={prod.id || idx} className="text-[13.5px] text-[#3a3a3c]">
-                          <span className="font-bold text-[#1c1c1e]">{idx + 1}. {prod.nome}</span> — {formatCurrency(prod.preco, "KZ")}<br />
+                          <span className="font-bold text-[#1c1c1e]">{idx + 1}. {displayBotName(prod.nome)}</span> — {formatCurrency(prod.preco, "KZ")}<br />
                           <span className="text-[#8a8a8e] text-[12.5px]">
                             Renda: <span className="text-[#25ae60] font-medium">+{formatCurrency(prod.renda_diaria, "KZ")}/dia</span> • Duração: {prod.duracao_dias} dias • Renda Total: {formatCurrency(prod.renda_diaria * prod.duracao_dias, "KZ")}
                           </span>
@@ -832,7 +845,7 @@ export default function TelegramBotsChat() {
 
                 {msg.type === "single_bot" && msg.payload?.product && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="font-bold text-[14.5px] text-[#1a7ac7] mb-1.5">Informações do {msg.payload.product.nome}:</p>
+                    <p className="font-bold text-[14.5px] text-[#1a7ac7] mb-1.5">Informações do {displayBotName(msg.payload.product.nome)}:</p>
                     <p className="text-[13.5px] text-[#3a3a3c] space-y-1">
                       • Preço: {formatCurrency(msg.payload.product.preco, "KZ")}<br />
                       • Renda Diária: <span className="text-[#25ae60] font-semibold">+{formatCurrency(msg.payload.product.renda_diaria, "KZ")} / dia</span><br />
@@ -849,13 +862,13 @@ export default function TelegramBotsChat() {
 
                 {msg.type === "purchase_success" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="font-bold text-[#25ae60] text-[14.5px] mb-1">Robô Comprado com Sucesso!</p>
+                    <p className="font-bold text-[#25ae60] text-[14.5px] mb-1">Bot ativado com sucesso!</p>
                     <p className="mb-1 text-[#3a3a3c]">Chave de Ativação (HTTP API):</p>
                     <div className="bg-[#e8f4fd] rounded-[8px] px-2.5 py-1 font-mono text-[12.5px] text-[#1a7ac7] select-all my-1.5">
                       8723751541:AAF1i3n8zKtRJd5_mJmVDw0vQvJhMjzUjWU
                     </div>
                     <p className="text-[13px] text-[#8a8a8e]">
-                      O robô <span className="font-semibold text-[#1c1c1e]">{msg.payload?.product?.nome}</span> está ativo. Rendimento de <span className="font-semibold text-[#25ae60]">+{formatCurrency(msg.payload?.product?.renda_diaria, "KZ")}</span> creditado diariamente.
+                      O Bot <span className="font-semibold text-[#1c1c1e]">{msg.payload?.product?.nome}</span> está ativo. Rendimento de <span className="font-semibold text-[#25ae60]">+{formatCurrency(msg.payload?.product?.renda_diaria, "KZ")}</span> creditado diariamente.
                     </p>
                   </div>
                 )}
@@ -867,21 +880,13 @@ export default function TelegramBotsChat() {
                 )}
               </BotBubble>
 
-              {/* Botões Inline anexados à mensagem */}
-              {msg.type === "welcome" && (
-                <div className="w-full max-w-[80%] flex items-center justify-center -mt-1.5 mb-2 pl-2">
-                  <GrayButton onClick={() => handleSendMessage("/bots")}>
-                    « Back to Bot List
-                  </GrayButton>
-                </div>
-              )}
               {msg.type === "catalog" && msg.payload?.products && (
                 <div className="w-full max-w-[80%] flex flex-col items-center justify-center gap-1 -mt-1.5 mb-2 pl-2">
                   {msg.payload.products.map((prod: ProductItem) => {
                     const isBuyingThis = buyingId === prod.id;
                     return (
                       <GrayButton key={prod.id} onClick={() => handleBuyProduct(prod)} disabled={isBuyingThis}>
-                        {isBuyingThis ? <><Loader2 className="w-4 h-4 animate-spin" /> Comprando...</> : `Comprar ${prod.nome}`}
+                        {isBuyingThis ? <><Loader2 className="w-4 h-4 animate-spin" /> A ativar...</> : `Ativar ${displayBotName(prod.nome)}`}
                       </GrayButton>
                     );
                   })}
@@ -890,7 +895,7 @@ export default function TelegramBotsChat() {
               {msg.type === "single_bot" && msg.payload?.product && (
                 <div className="w-full max-w-[80%] flex items-center justify-center -mt-1.5 mb-2 pl-2">
                   <GrayButton onClick={() => handleBuyProduct(msg.payload.product)} disabled={buyingId === msg.payload.product.id || msg.payload.remaining <= 0}>
-                    {buyingId === msg.payload.product.id ? <><Loader2 className="w-4 h-4 animate-spin" /> Comprando...</> : msg.payload.remaining <= 0 ? "⚠️ Limite atingido" : `Comprar ${msg.payload.product.nome}`}
+                    {buyingId === msg.payload.product.id ? <><Loader2 className="w-4 h-4 animate-spin" /> A ativar...</> : msg.payload.remaining <= 0 ? "⚠️ Limite atingido" : `Ativar ${displayBotName(msg.payload.product.nome)}`}
                   </GrayButton>
                 </div>
               )}
@@ -915,40 +920,6 @@ export default function TelegramBotsChat() {
         <button onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" })} className="absolute right-3.5 bottom-20 w-10 h-10 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-[#8a8a8e] hover:bg-gray-50 active:scale-95 transition-all z-20 cursor-pointer">
           <ChevronDown className="w-5 h-5" />
         </button>
-      )}
-
-      {/* ── QUICK HINTS (RESPOSTAS RÁPIDAS / COMANDOS) ── */}
-      {showCommandsModal && (
-        <div className="fixed bottom-[65px] left-0 right-0 flex justify-center px-2 sm:px-6 z-40 animate-in slide-in-from-bottom-2">
-          <div className="w-full max-w-[650px] bg-white dark:bg-[#182533] rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 space-y-1">
-            <div className="flex items-center justify-between px-2 py-1 text-[11.5px] font-semibold text-[#2481cc] uppercase">
-              <span className="flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5" /> Comandos Rápidos (BotFather)
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowCommandsModal(false)}
-                className="text-gray-400 hover:text-black dark:hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            {quickReplies.map((qr) => (
-              <button
-                key={qr.shortcut}
-                type="button"
-                onClick={() => {
-                  setShowCommandsModal(false);
-                  handleSendMessage(qr.shortcut);
-                }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-[#242f3d] rounded-lg transition-colors flex items-center justify-between text-xs cursor-pointer"
-              >
-                <span className="font-mono font-bold text-[#2481cc]">{qr.shortcut}</span>
-                <span className="text-gray-600 dark:text-gray-300 truncate max-w-[70%]">{qr.text}</span>
-              </button>
-            ))}
-          </div>
-        </div>
       )}
 
       {/* ── FOOTER FLUTUANTE — Input + Botão Enviar ── */}
