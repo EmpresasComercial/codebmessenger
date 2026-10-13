@@ -38,7 +38,7 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { COUNTRIES, detectCountryFromPhone } from '../lib/countries';
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js/max';
 
-const hasImageAttachment = (message: any) => {
+const getMessageDetails = (message: any) => {
   let details = message?.detalhes;
   if (typeof details === 'string') {
     try {
@@ -47,6 +47,11 @@ const hasImageAttachment = (message: any) => {
       details = {};
     }
   }
+  return details && typeof details === 'object' ? details : {};
+};
+
+const hasImageAttachment = (message: any) => {
+  const details = getMessageDetails(message);
 
   return Boolean(
     details?.imagem_url ||
@@ -57,6 +62,24 @@ const hasImageAttachment = (message: any) => {
       String(details?.tipo_midia || message?.tipo_midia || '').toLowerCase(),
     ),
   );
+};
+
+const hasPdfAttachment = (message: any) => {
+  const details = getMessageDetails(message);
+  const files = Array.isArray(details.arquivos) ? details.arquivos : [details];
+  return files.some((file: any) =>
+    file?.tipo_mime === 'application/pdf' ||
+    file?.mime_type === 'application/pdf' ||
+    file?.content_type === 'application/pdf' ||
+    String(file?.nome_arquivo || file?.file_name || file?.filename || '').toLowerCase().endsWith('.pdf')
+  );
+};
+
+const getMessagePreview = (message: any) => {
+  if (hasPdfAttachment(message)) return 'Ficheiro: PDF';
+  if (hasImageAttachment(message)) return 'Foto';
+  const text = typeof message?.mensagem === 'string' ? message.mensagem.trim() : '';
+  return text || 'Enviou uma mensagem';
 };
 
 // Selo de verificação oficial da empresa (Telegram Blue)
@@ -356,7 +379,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             }
           }
 
-          const text = hasImageAttachment(latestMsg) ? "Foto" : latestMsg.mensagem || "Mensagem";
+          const text = getMessagePreview(latestMsg);
           const msgTimestamp = new Date(latestMsg.data_registrada).getTime();
 
           const newMsg = {
@@ -431,7 +454,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         const senderName = profile?.nome_exibicao
           || (profile?.telefone ? formatSenderPhone(profile.telefone, getProfileCountryCode(profile.metadados)) : 'Membro');
         const messageText = typeof message.mensagem === 'string' ? message.mensagem.trim() : '';
-        const body = messageText || (details.imagem_url || details.photo_url ? 'Enviou uma foto' : 'Enviou uma mensagem');
+        const body = hasPdfAttachment(message)
+          ? 'Ficheiro: PDF'
+          : messageText || (details.imagem_url || details.photo_url ? 'Enviou uma foto' : 'Enviou uma mensagem');
         const registration = await navigator.serviceWorker.ready;
         if (!document.hidden) return;
 
@@ -579,7 +604,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   const msgTime = new Date(msg.created_at).getTime();
                   uniqueContacts.set(otherId, {
                     ...existing,
-                    lastMessage: hasImageAttachment(msg) ? "Foto" : msg.mensagem,
+                    lastMessage: getMessagePreview(msg),
                     lastMessageTime: formatTelegramTime(msgTime),
                     lastMessageTimestamp: msgTime,
                     isMe: msg.remetente_id === user.id
@@ -806,7 +831,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs bg-[#2481cc]/20 border border-white/40">
             <img
-              src="/pavel_durov.jpg"
+              src="/pavel_durov.png"
               alt="Pavel Durov"
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -1164,7 +1189,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 { label: "Payment Wallet", path: "/sand-pay", icon: PlusCircle },
                 { label: "Introdução ao Telegram", path: "/sobre-telegram business", icon: Lightbulb },
                 { label: "Download APK", path: "/android?setln=pt", icon: Download },
-                { label: "Carteira bancária", path: "/bank", icon: CreditCard },
+                { label: "Carteira bancária", path: "/carteira?intent=add-bank", icon: CreditCard },
                 { label: "Notificações", action: "notifications", icon: Bell },
                 { label: "Canal postes", path: "/canal-oficial", icon: MessagesSquare },
                 { label: "Perguntas Frequentes", path: "/help-faq", icon: HelpCircle },

@@ -15,9 +15,9 @@ import {
   Camera,
   BarChart3,
   Zap,
-  Smile
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
 
@@ -71,7 +71,7 @@ const VALID_COMMANDS = new Set([
   '/historico', '/registos',
   '/total', '/total_deposito', '/total_depositos', '/meus_depositos', '/extrato', '/relatorio',
   '/limpar', '/reset', '/clear',
-  '/cancelar'
+  '/cancelar', '/cancelar_deposito', '/cancelar-deposito', '/cancelar_pedido', '/cancelar-pedido'
 ]);
 
 function isRecognizedCommand(text: string): boolean {
@@ -82,8 +82,30 @@ function isRecognizedCommand(text: string): boolean {
   return VALID_COMMANDS.has(cmd) || /^\/\d+$/.test(cmd);
 }
 
+function isCancelRechargeRequest(text: string): boolean {
+  const normalized = text
+    .trim()
+    .toLocaleLowerCase('pt')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+  return [
+    'cancelar',
+    'cancela',
+    'cancelar deposito',
+    'cancelar pedido',
+    'cancelar recarga',
+    'cancelar pedido de deposito',
+    '/cancelar',
+    '/cancelar_deposito',
+    '/cancelar-deposito',
+    '/cancelar_pedido',
+    '/cancelar-pedido',
+  ].includes(normalized);
+}
+
 function parseDepositNaturalLanguage(rawInput: string): {
-  intent: 'balance' | 'deposit' | 'history' | 'banks' | 'schedule' | 'limits' | 'help' | 'clear' | 'cancel' | 'total' | 'greeting' | 'unknown';
+  intent: 'balance' | 'deposit' | 'history' | 'banks' | 'schedule' | 'limits' | 'help' | 'clear' | 'cancel' | 'total' | 'greeting' | 'support' | 'unknown';
   amount?: number;
 } {
   const clean = rawInput.trim();
@@ -96,9 +118,24 @@ function parseDepositNaturalLanguage(rawInput: string): {
   if (['limpar', 'reset', 'clear', 'limpar chat', 'limpar conversa', 'apagar conversa', 'reiniciar'].includes(norm))
     return { intent: 'clear' };
 
+  const reportsUncreditedRecharge =
+    ['nao caiu', 'nao entrou', 'nao apareceu', 'nao recebi', 'nao foi creditado', 'nao refletiu'].some((phrase) => norm.includes(phrase)) &&
+    ['deposito', 'recarga', 'carreguei', 'saldo', 'comprovativo', 'comprovante', 'transferencia', 'dinheiro'].some((word) => norm.includes(word));
+  const asksRechargeDelay =
+    ['quanto tempo', 'demora', 'prazo', 'quando cai', 'quando entra', 'quando reflete', 'refletir'].some((phrase) => norm.includes(phrase)) &&
+    ['deposito', 'recarga', 'carreguei', 'saldo', 'comprovativo', 'comprovante', 'transferencia', 'dinheiro'].some((word) => norm.includes(word));
+  const asksAfterRecharge =
+    ['depois de', 'apos', 'após'].some((phrase) => norm.includes(phrase)) &&
+    ['depositar', 'deposito', 'recarregar', 'recarga', 'carregar', 'transferencia'].some((word) => norm.includes(word)) &&
+    ['o que', 'fazer', 'agora', 'sucesso', 'concluido'].some((word) => norm.includes(word));
+  const expressesSuspicionOrConcern =
+    ['burla', 'fraude', 'golpe', 'scam', 'enganado', 'enganada', 'perdi dinheiro', 'preocupado', 'preocupada', 'medo', 'ansioso', 'ansiosa'].some((word) => norm.includes(word));
+  if (reportsUncreditedRecharge || asksRechargeDelay || asksAfterRecharge || expressesSuspicionOrConcern) return { intent: 'support' };
+
   // Saudações conversacionais
   const greetings = ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'opa', 'e ai', 'tudo bem', 'tudo bom', 'como vai', 'fala', 'alo'];
-  if (greetings.includes(norm) || greetings.some(g => norm.startsWith(g + ' ') || norm.endsWith(' ' + g))) {
+  const includesTaskOrQuestion = /\b(deposit|recarga|recarreg|saldo|banco|histor|taxa|comprov|prazo|quanto|como|quero|preciso|transfer|carregar|levantamento|retirada)\w*/.test(norm);
+  if (!includesTaskOrQuestion && (greetings.includes(norm) || greetings.some(g => norm.startsWith(g + ' ') || norm.endsWith(' ' + g)))) {
     return { intent: 'greeting' };
   }
 
@@ -120,8 +157,7 @@ function parseDepositNaturalLanguage(rawInput: string): {
     norm.includes('meus depositos') || norm.includes('minhas recargas') ||
     norm.includes('ver historico') || norm.includes('ultimos depositos') ||
     norm.includes('ultimas recargas') || norm.includes('depositos anteriores') ||
-    norm.includes('registos') || norm.includes('status do meu deposito') ||
-    norm.includes('comprovativo')
+    norm.includes('registos') || norm.includes('status do meu deposito')
   ) return { intent: 'history' };
 
   // Total / Relatório
@@ -160,7 +196,7 @@ function parseDepositNaturalLanguage(rawInput: string): {
   ) return { intent: 'limits' };
 
   // Depósito com valor extraído
-  const depositTriggers = ['depositar', 'recarregar', 'deposito', 'recarga', 'quero depositar', 'fazer deposito', 'enviar', 'transferir', 'por saldo', 'colocar dinheiro'];
+  const depositTriggers = ['depositar', 'recarregar', 'deposito', 'recarga', 'quero depositar', 'fazer deposito', 'fazer uma recarga', 'enviar', 'transferir', 'por saldo', 'colocar dinheiro', 'meter saldo', 'meter dinheiro', 'carregar a carteira', 'carregar a conta'];
   const hasDepositWord = depositTriggers.some(w => norm.includes(w)) || norm.startsWith('/depositar') || norm.startsWith('/recarregar');
   const numberMatch = norm.match(/(?:(?:kz|ao|akz)\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?:\s*(?:kz|kwanza|reais|ao|akz))?/i);
   if (numberMatch && (hasDepositWord || /^\d+$/.test(clean.replace(/[\s.,]/g, '')))) {
@@ -227,6 +263,12 @@ interface ChatMessage {
   time: string;
   text?: string;
   imageUrl?: string;
+  attachment?: {
+    name: string;
+    sizeBytes: number;
+    mimeType: string;
+    storagePath?: string;
+  };
   type:
     | 'welcome'
     | 'text'
@@ -362,16 +404,16 @@ export default function playmentbot() {
     { shortcut: '/saldo', text: 'Consultar saldo da conta e carteira' },
     { shortcut: '/bancos', text: 'Ver dados bancários e contas disponíveis' },
     { shortcut: '/historico', text: 'Consultar histórico de depósitos' },
-    { shortcut: '/limites', text: 'Ver regras, limites e prazos de depósito' },
+    { shortcut: '/limites', text: 'Ver valores mínimo e máximo e as taxas' },
+    { shortcut: '/horarios', text: 'Consultar horário de funcionamento' },
+    { shortcut: '/total_deposito', text: 'Ver relatório e total de depósitos' },
     { shortcut: '/ajuda', text: 'Instruções e ajuda do Payments Bot' },
   ];
 
   const [depositAmount, setDepositAmount] = useState<number | null>(() => rechargeSession.get().amount);
   const [selectedBank, setSelectedBank] = useState<CollectionBank | null>(() => rechargeSession.get().bank);
   const [activeRechargeId, setActiveRechargeId] = useState<string | null>(() => rechargeSession.get().rechargeId);
-
-  const [lastIntent, setLastIntent] = useState<string | null>(null);
-  const [lastBotResponse, setLastBotResponse] = useState<string | null>(null);
+  const awaitingProof = Boolean(activeRechargeId && selectedBank && depositAmount !== null);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
@@ -380,6 +422,25 @@ export default function playmentbot() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const fileDocInputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
+
+  const restartConversation = useCallback(() => {
+    if (awaitingProof) {
+      showToast('Envia o comprovativo ou cancela o pedido antes de reiniciar a conversa.', 'error');
+      return;
+    }
+    try {
+      localStorage.removeItem(CHAT_STORAGE_KEY);
+    } catch (error) {
+      console.error('Não foi possível limpar o histórico local do Playment Bot:', error);
+    }
+    rechargeSession.clear();
+    setDepositAmount(null);
+    setSelectedBank(null);
+    setActiveRechargeId(null);
+    setShowQuickHints(false);
+    setMessages([createBotMsg('welcome', undefined, undefined, 'welcome-reset-' + Date.now())]);
+    showToast('Conversa reiniciada!', 'success');
+  }, [awaitingProof, showToast]);
 
   useEffect(() => {
     const el = chatBottomRef.current;
@@ -502,6 +563,38 @@ export default function playmentbot() {
     }
   }, []);
 
+  const cancelActiveRecharge = useCallback(async () => {
+    const rechargeId = activeRechargeId || rechargeSession.get().rechargeId;
+    if (!rechargeId) {
+      showToast('Não foi possível identificar o pedido de recarga para cancelar.', 'error');
+      return;
+    }
+
+    setIsTyping(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('payment-recharge', {
+        body: { action: 'cancel_recharge', recharge_id: rechargeId },
+      });
+      if (error) throw error;
+      if (data?.success !== true) {
+        throw new Error(data?.error || 'Não foi possível cancelar este pedido de recarga.');
+      }
+
+      rechargeSession.clear();
+      setDepositAmount(null);
+      setSelectedBank(null);
+      setActiveRechargeId(null);
+      setIsTyping(false);
+      showToast('Pedido de recarga cancelado.', 'success');
+      botReply(() => createBotMsg('text', 'O pedido de recarga foi cancelado. Quando quiser, podemos começar novamente com /depositar.'));
+    } catch (error) {
+      console.error('Erro ao cancelar pedido de recarga:', error);
+      setIsTyping(false);
+      showToast(error instanceof Error ? error.message : 'Não foi possível cancelar o pedido.', 'error');
+      botReply(() => createBotMsg('text', 'Não consegui cancelar o pedido agora. O fluxo continua ativo; envia o comprovativo ou tenta cancelar novamente.'));
+    }
+  }, [activeRechargeId, botReply, showToast]);
+
   const copyToClipboard = async (text: string, isAmount = false) => {
     if (!text) return;
     try {
@@ -564,10 +657,9 @@ export default function playmentbot() {
           }
         }
 
-        if (recId) {
-          setActiveRechargeId(recId);
-          rechargeSession.set(recId, amount, bank);
-        }
+        if (!recId) throw new Error('Não foi possível criar o pedido de recarga. Tenta novamente antes de fazer a transferência.');
+        setActiveRechargeId(recId);
+        rechargeSession.set(recId, amount, bank);
 
         setSelectedBank(bank);
 
@@ -595,21 +687,45 @@ export default function playmentbot() {
   const handleUploadProof = async (file: File) => {
     if (!file) return;
 
-    const reader = new FileReader();
-    const dataUrlPromise = new Promise<string>((resolve) => {
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(URL.createObjectURL(file));
-    });
-    reader.readAsDataURL(file);
-    const initialPreviewUrl = await dataUrlPromise;
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isImage && !isPdf) {
+      showToast('Envia o comprovativo como imagem ou PDF.', 'error');
+      return;
+    }
+    if (!awaitingProof || !(activeRechargeId || rechargeSession.get().rechargeId)) {
+      showToast('Inicia uma recarga e seleciona o método de pagamento antes de enviar o comprovativo.', 'error');
+      return;
+    }
+    if (isUploading) return;
+
+    let imageUrl: string | undefined;
+    if (isImage) {
+      imageUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') resolve(reader.result);
+          else reject(new Error('Não foi possível carregar a imagem selecionada.'));
+        };
+        reader.onerror = () => reject(new Error('Não foi possível carregar a imagem selecionada.'));
+        reader.readAsDataURL(file);
+      });
+    }
 
     const userImgMsgId = 'usr-proof-' + Date.now();
     const userImgMsg: ChatMessage = {
       id: userImgMsgId,
       sender: 'user',
       time: nowTime(),
-      text: 'Comprovativo de depósito anexado 📸',
-      imageUrl: initialPreviewUrl,
+      text: isPdf ? '' : 'Comprovativo de depósito anexado 📸',
+      imageUrl,
+      ...(!isImage ? {
+        attachment: {
+          name: file.name,
+          sizeBytes: file.size,
+          mimeType: isPdf ? 'application/pdf' : (file.type || 'application/octet-stream')
+        }
+      } : {}),
       type: 'text',
     };
     setMessages((prev) => [...prev, userImgMsg]);
@@ -621,58 +737,12 @@ export default function playmentbot() {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Sessão expirada. Faça login novamente.');
 
-      let targetRechargeId = activeRechargeId || rechargeSession.get().rechargeId;
-
-      if (!targetRechargeId) {
-        const { data: latestPending } = await supabase
-          .from('recargas_mcpn')
-          .select('id, valor')
-          .eq('user_id', userData.user.id)
-          .eq('status', 'pendente')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (latestPending?.id) {
-          targetRechargeId = latestPending.id;
-        }
-      }
-
-      if (!targetRechargeId) {
-        const amt = depositAmount || rechargeSession.get().amount || 3000;
-        const bankId = selectedBank?.id || rechargeSession.get().bank?.id || collectionBanks[0]?.id;
-
-        const { data: newOrder } = (await supabase.rpc('request_recharge_kz_mcpn', {
-          p_amount: amt,
-          p_bank_id: bankId,
-        })) as { data: any };
-
-        targetRechargeId = newOrder?.recharge_id || newOrder?.id;
-
-        if (!targetRechargeId) {
-          const { data: directInsert } = await supabase
-            .from('recargas_mcpn')
-            .insert({
-              user_id: userData.user.id,
-              valor: amt,
-              status: 'pendente',
-              detalhes_transacao: {
-                banco: selectedBank?.nome_banco || rechargeSession.get().bank?.nome_banco || collectionBanks[0]?.nome_banco || 'Depósito Bancário',
-                metodo: 'chat_bot'
-              }
-            })
-            .select('id')
-            .single();
-          targetRechargeId = directInsert?.id || null;
-        }
-      }
+      const targetRechargeId = activeRechargeId || rechargeSession.get().rechargeId;
 
       if (!targetRechargeId) {
         throw new Error('Não foi possível identificar o pedido de recarga. Por favor, envie /depositar para reiniciar.');
       }
 
-      const isImage = file.type.startsWith('image/');
-      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
       const fileExt = isPdf ? 'pdf' : (file.name.split('.').pop()?.toLowerCase() || (isImage ? 'jpg' : 'bin'));
       const mimeType = isPdf ? 'application/pdf' : (isImage ? 'image/jpeg' : (file.type || 'application/octet-stream'));
 
@@ -684,6 +754,13 @@ export default function playmentbot() {
         .upload(fileName, uploadPayload, { upsert: true, contentType: mimeType });
 
       if (uploadError) throw uploadError;
+      if (!isImage) {
+        setMessages((prev) => prev.map((message) =>
+          message.id === userImgMsgId && message.attachment
+            ? { ...message, attachment: { ...message.attachment, storagePath: uploadData.path } }
+            : message
+        ));
+      }
 
       const bankName = selectedBank?.nome_banco || rechargeSession.get().bank?.nome_banco || collectionBanks[0]?.nome_banco || 'Depósito Bancário';
 
@@ -863,19 +940,59 @@ export default function playmentbot() {
       const cleanCmd = rawInput.toLowerCase().replace(/^\//, '').trim();
 
       const nlp = !isSlashCmd && !isPureNumeric ? parseDepositNaturalLanguage(rawInput) : null;
+      const previousAssistantMessage = messages
+        .slice()
+        .reverse()
+        .find((message) => message.sender === 'bot' && message.type === 'text')?.text || '';
+
+      if (awaitingProof) {
+        if (isCancelRechargeRequest(rawInput)) {
+          await cancelActiveRecharge();
+          return;
+        }
+        botReply(
+          () => createBotMsg('text', 'Ainda estou a aguardar o comprovativo desta recarga. Envia uma imagem ou PDF, ou escreve “cancelar pedido” para cancelar a recarga.'),
+          350
+        );
+        return;
+      }
 
       if (['cancelar', 'cancela', 'sair', 'deixa'].includes(cleanCmd) || nlp?.intent === 'cancel') {
         setDepositAmount(null);
         setSelectedBank(null);
         setActiveRechargeId(null);
-        setLastIntent(null);
         rechargeSession.clear();
         botReply(() => createBotMsg('text', 'Processo de depósito cancelado. Quando quiser recarregar, envie /depositar.'));
         return;
       }
 
+      if (nlp?.intent === 'support') {
+        setIsTyping(true);
+        try {
+          const { getPaymentAssistantResponse } = await import('./paymentAssistantCore');
+          const response = getPaymentAssistantResponse(rawInput, previousAssistantMessage);
+          setIsTyping(false);
+          botReply(() => createBotMsg('text', response));
+        } catch (error) {
+          console.error('Erro ao carregar respostas locais do Playment Bot:', error);
+          setIsTyping(false);
+          botReply(() => createBotMsg('text', 'Compreendo a tua preocupação. Confirma o estado no /historico e, se necessário, contacta o suporte oficial. Não partilhes palavras-passe nem códigos.'));
+        }
+        return;
+      }
+
       if (nlp?.intent === 'greeting') {
-        botReply(() => createBotMsg('text', 'Olá! Como posso ajudar você hoje? Pode consultar seu saldo, ver os bancos ou fazer um depósito.'));
+        setIsTyping(true);
+        try {
+          const { getPaymentAssistantResponse } = await import('./paymentAssistantCore');
+          const response = getPaymentAssistantResponse(rawInput, previousAssistantMessage);
+          setIsTyping(false);
+          botReply(() => createBotMsg('text', response));
+        } catch (error) {
+          console.error('Erro ao carregar respostas locais do Playment Bot:', error);
+          setIsTyping(false);
+          botReply(() => createBotMsg('text', 'Olá! Como estás? Posso ajudar-te com recargas, saldo ou comprovativos.'));
+        }
         return;
       }
 
@@ -884,7 +1001,6 @@ export default function playmentbot() {
         ['/start', '/inicio', '/início', '/ajuda', '/help', '/menu'].includes(rawInput.toLowerCase()) ||
         nlp?.intent === 'help'
       ) {
-        setLastIntent('menu');
         botReply(() => createBotMsg('welcome'));
         return;
       }
@@ -893,7 +1009,6 @@ export default function playmentbot() {
         (isSlashCmd && ['saldo', 'carteira', 'versaldo', 'meusaldo'].includes(cleanCmd)) ||
         nlp?.intent === 'balance'
       ) {
-        setLastIntent('saldo');
         setIsTyping(true);
         try {
           const { data: wi } = await supabase.rpc('get_withdraw_info_mcpn');
@@ -909,7 +1024,6 @@ export default function playmentbot() {
       }
 
       if ((isSlashCmd && ['bancos', 'banco', 'contas'].includes(cleanCmd)) || nlp?.intent === 'banks') {
-        setLastIntent('metodos_deposito');
         const banksText = collectionBanks.length > 0
           ? collectionBanks.map((b, i) => `${i + 1}. ${b.nome_banco} | Titular: ${b.nome_proprietario} | IBAN: ${b.iban}`).join('\n')
           : 'Nenhum banco disponível no momento.';
@@ -918,13 +1032,11 @@ export default function playmentbot() {
       }
 
       if ((isSlashCmd && ['horario', 'horarios'].includes(cleanCmd)) || nlp?.intent === 'schedule') {
-        setLastIntent('horarios');
         botReply(() => createBotMsg('text', 'Os depósitos funcionam 24 horas por dia, 7 dias por semana.'));
         return;
       }
 
       if ((isSlashCmd && ['limites', 'regras', 'taxa', 'taxas', 'info'].includes(cleanCmd)) || nlp?.intent === 'limits') {
-        setLastIntent('limites');
         botReply(() => createBotMsg('text', `Regras de depósito: Mínimo: ${formatCurrency(MIN_RECHARGE, 'KZ')}. Máximo: ${formatCurrency(MAX_RECHARGE, 'KZ')}. Taxa: 0%. Horário: 24h.`));
         return;
       }
@@ -979,15 +1091,7 @@ export default function playmentbot() {
       }
 
       if (isSlashCmd && ['limpar', 'reset', 'clear'].includes(cleanCmd)) {
-        try { localStorage.removeItem(CHAT_STORAGE_KEY); } catch { }
-        rechargeSession.clear();
-        setDepositAmount(null);
-        setSelectedBank(null);
-        setActiveRechargeId(null);
-        setLastIntent(null);
-        setLastBotResponse(null);
-        setMessages([createBotMsg('welcome', undefined, undefined, 'welcome-reset')]);
-        showToast('Conversa reiniciada!', 'success');
+        restartConversation();
         return;
       }
 
@@ -998,7 +1102,6 @@ export default function playmentbot() {
         setDepositAmount(null);
         setSelectedBank(null);
         setActiveRechargeId(null);
-        setLastIntent('como_depositar');
         botReply(() => createBotMsg('amount_selector', `Qual valor deseja depositar? Digite o valor ou escolha uma opção abaixo (Mínimo: ${formatCurrency(MIN_RECHARGE, 'KZ')}, Máximo: ${formatCurrency(MAX_RECHARGE, 'KZ')}):`));
         return;
       }
@@ -1010,7 +1113,6 @@ export default function playmentbot() {
           return;
         }
         setDepositAmount(nlp.amount);
-        setLastIntent('valor_deposito');
         botReply(() => createBotMsg('bank_selector',
           `Olá, por favor, selecione o método de pagamento para concluir a transferência de ${formatCurrency(nlp.amount!, 'KZ')}.`,
           { amount: nlp.amount, banks: collectionBanks }
@@ -1038,7 +1140,6 @@ export default function playmentbot() {
           return;
         }
         setDepositAmount(numericVal);
-        setLastIntent('valor_deposito');
         botReply(() => createBotMsg('bank_selector',
           `Olá, por favor, selecione o método de pagamento para concluir a transferência de ${formatCurrency(numericVal, 'KZ')}.`,
           { amount: numericVal, banks: collectionBanks }
@@ -1046,60 +1147,21 @@ export default function playmentbot() {
         return;
       }
 
-      setIsTyping(true);
       try {
-        const { data: rawRpc, error: rpcErr } = await (supabase.rpc as any)(
-          'classify_deposit_message',
-          {
-            p_message: rawInput,
-            p_last_intent: lastIntent,
-            p_last_response: lastBotResponse,
-          }
-        );
-
+        setIsTyping(true);
+        const { getPaymentAssistantResponse } = await import('./paymentAssistantCore');
+        const response = getPaymentAssistantResponse(rawInput, previousAssistantMessage);
         setIsTyping(false);
-
-        const intentData = (!rpcErr && rawRpc && rawRpc.response) ? rawRpc : null;
-
-        if (intentData && intentData.response) {
-          const { category, response, action } = intentData;
-          setLastIntent(category);
-          setLastBotResponse(response);
-
-          const cleanResp = (response || '').replace(/[*#]/g, '').trim();
-
-          if (action === 'TRIGGER_AMOUNT_SELECTOR') {
-            setDepositAmount(null);
-            setSelectedBank(null);
-            setActiveRechargeId(null);
-            botReply(() => createBotMsg('amount_selector', cleanResp || `Qual valor deseja depositar? (Mínimo: ${formatCurrency(MIN_RECHARGE, 'KZ')}, Máximo: ${formatCurrency(MAX_RECHARGE, 'KZ')})`));
-            return;
-          }
-
-          if (action === 'TRIGGER_BANKS') {
-            botReply(() => createBotMsg('banks_list', cleanResp, { banks: collectionBanks }));
-            return;
-          }
-
-          if (action === 'TRIGGER_HISTORY') {
-            setIsTyping(true);
-            const recentList = await fetchRecentRecharges();
-            setIsTyping(false);
-            botReply(() => createBotMsg('history_list', cleanResp, { list: recentList }));
-            return;
-          }
-
-          botReply(() => createBotMsg('text', cleanResp));
-          return;
-        }
-      } catch {
+        botReply(() => createBotMsg('text', response));
+      } catch (error) {
+        console.error('Erro ao carregar respostas locais do Playment Bot:', error);
         setIsTyping(false);
+        botReply(() => createBotMsg('text', 'Não consegui preparar uma resposta agora. Podes consultar o /historico ou escolher uma opção de recarga.'));
       }
-
-      botReply(() => createBotMsg('text', 'Não entendi com clareza. Você pode pedir seu saldo, solicitar um depósito (ex: depositar 1000) ou enviar /historico.'));
     },
     [
       inputText,
+      messages,
       userBalance,
       collectionBanks,
       depositAmount,
@@ -1108,8 +1170,9 @@ export default function playmentbot() {
       createRechargeOrder,
       fetchRecentRecharges,
       fetchDepositSummary,
-      lastIntent,
-      lastBotResponse,
+      restartConversation,
+      awaitingProof,
+      cancelActiveRecharge,
     ]
   );
 
@@ -1130,7 +1193,7 @@ export default function playmentbot() {
       <input type="file" ref={photoInputRef} accept="image/*" className="hidden"
         onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUploadProof(file); e.target.value = ''; }}
       />
-      <input type="file" ref={fileDocInputRef} accept="image/*,.pdf,.doc,.docx" className="hidden"
+      <input type="file" ref={fileDocInputRef} accept="image/*,.pdf" className="hidden"
         onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUploadProof(file); e.target.value = ''; }}
       />
       <input type="file" ref={fileInputRef} accept="image/*,.pdf" className="hidden"
@@ -1157,7 +1220,7 @@ export default function playmentbot() {
           </svg>
         </button>
 
-        <div className="flex items-center gap-2.5 bg-white rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] pointer-events-auto">
+        <div className="flex w-0 flex-1 items-center gap-2.5 bg-white rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 pointer-events-auto">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
             <img src="/logo-tb.jpg" alt="Payments Bot" className="w-full h-full object-cover" />
           </div>
@@ -1169,11 +1232,9 @@ export default function playmentbot() {
               </h1>
               <span className="w-3.5 h-3.5 rounded-full bg-[#2481cc] text-white flex items-center justify-center text-[8px] font-black shrink-0 mt-0.5">✓</span>
             </div>
-            <span
-              onClick={() => handleSendMessage('/historico')}
-              className="text-[12.5px] text-[#2481cc] font-normal leading-[1.15] mt-0.5 truncate cursor-pointer hover:underline"
-            >
-              {loading ? 'Carregando...' : `Recargas: ${formatCurrency(totalRecharges, 'KZ')}`}
+            <span className="mt-0.5 flex items-center gap-1 text-[12px] font-normal leading-[1.15] text-[#25ae60]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#25ae60]" />
+              Online
             </span>
           </div>
         </div>
@@ -1305,6 +1366,40 @@ export default function playmentbot() {
                         className="rounded-lg max-h-48 w-auto object-cover mt-1 mb-1 block"
                       />
                     )}
+                    {msg.attachment && (
+                      <div className="my-1 flex min-w-0 items-center gap-2 rounded-[10px] bg-black/5 px-2.5 py-2">
+                        {msg.attachment.mimeType === 'application/pdf' ? (
+                          <PdfDownloadCard
+                            name={msg.attachment.name}
+                            sizeBytes={msg.attachment.sizeBytes}
+                            disabled={!msg.attachment.storagePath}
+                            resolveUrl={msg.attachment.storagePath
+                              ? async () => {
+                                  const { data, error } = await supabase.storage
+                                    .from('recargas')
+                                    .createSignedUrl(msg.attachment!.storagePath!, 60);
+                                  if (error || !data?.signedUrl) {
+                                    throw error || new Error('Não foi possível preparar o download do PDF.');
+                                  }
+                                  return data.signedUrl;
+                                }
+                              : undefined}
+                          />
+                        ) : (
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[7px] bg-[#74808b] text-white">
+                            <FileText className="h-5 w-5" />
+                          </span>
+                        )}
+                        <span className="flex min-w-0 flex-col">
+                          <span className="text-[11px] font-medium text-gray-500">
+                            Ficheiro: {formatFileSize(msg.attachment.sizeBytes)}
+                          </span>
+                          <span className="max-w-full truncate text-[13px] font-medium text-gray-900">
+                            {msg.attachment.name}
+                          </span>
+                        </span>
+                      </div>
+                    )}
                     <div className="relative leading-[1.3] pointer-events-none">
                       <span
                         className={`text-[16px] whitespace-pre-wrap break-words font-normal ${isValid ? 'text-[#1a7ac7]' : 'text-black'}`}
@@ -1359,7 +1454,7 @@ export default function playmentbot() {
                     {msg.type === 'welcome' && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                         <p>
-                          Olá! Bem-vindo ao <strong>Payments Bot</strong>, o seu assistente de depósitos e recargas disponível 24/7 para o atender de forma rápida e simples.
+                          Olá! Sou o assistente de recargas. Tudo bem? Como posso ajudar hoje?
                         </p>
                       </div>
                     )}
@@ -1442,10 +1537,10 @@ export default function playmentbot() {
                         <div className="text-[13.5px] space-y-2 my-2">
                           <div>
                             <p>
-                              Por favor, conclua a transferência para <strong>{msg.payload.bank?.nome_proprietario || 'Conta Oficial'}</strong>
-                              {' '}no banco <strong>{msg.payload.bank?.nome_banco}</strong>, no valor de{' '}
+                              Por favor, conclua a transferência para <strong className="font-bold text-[#2481cc]">{msg.payload.bank?.nome_proprietario || 'Conta Oficial'}</strong>
+                              {' '}no banco <strong className="font-bold text-[#2481cc]">{msg.payload.bank?.nome_banco}</strong>, no valor de{' '}
                               <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                                <strong className="text-[#25ae60] text-[15px]">{formatCurrency(msg.payload.amount, 'KZ')}</strong>
+                                <strong className="text-[#dc2626] text-[15px]">{formatCurrency(msg.payload.amount, 'KZ')}</strong>
                                 <button
                                   type="button"
                                   onClick={() => copyToClipboard(String(msg.payload.amount), true)}
@@ -1462,7 +1557,7 @@ export default function playmentbot() {
                           <div className="flex items-start gap-2">
                             <p className="min-w-0 break-all">
                               <strong>Referência (IBAN):</strong>{' '}
-                              <span className="select-all">{ibanReference}</span>
+                              <strong className="select-all font-bold text-[#2481cc]">{ibanReference}</strong>
                             </p>
                             <button
                               type="button"
@@ -1486,16 +1581,36 @@ export default function playmentbot() {
                       </div>
                     )}
 
+                    {msg.type === 'deposit_instructions' && msg.payload && awaitingProof && msg.payload.rechargeId === activeRechargeId && (
+                      <div className="mt-3 grid grid-cols-2 gap-2 select-none">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                          className="rounded-lg bg-[#2481cc] px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-[#1f72b5] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Enviar comprovativo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void cancelActiveRecharge()}
+                          disabled={isUploading || isTyping}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Cancelar depósito
+                        </button>
+                      </div>
+                    )}
+
                     {msg.type === 'proof_success' && msg.payload && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                         <p className="font-bold text-[15px] text-[#25ae60] mb-1.5">
                           Recebido com muito sucesso! 🎉🥳
                         </p>
                         <p className="text-[13.5px] text-gray-800 leading-normal">
-                          Já encaminhei o seu comprovativo para conferência da nossa equipe. O seu saldo no valor de{' '}
-                          <strong>{formatCurrency(msg.payload.amount || 0, 'KZ')}</strong> será creditado na sua conta em instantes!
-                          <br /><br />
-                          Muito obrigado pela preferência e confiança! Estarei sempre por aqui para o que precisar 😊
+                          O teu comprovativo foi recebido e enviado para conferência. Depois da aprovação, o valor de{' '}
+                          <strong>{formatCurrency(msg.payload.amount || 0, 'KZ')}</strong> ficará disponível no saldo.
+                          Acompanha o estado em <strong>/historico</strong>; quando aparecer como aprovado, confirma o saldo com <strong>/saldo</strong>.
                         </p>
                       </div>
                     )}
@@ -1581,38 +1696,6 @@ export default function playmentbot() {
                     </div>
                   </div>
 
-                  {msg.type === 'welcome' && (
-                    <div className="w-full flex flex-col items-center justify-center gap-[2px] mt-[2px] select-none">
-                      <button onClick={() => handleSendMessage('/depositar')} className="bg-[#6b7b8a] bg-opacity-70 hover:bg-opacity-85 text-white px-4 py-2.5 text-[14px] font-medium active:scale-[0.99] transition-all w-full flex items-center justify-center gap-1.5 cursor-pointer rounded-none">
-                        💳 Fazer Depósito
-                      </button>
-                      <div className="w-full flex items-center gap-[2px]">
-                        <button onClick={() => handleSendMessage('/bancos')} className="flex-1 bg-[#6b7b8a] bg-opacity-70 hover:bg-opacity-85 text-white px-2 py-2.5 text-[13px] font-medium active:scale-[0.99] transition-all cursor-pointer rounded-none">
-                          🏦 Bancos
-                        </button>
-                        <button onClick={() => handleSendMessage('/saldo')} className="flex-1 bg-[#6b7b8a] bg-opacity-70 hover:bg-opacity-85 text-white px-2 py-2.5 text-[13px] font-medium active:scale-[0.99] transition-all cursor-pointer rounded-none">
-                          💰 Saldo
-                        </button>
-                      </div>
-                      <div className="w-full flex items-center gap-[2px]">
-                        <button onClick={() => handleSendMessage('/horario')} className="flex-1 bg-[#6b7b8a] bg-opacity-70 hover:bg-opacity-85 text-white px-2 py-2.5 text-[13px] font-medium active:scale-[0.99] transition-all cursor-pointer rounded-none">
-                          ⏰ Horários
-                        </button>
-                        <button onClick={() => handleSendMessage('/limites')} className="flex-1 bg-[#6b7b8a] bg-opacity-70 hover:bg-opacity-85 text-white px-2 py-2.5 text-[13px] font-medium active:scale-[0.99] transition-all cursor-pointer rounded-none">
-                          📐 Limites
-                        </button>
-                      </div>
-                      <div className="w-full flex items-center gap-[2px]">
-                        <button onClick={() => handleSendMessage('/total_deposito')} className="flex-1 bg-[#6b7b8a] bg-opacity-70 hover:bg-opacity-85 text-white px-2 py-2.5 text-[13px] font-medium active:scale-[0.99] transition-all cursor-pointer rounded-bl-[16px] rounded-br-none rounded-t-none">
-                          📊 Relatório
-                        </button>
-                        <button onClick={() => handleSendMessage('/historico')} className="flex-1 bg-[#6b7b8a] bg-opacity-70 hover:bg-opacity-85 text-white px-2 py-2.5 text-[13px] font-medium active:scale-[0.99] transition-all cursor-pointer rounded-br-[16px] rounded-bl-none rounded-t-none">
-                          📋 Histórico
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
                   {msg.type === 'deposit_instructions' && msg.payload && (
                     <div className="w-full flex flex-col items-center justify-center gap-[2px] mt-[2px] select-none">
                       <button
@@ -1649,6 +1732,17 @@ export default function playmentbot() {
             </React.Fragment>
           );
         })}
+
+        {awaitingProof && !isTyping && (
+          <div className="mb-2 flex items-center gap-2 px-1">
+            <div className="flex items-center gap-1.5 rounded-[16px] rounded-bl-[3px] bg-white px-3.5 py-2 shadow-xs">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#707579]" style={{ animationDelay: '0ms' }} />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#707579]" style={{ animationDelay: '150ms' }} />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#707579]" style={{ animationDelay: '300ms' }} />
+              <span className="ml-1 text-[11.5px] text-[#707579]">Aguardando o envio do comprovativo...</span>
+            </div>
+          </div>
+        )}
 
         {isTyping && (
           <div className="flex items-center gap-2 mb-2 px-1">
@@ -1739,12 +1833,12 @@ export default function playmentbot() {
 
             <button
               type="button"
-              onClick={() => inputRef.current?.focus()}
-              className="text-[#707579] dark:text-[#9eaab6] p-1 shrink-0"
-              title="Emojis"
-              aria-label="Emojis"
+              onClick={restartConversation}
+              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1 shrink-0 transition-colors"
+              title="Reiniciar conversa"
+              aria-label="Reiniciar conversa"
             >
-              <Smile className="w-5 h-5" />
+              <RotateCcw className="w-5 h-5" />
             </button>
 
             {/* Campo de texto */}
@@ -1760,7 +1854,9 @@ export default function playmentbot() {
                 }
               }}
               placeholder={
-                depositAmount !== null && !selectedBank
+                awaitingProof
+                  ? 'Envia o comprovativo ou escreve “cancelar pedido”...'
+                  : depositAmount !== null && !selectedBank
                   ? 'Nome do banco...'
                   : 'Mensagem...'
               }

@@ -149,6 +149,41 @@ serve(async (req) => {
       );
     }
 
+    // 2b. Cancelar um pedido ainda pendente do usuário autenticado
+    if (action === "cancel_recharge") {
+      const rechargeId = typeof body.recharge_id === "string" ? body.recharge_id.trim() : "";
+      if (!rechargeId) {
+        return new Response(
+          JSON.stringify({ error: "ID do pedido de recarga ausente." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: cancelledRecharge, error: cancelError } = await adminClient
+        .from("recargas_mcpn")
+        .update({ status: "cancelado" })
+        .eq("id", rechargeId)
+        .eq("user_id", user.id)
+        .in("status", ["pendente", "pending"])
+        .select("id")
+        .maybeSingle();
+
+      if (cancelError) {
+        throw new Error(cancelError.message);
+      }
+      if (!cancelledRecharge) {
+        return new Response(
+          JSON.stringify({ error: "O pedido não existe ou já não está pendente." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, rechargeId: cancelledRecharge.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // 3. Confirmar recarga com comprovativo
     if (action === "confirm_recharge") {
       const { recharge_id, bank_name, image_path } = body;

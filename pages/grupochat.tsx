@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import ChatsList from "./ChatsList";
+import PdfDownloadCard, { formatFileSize } from "../components/PdfDownloadCard";
 import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { COUNTRIES } from "../lib/countries";
 
@@ -405,7 +406,7 @@ const GROUP_MEMBERS = [
   }
 ];
 
-const COMMUNITY_QUICK_REACTIONS = ['👍', '❤️', '🔥', '🥰', '👏', '😂'];
+const COMMUNITY_QUICK_REACTIONS = ['👍', '❤️', '👏'];
 
 type GroupTab = 'members' | 'media' | 'files' | 'links';
 const GROUP_TABS: { id: GroupTab; label: string }[] = [
@@ -431,6 +432,19 @@ const getMessageDetails = (message: any): Record<string, any> => {
 
 const cleanSharedUrl = (value: string) => value.trim().replace(/[.,;!?)]+$/, '');
 
+const getContextMenuPosition = (messageElement: HTMLElement) => {
+  const margin = 8;
+  const menuWidth = Math.min(184, window.innerWidth - margin * 2);
+  const chatBounds = messageElement.closest('.tg-chat-no-select')?.getBoundingClientRect();
+  const right = chatBounds?.right ?? window.innerWidth;
+  const top = chatBounds?.top ?? 0;
+
+  return {
+    x: Math.max(margin, right - menuWidth - margin),
+    y: Math.max(margin, top + margin),
+  };
+};
+
 interface MessageItemProps {
   message: any;
   isMe: boolean;
@@ -442,9 +456,10 @@ interface MessageItemProps {
   timeFormatted: string;
   language: string;
   isSelectedInContextMenu: boolean;
-  onStartLongPress: (m: any, isMe: boolean, clientX: number, clientY: number) => void;
+  onStartLongPress: (m: any, isMe: boolean, clientX: number, clientY: number, element: HTMLElement) => void;
   onCancelLongPress: () => void;
   onCheckMoveCancel: (clientX: number, clientY: number) => void;
+  onSwipeToReply: (message: any) => void;
   onContextMenu: (e: React.MouseEvent, m: any, isMe: boolean) => void;
   onClickBubble: (e: React.MouseEvent) => void;
   onToggleReaction: (messageId: number, emoji: string) => void;
@@ -466,6 +481,7 @@ const MessageItem = React.memo(({
   onStartLongPress,
   onCancelLongPress,
   onCheckMoveCancel,
+  onSwipeToReply,
   onContextMenu,
   onClickBubble,
   onToggleReaction,
@@ -476,6 +492,53 @@ const MessageItem = React.memo(({
   const reply = parsedData.reply;
   const reactions = parsedData.reacoes || {};
   const isEdited = Boolean(parsedData.editado);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const swipeHandledRef = useRef(false);
+
+  const handleMessageTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    swipeHandledRef.current = false;
+    onStartLongPress(m, isMe, touch.clientX, touch.clientY, e.currentTarget);
+  };
+
+  const handleMessageTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    onCheckMoveCancel(touch.clientX, touch.clientY);
+  };
+
+  const handleMessageTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    onCancelLongPress();
+    const start = touchStartRef.current;
+    const touch = e.changedTouches[0];
+    touchStartRef.current = null;
+    if (!start || !touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = Math.abs(touch.clientY - start.y);
+    if (deltaX >= 64 && deltaY <= 48) {
+      swipeHandledRef.current = true;
+      onSwipeToReply(m);
+      window.setTimeout(() => {
+        swipeHandledRef.current = false;
+      }, 350);
+    }
+  };
+
+  const handleMessageTouchCancel = () => {
+    onCancelLongPress();
+    touchStartRef.current = null;
+  };
+
+  const handleMessageClick = (e: React.MouseEvent) => {
+    if (swipeHandledRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      swipeHandledRef.current = false;
+      return;
+    }
+    onClickBubble(e);
+  };
 
   return (
     <React.Fragment>
@@ -500,20 +563,14 @@ const MessageItem = React.memo(({
         {/* ── Mensagem só com imagem (sem balão) ── */}
         {parsedData.imagem_url && !m.mensagem?.trim() ? (
           <div
-            className="relative cursor-pointer rounded-[18px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.18)] max-w-[72vw] sm:max-w-[320px]"
-            onTouchStart={(e) => {
-              const t = e.touches[0];
-              onStartLongPress(m, isMe, t.clientX, t.clientY);
-            }}
-            onTouchMove={(e) => {
-              const t = e.touches[0];
-              onCheckMoveCancel(t.clientX, t.clientY);
-            }}
-            onTouchEnd={onCancelLongPress}
-            onTouchCancel={onCancelLongPress}
+            className="relative cursor-pointer rounded-[18px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.18)] max-w-[80vw] sm:max-w-[360px]"
+            onTouchStart={handleMessageTouchStart}
+            onTouchMove={handleMessageTouchMove}
+            onTouchEnd={handleMessageTouchEnd}
+            onTouchCancel={handleMessageTouchCancel}
             onMouseDown={(e) => {
               if (e.button === 0) {
-                onStartLongPress(m, isMe, e.clientX, e.clientY);
+                onStartLongPress(m, isMe, e.clientX, e.clientY, e.currentTarget);
               }
             }}
             onMouseMove={(e) => {
@@ -522,7 +579,7 @@ const MessageItem = React.memo(({
             onMouseUp={onCancelLongPress}
             onMouseLeave={onCancelLongPress}
             onContextMenu={(e) => onContextMenu(e, m, isMe)}
-            onClick={onClickBubble}
+            onClick={handleMessageClick}
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             <img
@@ -533,8 +590,6 @@ const MessageItem = React.memo(({
               className="w-full h-auto block rounded-[18px] cursor-pointer active:opacity-90"
               style={{ maxHeight: '340px', objectFit: 'cover' }}
               onClick={(e) => { e.stopPropagation(); onOpenZoomedImage(parsedData.imagem_url); }}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
             />
             <div className="absolute bottom-1.5 right-2 flex items-center gap-1 bg-black/40 rounded-full px-1.5 py-0.5 select-none">
               {isEdited && (
@@ -573,19 +628,13 @@ const MessageItem = React.memo(({
         ) : (
           /* ── Mensagem normal (texto ± imagem) ── */
           <div
-            onTouchStart={(e) => {
-              const t = e.touches[0];
-              onStartLongPress(m, isMe, t.clientX, t.clientY);
-            }}
-            onTouchMove={(e) => {
-              const t = e.touches[0];
-              onCheckMoveCancel(t.clientX, t.clientY);
-            }}
-            onTouchEnd={onCancelLongPress}
-            onTouchCancel={onCancelLongPress}
+            onTouchStart={handleMessageTouchStart}
+            onTouchMove={handleMessageTouchMove}
+            onTouchEnd={handleMessageTouchEnd}
+            onTouchCancel={handleMessageTouchCancel}
             onMouseDown={(e) => {
               if (e.button === 0) {
-                onStartLongPress(m, isMe, e.clientX, e.clientY);
+                onStartLongPress(m, isMe, e.clientX, e.clientY, e.currentTarget);
               }
             }}
             onMouseMove={(e) => {
@@ -594,7 +643,7 @@ const MessageItem = React.memo(({
             onMouseUp={onCancelLongPress}
             onMouseLeave={onCancelLongPress}
             onContextMenu={(e) => onContextMenu(e, m, isMe)}
-            onClick={onClickBubble}
+            onClick={handleMessageClick}
             className={cn(
               "tg-bubble max-w-[85%] px-[10px] pt-[6px] pb-[6px] text-[#000000] dark:text-[#f3f4f6] shadow-[0_1px_2px_rgba(16,35,47,0.15)] relative cursor-pointer active:brightness-95 active:scale-[0.985] transition-all select-none",
               isMe ? "bg-[#eeffde] dark:bg-[#2b5278] is-me" : "bg-white dark:bg-[#182533] is-other is-other-top",
@@ -660,6 +709,26 @@ const MessageItem = React.memo(({
                   onTouchStart={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
                 />
+              </div>
+            )}
+
+            {parsedData.arquivo_url && parsedData.tipo_mime === 'application/pdf' && (
+              <div className="mb-1.5 flex min-w-0 items-center gap-2 rounded-[8px] bg-black/5 px-2.5 py-2 dark:bg-white/10">
+                <span onClick={(e) => e.stopPropagation()}>
+                  <PdfDownloadCard
+                    url={parsedData.arquivo_url}
+                    name={parsedData.nome_arquivo || 'documento.pdf'}
+                    sizeBytes={parsedData.tamanho_bytes}
+                  />
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-[11px] font-medium text-gray-500 dark:text-gray-300">
+                    Ficheiro: {formatFileSize(parsedData.tamanho_bytes)}
+                  </span>
+                  <span className="max-w-full truncate text-[13px] font-medium">
+                    {parsedData.nome_arquivo || 'documento.pdf'}
+                  </span>
+                </span>
               </div>
             )}
 
@@ -753,6 +822,7 @@ export default function grupochat() {
   const typingChannelRef = useRef<any>(null);
   const groupListTypingChannelRef = useRef<any>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [pdfPreview, setPdfPreview] = useState<{ name: string; url: string; sizeBytes: number } | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
   const [activeGroupTab, setActiveGroupTab] = useState<GroupTab>('members');
@@ -762,7 +832,12 @@ export default function grupochat() {
   const [reactionMenuId, setReactionMenuId] = useState<number | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
 
-  const [contextMenu, setContextMenu] = useState<{ message: any; isMe: boolean } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    message: any;
+    isMe: boolean;
+    x: number;
+    y: number;
+  } | null>(null);
   const [showAllReactions, setShowAllReactions] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressTriggeredRef = useRef(false);
@@ -803,7 +878,13 @@ export default function grupochat() {
     return Array.from(members.values());
   }, [publicMessages, user?.id, user?.phone, user?.user_metadata]);
 
-  const startLongPress = useCallback((m: any, isMe: boolean, clientX: number, clientY: number) => {
+  const startLongPress = useCallback((
+    m: any,
+    isMe: boolean,
+    clientX: number,
+    clientY: number,
+    element: HTMLElement
+  ) => {
     isLongPressTriggeredRef.current = false;
     pressStartPosRef.current = { x: clientX, y: clientY };
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
@@ -813,7 +894,7 @@ export default function grupochat() {
       if (typeof window !== 'undefined' && window.navigator && 'vibrate' in window.navigator) {
         try { window.navigator.vibrate(40); } catch {}
       }
-      setContextMenu({ message: m, isMe });
+      setContextMenu({ message: m, isMe, ...getContextMenuPosition(element) });
       setShowAllReactions(false);
     }, 500);
   }, []);
@@ -844,7 +925,11 @@ export default function grupochat() {
     e.preventDefault();
     e.stopPropagation();
     cancelLongPress();
-    setContextMenu({ message: m, isMe });
+    setContextMenu({
+      message: m,
+      isMe,
+      ...getContextMenuPosition(e.currentTarget),
+    });
     setShowAllReactions(false);
   }, [cancelLongPress]);
 
@@ -861,16 +946,46 @@ export default function grupochat() {
   }, []);
 
   const handleDeleteMessage = async (msgId: number) => {
-    if (editingMessage?.id === msgId) {
-      setEditingMessage(null);
-      setPublicInput("");
-    }
-    try {
-      await supabase.from('chat_gruop').delete().eq('id', msgId);
-    } catch {}
-    setPublicMessages(prev => prev.filter(m => m.id !== msgId));
-    showToast('Mensagem apagada', 'info');
     closeContextMenu();
+    if (!user?.id) {
+      showToast('Mensagem não apagada', 'error');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_gruop')
+        .delete()
+        .eq('id', msgId)
+        .eq('uid_emissor', user.id)
+        .select('id')
+        .maybeSingle();
+
+      if (error || !data) {
+        showToast('Mensagem não apagada', 'error');
+        return;
+      }
+
+      if (editingMessage?.id === msgId) {
+        setEditingMessage(null);
+        setPublicInput("");
+      }
+
+      setPublicMessages(prev => {
+        const updated = prev.filter(m => m.id !== msgId);
+        try {
+          if (updated.length > 0) {
+            localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
+          } else {
+            localStorage.removeItem('community_chat_cache');
+          }
+        } catch {}
+        return updated;
+      });
+      showToast('Mensagem apagada', 'info');
+    } catch {
+      showToast('Mensagem não apagada', 'error');
+    }
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -878,6 +993,7 @@ export default function grupochat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   // IDs de mensagens com reaÃ§Ãµes em voo (impede o realtime de sobrescrever estado otimista)
   const pendingReactionIds = useRef<Set<number>>(new Set());
@@ -1427,20 +1543,75 @@ export default function grupochat() {
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { showToast("Máximo 10MB.", "error"); return; }
+    e.target.value = "";
+    if (!file.type.startsWith('image/')) {
+      showToast("Selecione uma imagem válida.", "error");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("Máximo 10MB.", "error");
+      return;
+    }
     try {
       const compressed = await compressImage(file, 1280, 1280, 0.75);
       setImagePreview(compressed);
+      setPdfPreview(null);
     } catch {
       const reader = new FileReader();
-      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+      reader.onload = (ev) => {
+        if (typeof ev.target?.result === 'string') {
+          setImagePreview(ev.target.result);
+          setPdfPreview(null);
+        } else {
+          showToast("Não foi possível abrir a imagem selecionada.", "error");
+        }
+      };
+      reader.onerror = () => showToast("Não foi possível abrir a imagem selecionada.", "error");
       reader.readAsDataURL(file);
     }
+  };
+
+  const handlePdfSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     e.target.value = "";
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      showToast("Selecione um documento PDF.", "error");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("O PDF não pode exceder 10MB.", "error");
+      return;
+    }
+
+    try {
+      const signature = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+      if (new TextDecoder().decode(signature) !== '%PDF-') {
+        showToast("O ficheiro selecionado não é um PDF válido.", "error");
+        return;
+      }
+    } catch {
+      showToast("Não foi possível validar o PDF selecionado.", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') {
+        showToast("Não foi possível abrir o PDF selecionado.", "error");
+        return;
+      }
+      setPdfPreview({ name: file.name, url: reader.result, sizeBytes: file.size });
+      setImagePreview(null);
+    };
+    reader.onerror = () => {
+      showToast("Não foi possível abrir o PDF selecionado.", "error");
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSend = async () => {
-    if (!user || (!publicInput.trim() && !imagePreview)) return;
+    if (!user || (!publicInput.trim() && !imagePreview && !pdfPreview)) return;
     if (publicInput.trim()) {
       const err = validateMessage(publicInput.trim());
       if (err) { showToast(err, "error"); return; }
@@ -1506,12 +1677,20 @@ export default function grupochat() {
     }
 
     const tempImg = imagePreview;
+    const tempPdf = pdfPreview;
     const tempReply = replyTo;
     const detalhes: Record<string, any> = {};
     if (typeof user?.user_metadata?.country_code === "string") {
       detalhes.sender_country_code = user.user_metadata.country_code;
     }
     if (tempImg) { detalhes.imagem_url = tempImg; detalhes.tipo_midia = 'imagem'; }
+    if (tempPdf) {
+      detalhes.arquivo_url = tempPdf.url;
+      detalhes.nome_arquivo = tempPdf.name;
+      detalhes.tamanho_bytes = tempPdf.sizeBytes;
+      detalhes.tipo_mime = 'application/pdf';
+      detalhes.tipo_midia = 'documento';
+    }
     if (tempReply) {
       detalhes.resposta_para_id = tempReply.id;
       detalhes.reply = { id: tempReply.id, text: tempReply.mensagem, sender: getSenderLabel(tempReply.perfil) };
@@ -1520,6 +1699,7 @@ export default function grupochat() {
     setPublicInput("");
     setIsComposerExpanded(false);
     setImagePreview(null);
+    setPdfPreview(null);
     setReplyTo(null);
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -1723,8 +1903,7 @@ export default function grupochat() {
       icon: Trash2, 
       label: 'Apagar', 
       onClick: () => handleDeleteMessage(contextMenu.message.id), 
-      color: '#e53e3e',
-      subLabel: 'AutoexcluirÃ¡ em 31 dias'
+      color: '#e53e3e'
     }] : [])
   ] : [];
 
@@ -1746,7 +1925,8 @@ export default function grupochat() {
         id: `${message.id}-file-${index}-${fileIndex}`,
         url,
         name: file.nome_arquivo || file.file_name || file.filename || file.name || 'Ficheiro',
-        type: file.tipo_mime || file.mime_type || file.content_type || ''
+        type: file.tipo_mime || file.mime_type || file.content_type || '',
+        sizeBytes: file.tamanho_bytes || file.size_bytes || file.file_size
       }];
     });
   }).reverse();
@@ -1805,15 +1985,10 @@ export default function grupochat() {
 
         <div 
           onClick={() => setShowInfo(true)} 
-          className="flex items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
+          className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
         >
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
             <img src="/logo-tb.jpg" alt="Telegram" className="w-full h-full object-cover" />
-            <span className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-white rounded-full flex items-center justify-center">
-              <span className="w-2.5 h-2.5 bg-[#25D366] rounded-full flex items-center justify-center">
-                <span className="text-[6px] font-bold text-white leading-none">1$</span>
-              </span>
-            </span>
           </div>
 
           <div className="flex flex-col min-w-0">
@@ -1879,6 +2054,11 @@ export default function grupochat() {
               onStartLongPress={startLongPress}
               onCancelLongPress={cancelLongPress}
               onCheckMoveCancel={checkMoveCancel}
+              onSwipeToReply={(message) => {
+                setEditingMessage(null);
+                setReplyTo(message);
+                setTimeout(() => inputRef.current?.focus(), 100);
+              }}
               onContextMenu={handleContextMenu}
               onClickBubble={handleClickBubble}
               onToggleReaction={handleToggleReaction}
@@ -1987,6 +2167,13 @@ export default function grupochat() {
               ref={fileInputRef} 
               onChange={handleImageSelect} 
             />
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              ref={pdfInputRef}
+              onChange={handlePdfSelect}
+            />
 
             <div className={`flex-1 bg-white ${isComposerExpanded ? 'rounded-[24px] items-end' : 'rounded-full items-center'} shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex px-3.5 py-1.5 min-h-[46px] border border-gray-100/80`}>
               <button 
@@ -2006,6 +2193,26 @@ export default function grupochat() {
                     className="absolute -top-1 -right-1 bg-black/70 text-white rounded-full p-0.5 hover:bg-black"
                   >
                     <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              )}
+              {pdfPreview && (
+                <div className="relative mr-2 flex max-w-[130px] shrink-0 items-center gap-1 rounded-lg border border-gray-200 px-1.5 py-1">
+                  <span className="flex h-8 w-8 shrink-0 flex-col items-center justify-center rounded-[5px] bg-[#e5484d] text-[7px] font-bold leading-none text-white">
+                    <FileText className="mb-0.5 h-3 w-3" />
+                    PDF
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-[9px] text-gray-500">Ficheiro: {formatAttachmentSize(pdfPreview.sizeBytes)}</span>
+                    <span className="truncate text-[11px] text-gray-600">{pdfPreview.name}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPdfPreview(null)}
+                    className="shrink-0 rounded-full bg-gray-100 p-0.5 text-gray-500 hover:bg-gray-200"
+                    aria-label="Remover PDF"
+                  >
+                    <X className="h-2.5 w-2.5" />
                   </button>
                 </div>
               )}
@@ -2046,9 +2253,10 @@ export default function grupochat() {
 
               <button 
                 type="button"
-                onClick={() => fileInputRef.current?.click()} 
+                onClick={() => pdfInputRef.current?.click()}
                 className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0 rotate-[-45deg]"
-                title="Anexar foto"
+                title="Anexar PDF"
+                aria-label="Anexar PDF"
               >
                 <Paperclip className="w-5 h-5 stroke-[2]" />
               </button>
@@ -2056,8 +2264,8 @@ export default function grupochat() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0"
-                title="Tirar foto ou escolher da galeria"
-                aria-label="Tirar foto ou escolher da galeria"
+                title="Escolher foto"
+                aria-label="Escolher foto"
               >
                 <Camera className="w-5 h-5 stroke-[1.8]" />
               </button>
@@ -2073,7 +2281,7 @@ export default function grupochat() {
             >
               {editingMessage ? (
                 <Check className="w-5 h-5 text-white stroke-[2.5]" />
-              ) : (publicInput.trim() || imagePreview) ? (
+              ) : (publicInput.trim() || imagePreview || pdfPreview) ? (
                 <Send className="w-5 h-5 text-white ml-0.5 stroke-[2]" />
               ) : (
                 <Mic className="w-5 h-5 text-white stroke-[2]" />
@@ -2263,23 +2471,37 @@ export default function grupochat() {
                   sharedFiles.length > 0 ? (
                     <div className="divide-y divide-gray-100 bg-white">
                       {sharedFiles.map((file) => (
-                        <a
-                          key={file.id}
-                          href={file.url}
-                          download={file.url.startsWith('data:') ? file.name : undefined}
-                          target={file.url.startsWith('data:') ? undefined : '_blank'}
-                          rel={file.url.startsWith('data:') ? undefined : 'noopener noreferrer'}
-                          className="flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50"
-                        >
-                          <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px]" style={{ backgroundColor: '#007aff20' }}>
-                            <FileText className="h-5 w-5" style={{ color: '#007aff' }} />
+                        file.type === 'application/pdf' ? (
+                          <div key={file.id} className="flex items-center gap-3 px-4 py-3 text-left">
+                            <PdfDownloadCard url={file.url} name={file.name} sizeBytes={file.sizeBytes} compact />
+                            <div className="flex min-w-0 flex-1 flex-col">
+                              <span className="truncate text-[14px] font-medium text-[#111]">{file.name}</span>
+                              <span className="truncate text-[12px]" style={{ color: '#8e8e93' }}>
+                                Ficheiro: {formatFileSize(file.sizeBytes)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex min-w-0 flex-1 flex-col">
-                            <span className="truncate text-[14px] font-medium text-[#111]">{file.name}</span>
-                            <span className="truncate text-[12px]" style={{ color: '#8e8e93' }}>{file.type || 'Ficheiro partilhado'}</span>
-                          </div>
-                          <Download className="h-4 w-4 shrink-0" style={{ color: '#8e8e93' }} />
-                        </a>
+                        ) : (
+                          <a
+                            key={file.id}
+                            href={file.url}
+                            download={file.url.startsWith('data:') ? file.name : undefined}
+                            target={file.url.startsWith('data:') ? undefined : '_blank'}
+                            rel={file.url.startsWith('data:') ? undefined : 'noopener noreferrer'}
+                            className="flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                          >
+                            <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px]" style={{ backgroundColor: '#007aff20' }}>
+                              <FileText className="h-5 w-5" style={{ color: '#007aff' }} />
+                            </div>
+                            <div className="flex min-w-0 flex-1 flex-col">
+                              <span className="truncate text-[14px] font-medium text-[#111]">{file.name}</span>
+                              <span className="truncate text-[12px]" style={{ color: '#8e8e93' }}>
+                                {file.type || 'Ficheiro partilhado'}
+                              </span>
+                            </div>
+                            <Download className="h-4 w-4 shrink-0" style={{ color: '#8e8e93' }} />
+                          </a>
+                        )
                       ))}
                     </div>
                   ) : (
@@ -2384,23 +2606,22 @@ export default function grupochat() {
       {/* â”€â”€ CONTEXT MENU â€” TOPO DA TELA (slide-down) â”€â”€ */}
       {contextMenu && (
         <div
-          className="fixed inset-0 z-[200] bg-black/40"
+          className="fixed inset-0 z-[200]"
           style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           onClick={closeContextMenu}
         >
-          {/* Painel que desce do topo */}
           <div
-            className="absolute top-0 left-0 right-0 bg-white dark:bg-[#1e1e1e] select-none shadow-2xl"
+            className="fixed w-[184px] max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-y-auto bg-white dark:bg-[#1e1e1e] select-none border border-black/10 dark:border-white/10 shadow-[0_6px_20px_rgba(0,0,0,0.18)]"
             onClick={(e) => e.stopPropagation()}
             style={{
-              animation: 'slideDownMenu 0.22s cubic-bezier(0.16, 1, 0.3, 1) both',
+              left: contextMenu.x,
+              top: contextMenu.y,
+              borderRadius: '12px',
               touchAction: 'manipulation',
-              borderBottomLeftRadius: '20px',
-              borderBottomRightRadius: '20px',
             }}
           >
             {/* ── Barra de Reações ── */}
-            <div className="flex items-center justify-around px-3 py-3 border-b border-gray-100 dark:border-white/8">
+            <div className="flex w-fit items-center gap-0.5 px-1.5 py-1 border-b border-gray-100 dark:border-white/10">
               {COMMUNITY_QUICK_REACTIONS.map((emoji) => (
                 <button
                   key={emoji}
@@ -2410,7 +2631,7 @@ export default function grupochat() {
                     showToast(`Reação ${emoji} adicionada!`, 'success');
                     closeContextMenu();
                   }}
-                  className="w-10 h-10 flex items-center justify-center text-[26px] leading-none active:scale-125 transition-transform rounded-full cursor-pointer"
+                  className="w-7 h-7 shrink-0 flex items-center justify-center text-[18px] leading-none active:scale-125 transition-transform rounded-full cursor-pointer hover:bg-black/5 dark:hover:bg-white/10"
                   style={{ touchAction: 'manipulation' }}
                   title={`Reagir com ${emoji}`}
                 >
@@ -2425,54 +2646,44 @@ export default function grupochat() {
                 <button
                   type="button"
                   onClick={action.onClick}
-                  className="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] active:bg-gray-100 dark:active:bg-[#333] transition-colors cursor-pointer text-left"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] active:bg-gray-100 dark:active:bg-[#333] transition-colors cursor-pointer text-left"
                   style={{ touchAction: 'manipulation' }}
                 >
-                  <action.icon
-                    className="w-5 h-5 shrink-0"
-                    style={{ color: action.color }}
-                  />
+                  <span
+                    className="w-[26px] h-[26px] shrink-0 flex items-center justify-center rounded-full"
+                    style={{
+                      color: action.color,
+                      backgroundColor: action.label === 'Apagar'
+                        ? 'rgba(229, 62, 62, 0.10)'
+                        : action.label === 'Responder'
+                          ? 'rgba(36, 129, 204, 0.10)'
+                          : 'rgba(120, 130, 140, 0.10)',
+                    }}
+                  >
+                    <action.icon className="w-[14px] h-[14px]" strokeWidth={2.2} />
+                  </span>
                   <div>
                     <span
-                      className="text-[15px] font-medium block leading-tight text-gray-900 dark:text-gray-100"
+                      className="text-[11px] font-medium block leading-tight text-gray-900 dark:text-gray-100"
                       style={{ color: action.color === '#e53e3e' ? '#e53e3e' : undefined }}
                     >
                       {action.label}
                     </span>
                     {action.subLabel && (
-                      <span className="text-[11px] text-gray-400 block mt-0.5">{action.subLabel}</span>
+                      <span className="text-[9px] text-gray-400 block mt-0.5">{action.subLabel}</span>
                     )}
                   </div>
                 </button>
                 {idx < menuActions.length - 1 && (
-                  <div className="h-px bg-gray-100 dark:bg-[#2e2e2e] mx-5" />
+                  <div className="h-px bg-gray-100 dark:bg-[#2e2e2e] ml-[38px]" />
                 )}
               </React.Fragment>
             ))}
 
-            {/* â”€â”€ Fechar / handle â”€â”€ */}
-            <div className="flex justify-center py-3">
-              <button
-                type="button"
-                onClick={closeContextMenu}
-                className="flex items-center gap-2 text-[13px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer select-none"
-                style={{ touchAction: 'manipulation' }}
-              >
-                <X className="w-4 h-4" />
-                Fechar
-              </button>
-            </div>
           </div>
         </div>
       )}
 
-      {/* â”€â”€ AnimaÃ§Ãµes CSS injetadas â”€â”€ */}
-      <style>{`
-        @keyframes slideDownMenu {
-          from { opacity: 0; transform: translateY(-100%); }
-          to   { opacity: 1; transform: translateY(0);     }
-        }
-      `}</style>
       </div>
     </div>
   );

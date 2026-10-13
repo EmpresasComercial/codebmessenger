@@ -22,9 +22,11 @@ import {
   Trash2,
   X,
   ChevronRight,
-  Calendar
+  Calendar,
+  FileText
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import ChatsList from './ChatsList';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
@@ -133,25 +135,73 @@ export default function PrivateChat() {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [pdfPreview, setPdfPreview] = useState<{ name: string; url: string; sizeBytes: number } | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = '';
+    if (!file.type.startsWith('image/')) {
+      showToast('Selecione uma imagem válida.', 'error');
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) {
       showToast('Tamanho máximo: 5MB.', 'error');
       return;
     }
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setImagePreview(ev.target?.result as string);
+      if (typeof ev.target?.result !== 'string') {
+        showToast('Não foi possível abrir a imagem selecionada.', 'error');
+        return;
+      }
+      setImagePreview(ev.target.result);
+      setPdfPreview(null);
     };
+    reader.onerror = () => showToast('Não foi possível abrir a imagem selecionada.', 'error');
     reader.readAsDataURL(file);
-    e.target.value = '';
   };
 
+  const handlePdfSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      showToast('Selecione um documento PDF.', 'error');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('O PDF não pode exceder 10MB.', 'error');
+      return;
+    }
+
+    try {
+      const signature = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+      if (new TextDecoder().decode(signature) !== '%PDF-') {
+        showToast('O ficheiro selecionado não é um PDF válido.', 'error');
+        return;
+      }
+    } catch {
+      showToast('Não foi possível validar o PDF selecionado.', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') {
+        showToast('Não foi possível abrir o PDF selecionado.', 'error');
+        return;
+      }
+      setPdfPreview({ name: file.name, url: reader.result, sizeBytes: file.size });
+      setImagePreview(null);
+    };
+    reader.onerror = () => showToast('Não foi possível abrir o PDF selecionado.', 'error');
+    reader.readAsDataURL(file);
+  };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     requestAnimationFrame(() => {
@@ -476,13 +526,26 @@ export default function PrivateChat() {
   // ── Send Message ──────────────────────────────────────────────────────
   const handleSend = async (overrideText?: string) => {
     const textToSend = overrideText !== undefined ? overrideText : inputText;
-    if ((!textToSend.trim() && !imagePreview) || !user || !contactId || isSending) return;
+    if ((!textToSend.trim() && !imagePreview && !pdfPreview) || !user || !contactId || isSending) return;
 
     const msg = textToSend.trim();
     const imageToSend = imagePreview;
+    const pdfToSend = pdfPreview;
+    const attachmentDetails = imageToSend
+      ? { imagem_url: imageToSend, tipo_midia: 'imagem' }
+      : pdfToSend
+        ? {
+            arquivo_url: pdfToSend.url,
+            nome_arquivo: pdfToSend.name,
+            tamanho_bytes: pdfToSend.sizeBytes,
+            tipo_mime: 'application/pdf',
+            tipo_midia: 'documento'
+          }
+        : undefined;
 
     setInputText('');
     setImagePreview(null);
+    setPdfPreview(null);
     setReplyTo(null);
     setIsComposerExpanded(false);
     if (inputRef.current) {
@@ -498,7 +561,7 @@ export default function PrivateChat() {
       mensagem: msg,
       lida: false,
       created_at: new Date().toISOString(),
-      detalhes: imageToSend ? { imagem_url: imageToSend, tipo_midia: 'imagem' } : undefined,
+      detalhes: attachmentDetails,
       status: isUUID(contactId) ? 'sending' : 'sent'
     };
 
@@ -539,7 +602,7 @@ export default function PrivateChat() {
         mensagem: msg,
         detalhes: {
           lida: false,
-          ...(imageToSend ? { imagem_url: imageToSend, tipo_midia: 'imagem' } : {})
+          ...(attachmentDetails || {})
         }
       };
       console.log('[PrivateChat] Enviando para sys_t110:', payload);
@@ -674,7 +737,7 @@ export default function PrivateChat() {
           <ChevronLeft className="w-6 h-6 stroke-[2]" />
         </button>
 
-        <div className="flex items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] pointer-events-auto">
+        <div className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 pointer-events-auto">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
             {isPavel ? (
               <img
@@ -999,6 +1062,27 @@ export default function PrivateChat() {
                       </div>
                     )}
 
+                    {m.detalhes?.arquivo_url && m.detalhes?.tipo_mime === 'application/pdf' && (
+                      <div
+                        className="pointer-events-auto mb-1 flex min-w-0 items-center gap-2 rounded-[10px] bg-black/5 px-2.5 py-2 dark:bg-white/10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <PdfDownloadCard
+                          url={m.detalhes.arquivo_url}
+                          name={m.detalhes.nome_arquivo || 'documento.pdf'}
+                          sizeBytes={m.detalhes.tamanho_bytes}
+                        />
+                        <span className="flex min-w-0 flex-col">
+                          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-300">
+                            Ficheiro: {formatFileSize(m.detalhes.tamanho_bytes)}
+                          </span>
+                          <span className="max-w-full truncate text-[13px] font-medium">
+                            {m.detalhes.nome_arquivo || 'documento.pdf'}
+                          </span>
+                        </span>
+                      </div>
+                    )}
+
                     <div className="relative pointer-events-none leading-[1.3]">
                       {!isMe && (
                         <p
@@ -1195,6 +1279,27 @@ export default function PrivateChat() {
                 </button>
               </div>
             )}
+            {pdfPreview && (
+              <div className="relative mr-2 ml-1 flex max-w-[130px] shrink-0 items-center gap-1 rounded-lg border border-gray-200 px-1.5 py-1 dark:border-gray-600">
+                <span className="flex h-8 w-8 shrink-0 flex-col items-center justify-center rounded-[5px] bg-[#e5484d] text-[7px] font-bold leading-none text-white">
+                  <FileText className="mb-0.5 h-3 w-3" />
+                  PDF
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-[9px] text-gray-500 dark:text-gray-300">Ficheiro: {formatAttachmentSize(pdfPreview.sizeBytes)}</span>
+                  <span className="truncate text-[11px] text-gray-600 dark:text-gray-300">{pdfPreview.name}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPdfPreview(null)}
+                  className="shrink-0 rounded-full bg-gray-100 p-0.5 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
+                  title="Remover PDF"
+                  aria-label="Remover PDF"
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </div>
+            )}
 
             <textarea
               ref={inputRef}
@@ -1225,12 +1330,20 @@ export default function PrivateChat() {
               accept="image/*"
               className="hidden"
             />
+            <input
+              type="file"
+              ref={pdfInputRef}
+              onChange={handlePdfSelect}
+              accept="application/pdf,.pdf"
+              className="hidden"
+            />
 
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => pdfInputRef.current?.click()}
               className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0 cursor-pointer"
-              title="Anexar foto"
+              title="Anexar PDF"
+              aria-label="Anexar PDF"
             >
               <Paperclip className="w-5 h-5" />
             </button>
@@ -1238,8 +1351,8 @@ export default function PrivateChat() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0 cursor-pointer"
-              title="Tirar foto ou escolher da galeria"
-              aria-label="Tirar foto ou escolher da galeria"
+              title="Escolher foto"
+              aria-label="Escolher foto"
             >
               <Camera className="w-5 h-5" />
             </button>
@@ -1249,12 +1362,12 @@ export default function PrivateChat() {
           <button
             type="button"
             onClick={() => handleSend()}
-            disabled={!inputText.trim() && !imagePreview}
+            disabled={!inputText.trim() && !imagePreview && !pdfPreview}
             className={`w-[46px] h-[46px] rounded-full text-white flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_4px_16px_rgba(36,129,204,0.45)] ${
-              (inputText.trim() || imagePreview) ? 'bg-[#2481cc] hover:bg-[#1f72b5] cursor-pointer' : 'bg-[#2481cc] cursor-pointer'
+              (inputText.trim() || imagePreview || pdfPreview) ? 'bg-[#2481cc] hover:bg-[#1f72b5] cursor-pointer' : 'bg-[#2481cc] cursor-pointer'
             }`}
           >
-            {(inputText.trim() || imagePreview) ? <Send className="w-5 h-5 text-white ml-0.5" /> : <Mic className="w-5 h-5 text-white" />}
+            {(inputText.trim() || imagePreview || pdfPreview) ? <Send className="w-5 h-5 text-white ml-0.5" /> : <Mic className="w-5 h-5 text-white" />}
           </button>
         </div>
       </div>

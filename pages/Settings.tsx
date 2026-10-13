@@ -56,7 +56,7 @@ export default function Settings() {
             iconBg="bg-[#3390ec]"
             title="Conta"
             subtitle="Adicionar cartão bancário"
-            onClick={() => navigate('/bank')}
+            onClick={() => navigate('/carteira?intent=add-bank')}
           />
           
           <SettingsItem 

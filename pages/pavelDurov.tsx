@@ -155,7 +155,7 @@ export default function pavelDurov() {
   const [posts, setPosts] = useState<ChannelPost[]>([]);
   const [inputText, setInputText] = useState('');
   const [isMuted, setIsMuted] = useState(false);
-  const [subscribersCount] = useState('1 inscrito');
+  const [subscribersCount] = useState('850.747 inscritos');
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -583,7 +583,7 @@ export default function pavelDurov() {
         <div className="flex items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] pointer-events-auto">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
             <img
-              src="/pavel_durov.jpg"
+              src="/pavel_durov.png"
               alt="Pavel Durov"
               className="w-full h-full object-cover"
               onError={(e) => {

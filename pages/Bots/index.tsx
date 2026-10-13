@@ -724,18 +724,11 @@ export default function TelegramBotsChat() {
 
         {/* Cápsula central — BotFather */}
         <div
-          className="flex items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
+          className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
           onClick={() => handleSendMessage("/saldo")}
         >
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
             <img src="/BotFather.jpg" alt="BotFather" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/botfather.png"; }} />
-            <span className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-white rounded-full flex items-center justify-center">
-              <span className="w-2.5 h-2.5 bg-[#3390ec] rounded-full flex items-center justify-center">
-                <svg className="w-[7px] h-[7px] text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                </svg>
-              </span>
-            </span>
           </div>
           <div className="flex flex-col min-w-0">
             <h1 className="text-[15px] font-bold text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">

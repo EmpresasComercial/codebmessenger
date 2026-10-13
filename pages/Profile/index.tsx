@@ -268,7 +268,7 @@ export default function Profile() {
             iconBg="bg-[#3390ec]"
             title="Carteira bancária"
             subtitle="Adicionar cartão bancário"
-            onClick={() => navigate("/bank")}
+            onClick={() => navigate("/carteira?intent=add-bank")}
           />
 
         </div>

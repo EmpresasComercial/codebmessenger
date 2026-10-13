@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   MoreVertical, 
   Send, 
@@ -16,11 +16,13 @@ import {
   CheckCircle2,
   XCircle,
   ArrowDownLeft,
-  Zap
+  Zap,
+  X
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
+import AddBank from './AddBank';
 
 const MIN_WITHDRAW = 100;
 const MAX_WITHDRAW = 100000;
@@ -32,6 +34,10 @@ const VALID_COMMANDS = new Set([
   '/saldo', '/carteira',
   '/retirar', '/sacar', '/retirada', '/saque',
   '/banco', '/iban', '/conta',
+  '/adicionar_banco', '/adicionar-banco', '/adicionar_conta', '/adicionar-conta',
+  '/adicionar_iban', '/adicionar-iban', '/vincular_banco', '/vincular-banco',
+  '/salvar_banco', '/salvar-banco', '/guardar_banco', '/guardar-banco',
+  '/deletar_conta', '/deletar-conta', '/remover_conta', '/remover-conta',
   '/horario', '/horarios',
   '/taxa', '/taxas', '/limites', '/regras',
   '/historico', '/registos', '/extrato',
@@ -47,14 +53,77 @@ function isRecognizedCommand(text: string): boolean {
   return VALID_COMMANDS.has(cmd);
 }
 
+function getWalletCommandMessage(input: string): string {
+  const normalized = input.trim().toLowerCase();
+  const messages: Record<string, string> = {
+    '/retirar': 'Quero solicitar o levantamento para a minha conta bancária.',
+    '/sacar': 'Quero solicitar o levantamento para a minha conta bancária.',
+    '/retirada': 'Quero solicitar o levantamento para a minha conta bancária.',
+    '/saque': 'Quero solicitar o levantamento para a minha conta bancária.',
+    '/saldo': 'Por favor, quero consultar o meu saldo disponível para retirada.',
+    '/carteira': 'Por favor, quero consultar o meu saldo disponível para retirada.',
+    '/banco': 'Consultar os meus dados bancários e o banco cadastrado.',
+    '/iban': 'Consultar os meus dados bancários e o banco cadastrado.',
+    '/conta': 'Consultar os meus dados bancários e o banco cadastrado.',
+    '/taxa': 'Qual é a taxa cobrada em cada retirada?',
+    '/taxas': 'Qual é a taxa cobrada em cada retirada?',
+    '/historico': 'Por favor, dê-me o histórico de todas as retiradas.',
+    '/registos': 'Por favor, dê-me o histórico de todas as retiradas.',
+    '/extrato': 'Por favor, dê-me o histórico de todas as retiradas.',
+    'consultar banco': 'Consultar os meus dados bancários e o banco cadastrado.',
+    '/adicionar_banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar-banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar_conta': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar-conta': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar_iban': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar-iban': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/vincular_banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/vincular-banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/salvar_banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/salvar-banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/guardar_banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/guardar-banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/deletar_conta': 'Quero remover a minha conta bancária cadastrada.',
+    '/deletar-conta': 'Quero remover a minha conta bancária cadastrada.',
+    '/remover_conta': 'Quero remover a minha conta bancária cadastrada.',
+    '/remover-conta': 'Quero remover a minha conta bancária cadastrada.'
+  };
+
+  return messages[normalized] || input.trim();
+}
+
 function parseNaturalLanguage(rawInput: string): {
-  intent: 'balance' | 'withdraw' | 'history' | 'bank' | 'schedule' | 'fees' | 'help' | 'clear' | 'cancel' | 'confirm' | 'greeting' | 'unknown';
+  intent: 'balance' | 'withdraw' | 'withdraw_info' | 'support' | 'history' | 'bank' | 'add_bank' | 'delete_bank' | 'schedule' | 'fees' | 'help' | 'clear' | 'cancel' | 'confirm' | 'greeting' | 'unknown';
   amount?: number;
   isAll?: boolean;
 } {
   const clean = rawInput.trim();
   const lower = clean.toLowerCase();
   const norm = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+  // Ações de cadastro bancário devem ser distintas das consultas ao banco.
+  const bankAddCommands = [
+    '/adicionar_banco', '/adicionar-banco', '/adicionar_conta', '/adicionar-conta',
+    '/adicionar_iban', '/adicionar-iban', '/vincular_banco', '/vincular-banco',
+    '/salvar_banco', '/salvar-banco', '/guardar_banco', '/guardar-banco'
+  ];
+  const bankAddVerbs = ['adicionar', 'vincular', 'inserir', 'gravar', 'salvar', 'guardar', 'cadastrar'];
+  const bankAddTargets = ['banco', 'conta', 'iban', 'numero', 'número'];
+  if (
+    bankAddCommands.includes(norm.split(/\s+/)[0]) ||
+    (bankAddVerbs.some((verb) => norm.includes(verb)) && bankAddTargets.some((target) => norm.includes(target))) ||
+    ['salvar numero', 'guardar numero', 'gravar numero', 'adicionar conta bancaria', 'vincular conta'].some((phrase) => norm.includes(phrase))
+  ) {
+    return { intent: 'add_bank' };
+  }
+
+  if (
+    ['/deletar_conta', '/deletar-conta', '/remover_conta', '/remover-conta'].includes(norm.split(/\s+/)[0]) ||
+    (['deletar', 'apagar', 'excluir', 'eliminar', 'remover'].some((verb) => norm.includes(verb)) &&
+      ['conta', 'banco', 'iban'].some((target) => norm.includes(target)))
+  ) {
+    return { intent: 'delete_bank' };
+  }
 
   // 1. Confirmar
   if (
@@ -80,8 +149,28 @@ function parseNaturalLanguage(rawInput: string): {
     return { intent: 'clear' };
   }
 
+  const reportsWithdrawalProblem =
+    ['saque', 'saquei', 'retirada', 'retirei', 'levantamento', 'levantei'].some((word) => norm.includes(word)) &&
+    ['nao caiu', 'nao recebi', 'nao chegou', 'ainda nao', 'nao entrou', 'nao apareceu', 'nao foi creditado'].some((phrase) => norm.includes(phrase));
+  const expressesWithdrawalConcern =
+    ['saque', 'saquei', 'retirada', 'retirei', 'levantamento', 'levantei'].some((word) => norm.includes(word)) &&
+    ['medo', 'preocupado', 'preocupada', 'ansioso', 'ansiosa', 'nervoso', 'nervosa', 'triste'].some((word) => norm.includes(word));
+  const reportsPossibleFraud = ['burla', 'fraude', 'golpe', 'enganado', 'enganada', 'roubaram'].some((word) => norm.includes(word));
+  if (reportsWithdrawalProblem || expressesWithdrawalConcern || reportsPossibleFraud) {
+    return { intent: 'support' };
+  }
+
+  if (
+    ['como sacar', 'como retirar', 'como levantar', 'como fazer um saque',
+      'como solicitar uma retirada', 'como funciona o saque', 'como posso realizar uma retirada',
+      'como posso fazer uma retirada', 'posso realizar uma retirada', 'posso fazer um saque',
+      'como posso sacar', 'como posso retirar'].some((phrase) => norm.includes(phrase))
+  ) {
+    return { intent: 'withdraw_info' };
+  }
+
   // 4. Saudações conversacionais
-  const greetings = ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'opa', 'e ai', 'tudo bem', 'tudo bom', 'como vai', 'fala', 'alo'];
+  const greetings = ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'feliz noite', 'opa', 'e ai', 'tudo bem', 'tudo bom', 'como vai', 'como foi o dia', 'como foi teu dia', 'como foi seu dia', 'fala', 'alo'];
   if (greetings.includes(norm) || greetings.some(g => norm.startsWith(g + ' ') || norm.endsWith(' ' + g))) {
     return { intent: 'greeting' };
   }
@@ -123,7 +212,7 @@ function parseNaturalLanguage(rawInput: string): {
     norm.includes('dados bancarios') || norm.includes('conta cadastrada') ||
     norm.includes('cadastrar banco') || norm.includes('trocar banco') ||
     norm.includes('mudar banco') || norm.includes('meu iban') ||
-    norm.includes('adicionar banco')
+    norm.includes('consultar banco')
   ) {
     return { intent: 'bank' };
   }
@@ -159,6 +248,14 @@ function parseNaturalLanguage(rawInput: string): {
     norm.includes('todo o saldo') || norm.includes('todo meu saldo')
   ) {
     return { intent: 'withdraw', isAll: true };
+  }
+
+  if (
+    norm.includes('como sacar') || norm.includes('como retirar') ||
+    norm.includes('como levantar') || norm.includes('como fazer um saque') ||
+    norm.includes('como solicitar uma retirada') || norm.includes('como funciona o saque')
+  ) {
+    return { intent: 'withdraw_info' };
   }
 
   // 11. Saque com extração inteligente de valor
@@ -229,7 +326,7 @@ interface ChatMessage {
   sender: 'bot' | 'user';
   time: string;
   text?: string;
-  type: 'welcome' | 'text' | 'confirm_withdraw' | 'amount_selector' | 'no_bank' | 'no_bots' | 'history_list';
+  type: 'welcome' | 'text' | 'bank_saved' | 'bank_details' | 'confirm_withdraw' | 'confirm_delete_bank' | 'amount_selector' | 'no_bank' | 'no_bots' | 'history_list';
   payload?: any;
 }
 
@@ -244,6 +341,7 @@ function getCurrentDay(): string {
 
 export default function wallet() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
 
   const [info, setInfo] = useState<WithdrawInfo>({
@@ -264,23 +362,25 @@ export default function wallet() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [pendingAmount, setPendingAmount] = useState<number | null>(null);
+  const [pendingBankDeletion, setPendingBankDeletion] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const [lastIntent, setLastIntent] = useState<string | null>(null);
-  const [lastBotResponse, setLastBotResponse] = useState<string | null>(null);
+  const [showAddBankModal, setShowAddBankModal] = useState(false);
   const [showQuickHints, setShowQuickHints] = useState(false);
 
   const quickReplies = [
-    { shortcut: '/retirar', text: 'Solicitar levantamento para conta bancária' },
-    { shortcut: '/saldo', text: 'Consultar saldo disponível para retirada' },
-    { shortcut: '/banco', text: 'Ver dados bancários e IBAN cadastrado' },
-    { shortcut: '/taxa', text: 'Ver taxas e limites de saque (10%)' },
-    { shortcut: '/historico', text: 'Histórico de retiradas e levantamentos' },
-    { shortcut: '/ajuda', text: 'Horários e instruções da Wallet' },
+    { command: '/adicionar_banco', label: 'Adicionar conta bancária' },
+    { command: '/retirar', label: 'Solicitar levantamento para conta bancária' },
+    { command: '/saldo', label: 'Consultar saldo' },
+    { command: 'consultar banco', label: 'Consultar dados bancários' },
+    { command: '/taxa', label: 'Consultar taxa' },
+    { command: '/historico', label: 'Consultar histórico de retiradas' },
+    { command: '/deletar_conta', label: 'Deletar conta' },
   ];
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
+  const hasProcessedEntryIntent = useRef(false);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -546,7 +646,7 @@ export default function wallet() {
       return 'Histórico de Retiradas:\nNenhum saque registado ainda na sua conta. Para realizar uma retirada, envie /retirar.';
     }
 
-    const itemsText = list.map((item: any, idx: number) => {
+    const itemsText = list.map((item: any) => {
       const amount = Number(item.valor_bruto) || Number(item.amount) || Number(item.valor) || 0;
       const rawStatus = (item.status || 'pendente').toLowerCase();
       let statusEmoji = '⏳';
@@ -572,15 +672,15 @@ export default function wallet() {
       const bankStr = item.banco_destino || item.bank_name || info.bankName || 'Conta Bancária';
       const ibanStr = item.iban_snapshot || item.iban || (info.iban ? `...${info.iban.slice(-4)}` : '');
 
-      return `${idx + 1}. ${formatCurrency(amount, 'KZ')} | ${statusEmoji} ${statusLabel} | ${dateStr} | ${bankStr}${ibanStr ? ` (${ibanStr})` : ''}`;
-    }).join('\n');
+      return `No dia ${dateStr}, levantaste o montante de ${formatCurrency(amount, 'KZ')} pela conta ${bankStr}${ibanStr ? ` (${ibanStr})` : ''}, com o estado ${statusEmoji} ${statusLabel}.`;
+    }).join('\n\n');
 
     return `Histórico de Retiradas (${list.length} registos):\n\n${itemsText}\n\nPara solicitar um novo saque, envie /retirar.`;
   }, [info.bankName, info.iban]);
 
   const handleSendMessage = useCallback(
     async (textToSend?: string) => {
-      const content = (textToSend || inputText).trim();
+      const content = getWalletCommandMessage((textToSend || inputText).trim());
       if (!content) return;
 
       const userMsg: ChatMessage = {
@@ -594,13 +694,150 @@ export default function wallet() {
       setMessages((prev) => [...prev, userMsg]);
       if (!textToSend) setInputText('');
 
-      const withCmds = (text: string) =>
-        text +
-        '\n\n─────────────────\n' +
-        '/retirar  •  /saldo  •  /historico\n/banco  •  /taxa  •  /horario  •  /ajuda';
-
       // Interpretação inteligente em linguagem natural e comandos
       const parsed = parseNaturalLanguage(content);
+      const previousAssistantMessage = messages
+        .slice()
+        .reverse()
+        .find((message) => message.sender === 'bot' && message.type === 'text')?.text || '';
+
+      if (parsed.intent === 'support') {
+        setIsTyping(true);
+        try {
+          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
+          const response = getWalletAssistantResponse(content, previousAssistantMessage);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-support-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: response,
+          }));
+        } catch (error) {
+          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-support-error-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'Sinto muito pela preocupação. Consulta o /historico e contacta o gerente regional Mando pelo canal oficial se a retirada excedeu o prazo. Nunca partilhes palavras-passe ou códigos.',
+          }));
+        }
+        return;
+      }
+
+      if (pendingBankDeletion) {
+        if (parsed.intent === 'cancel') {
+          setPendingBankDeletion(false);
+          botReply(() => ({
+            id: 'bot-bank-delete-cancel-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'A remoção da conta bancária foi cancelada.',
+          }));
+          return;
+        }
+        if (parsed.intent !== 'confirm') {
+          botReply(() => ({
+            id: 'bot-bank-delete-confirm-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'Confirme a remoção da conta bancária com “Confirmar” ou cancele para manter os dados.',
+          }));
+          return;
+        }
+
+        setPendingBankDeletion(false);
+        setIsTyping(true);
+        try {
+          const { data: accounts, error: accountsError } = await supabase.rpc('get_my_bank_accounts_mcpn');
+          if (accountsError) throw accountsError;
+          const bankAccount = accounts?.[0];
+          if (!bankAccount) {
+            setIsTyping(false);
+            botReply(() => ({
+              id: 'bot-bank-not-found-' + Date.now(),
+              sender: 'bot',
+              time: nowTime(),
+              type: 'text',
+              text: 'Não há uma conta bancária cadastrada para remover.',
+            }));
+            return;
+          }
+
+          const { data, error } = await supabase.rpc('remove_bank_account_mcpn', { p_id: bankAccount.id });
+          if (error) throw error;
+          const result = data && typeof data === 'object' && !Array.isArray(data)
+            ? data as Record<string, unknown>
+            : null;
+          if (result?.success !== true) {
+            throw new Error(typeof result?.message === 'string' ? result.message : 'Não foi possível remover a conta bancária.');
+          }
+
+          await fetchData();
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-bank-deleted-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'A conta bancária cadastrada foi removida com sucesso.',
+          }));
+        } catch (error) {
+          console.error('Erro ao remover conta bancária:', error);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-bank-delete-error-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: error instanceof Error ? error.message : 'Não foi possível remover a conta bancária. Tente novamente.',
+          }));
+        }
+        return;
+      }
+
+      if (parsed.intent === 'delete_bank') {
+        setIsTyping(true);
+        try {
+          const { data: accounts, error } = await supabase.rpc('get_my_bank_accounts_mcpn');
+          if (error) throw error;
+          setIsTyping(false);
+          if (!Array.isArray(accounts) || accounts.length === 0) {
+            botReply(() => ({
+              id: 'bot-bank-no-delete-' + Date.now(),
+              sender: 'bot',
+              time: nowTime(),
+              type: 'text',
+              text: 'Não há uma conta bancária cadastrada para remover.',
+            }));
+            return;
+          }
+          setPendingBankDeletion(true);
+          botReply(() => ({
+            id: 'bot-bank-delete-confirmation-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'confirm_delete_bank',
+            text: 'Tem certeza de que deseja remover a conta bancária cadastrada? Esta ação não pode ser desfeita.',
+          }));
+        } catch (error) {
+          console.error('Erro ao verificar conta bancária para remoção:', error);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-bank-delete-check-error-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'Não foi possível verificar a conta bancária. Tente novamente dentro de instantes.',
+          }));
+        }
+        return;
+      }
 
       // FLUXO DE CONFIRMAÇÃO PENDENTE DE SAQUE
       if (pendingAmount !== null) {
@@ -673,13 +910,29 @@ export default function wallet() {
 
       // 1. INTENT: SAUDAÇÃO CONVERSACIONAL (resposta humana e natural)
       if (parsed.intent === 'greeting') {
-        botReply(() => ({
-          id: 'bot-' + Date.now(),
-          sender: 'bot',
-          time: nowTime(),
-          type: 'text',
-          text: 'Olá! Como posso ajudar você hoje? Pode perguntar seu saldo, pedir um saque ou consultar seu histórico.',
-        }));
+        setIsTyping(true);
+        try {
+          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
+          const response = getWalletAssistantResponse(content, previousAssistantMessage);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: response,
+          }));
+        } catch (error) {
+          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'Olá! Sou Assistente Wallet. Como posso ajudar?',
+          }));
+        }
         return;
       }
 
@@ -716,6 +969,39 @@ export default function wallet() {
         return;
       }
 
+      // 5. INTENT: ADICIONAR CONTA BANCÁRIA
+      if (parsed.intent === 'add_bank') {
+        setIsTyping(true);
+        await new Promise((resolve) => window.setTimeout(resolve, 2500));
+        try {
+          const { data: accounts, error } = await supabase.rpc('get_my_bank_accounts_mcpn');
+          if (error) throw error;
+          setIsTyping(false);
+          if (Array.isArray(accounts) && accounts.length > 0) {
+            botReply(() => ({
+              id: 'bot-' + Date.now(),
+              sender: 'bot',
+              time: nowTime(),
+              type: 'text',
+              text: 'Já existe uma conta bancária cadastrada. Não é possível adicionar outra conta.',
+            }));
+            return;
+          }
+          setShowAddBankModal(true);
+        } catch (error) {
+          console.error('Erro ao verificar conta bancária cadastrada:', error);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'Não foi possível verificar os seus dados bancários agora. Tente novamente dentro de instantes.',
+          }));
+        }
+        return;
+      }
+
       // 5. INTENT: CONSULTA DE SALDO REAL EM TEMPO REAL (direto e sem extras)
       if (parsed.intent === 'balance') {
         setIsTyping(true);
@@ -749,21 +1035,44 @@ export default function wallet() {
 
       // 7. INTENT: DADOS BANCÁRIOS / CONTA (direto)
       if (parsed.intent === 'bank') {
-        if (!info.hasBank) {
+        setIsTyping(true);
+        try {
+          const { data: accounts, error } = await supabase.rpc('get_my_bank_accounts_mcpn');
+          if (error) throw error;
+          const account = Array.isArray(accounts) ? accounts[0] : null;
+          setIsTyping(false);
+
+          if (!account) {
+            botReply(() => ({
+              id: 'bot-' + Date.now(),
+              sender: 'bot',
+              time: nowTime(),
+              type: 'no_bank',
+              text: 'Você ainda não possui uma conta bancária cadastrada. Cadastre seus dados para poder retirar:',
+            }));
+          } else {
+            botReply(() => ({
+              id: 'bot-' + Date.now(),
+              sender: 'bot',
+              time: nowTime(),
+              type: 'bank_details',
+              payload: {
+                intro: 'A sua conta cadastrada é, pelo nome de',
+                holderName: account.owner_name,
+                bankName: account.bank_name,
+                iban: String(account.iban || '').replace(/^AO06/i, '').replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim(),
+              },
+            }));
+          }
+        } catch (error) {
+          console.error('Erro ao consultar dados bancários cadastrados:', error);
+          setIsTyping(false);
           botReply(() => ({
-            id: 'bot-' + Date.now(),
-            sender: 'bot',
-            time: nowTime(),
-            type: 'no_bank',
-            text: 'Você ainda não possui uma conta bancária cadastrada. Cadastre seus dados para poder retirar:',
-          }));
-        } else {
-          botReply(() => ({
-            id: 'bot-' + Date.now(),
+            id: 'bot-bank-query-error-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: `Seu banco cadastrado é ${info.bankName}, IBAN: ${info.iban}.`,
+            text: 'Não foi possível consultar os dados bancários agora. Tente novamente dentro de instantes.',
           }));
         }
         return;
@@ -772,25 +1081,84 @@ export default function wallet() {
       // 8. INTENT: HORÁRIOS DE ATENDIMENTO (direto)
       if (parsed.intent === 'schedule') {
         const sched = getWithdrawScheduleStatus();
-        botReply(() => ({
-          id: 'bot-' + Date.now(),
-          sender: 'bot',
-          time: nowTime(),
-          type: 'text',
-          text: `Horário de retiradas: Segunda a Sexta, das 09:00 às 18:00. ${sched.isOpen ? 'Aberto agora.' : sched.text}`,
-        }));
+        setIsTyping(true);
+        try {
+          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
+          const response = getWalletAssistantResponse(content, previousAssistantMessage);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: `${response} ${sched.isOpen ? 'Aberto agora.' : sched.text}`,
+          }));
+        } catch (error) {
+          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: sched.isOpen ? 'O horário de retiradas é de segunda a sexta, das 09:00 às 18:00. Aberto agora.' : sched.text,
+          }));
+        }
         return;
       }
 
       // 9. INTENT: TAXAS E REGRAS (direto)
       if (parsed.intent === 'fees') {
-        botReply(() => ({
-          id: 'bot-' + Date.now(),
-          sender: 'bot',
-          time: nowTime(),
-          type: 'text',
-          text: `Taxa operacional: ${FEE_PERCENT}%. Valor mínimo: ${formatCurrency(MIN_WITHDRAW, 'KZ')}. Valor máximo: ${formatCurrency(MAX_WITHDRAW, 'KZ')}. Prazo: até 24h úteis.`,
-        }));
+        setIsTyping(true);
+        try {
+          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
+          const response = getWalletAssistantResponse(content);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: `${response} O valor mínimo é ${formatCurrency(MIN_WITHDRAW, 'KZ')} e o máximo é ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
+          }));
+        } catch (error) {
+          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: `A taxa operacional é ${FEE_PERCENT}%. O valor mínimo é ${formatCurrency(MIN_WITHDRAW, 'KZ')} e o máximo é ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
+          }));
+        }
+        return;
+      }
+
+      if (parsed.intent === 'withdraw_info') {
+        setIsTyping(true);
+        try {
+          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
+          const response = getWalletAssistantResponse(content);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: response,
+          }));
+        } catch (error) {
+          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          setIsTyping(false);
+          botReply(() => ({
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'Para solicitar uma retirada, envie /retirar e siga as instruções da Wallet.',
+          }));
+        }
         return;
       }
 
@@ -931,123 +1299,40 @@ export default function wallet() {
         return;
       }
 
-      // 11. MOTOR CONVERSACIONAL DE RETIRADA (sys_t1000_retirada via RPC backend fallback)
+      // 11. Resposta conversacional local; o conteúdo do assistente não depende de RPC.
       setIsTyping(true);
       try {
-        const { data: rawRpc, error: rpcErr } = await (supabase.rpc as any)(
-          'classify_withdraw_message',
-          {
-            p_message: content,
-            p_last_intent: lastIntent,
-            p_last_response: lastBotResponse,
-          }
-        );
-
+        const { getWalletAssistantResponse } = await import('./walletAssistantCore');
+        const response = getWalletAssistantResponse(content);
         setIsTyping(false);
-
-        // O Supabase SDK pode retornar JSONB como objeto direto, ou aninhado numa chave
-        let intentData: any = null;
-        if (!rpcErr && rawRpc) {
-          if (Array.isArray(rawRpc) && rawRpc.length > 0) {
-            const first = rawRpc[0];
-            intentData = first.classify_withdraw_message ?? first;
-          } else if (typeof rawRpc === 'object') {
-            // Pode vir direto como {category, response, action} ou aninhado
-            intentData = (rawRpc as any).classify_withdraw_message ?? rawRpc;
-          }
-          if (!intentData?.response) intentData = null;
-        }
-
-        if (intentData) {
-          const { category, response, action } = intentData;
-          setLastIntent(category);
-          setLastBotResponse(response);
-
-          // Limpar qualquer asterisco ou cerquilha que possa vir do banco
-          const cleanResp = (response || '').replace(/[*#]/g, '').trim();
-
-          if (action === 'TRIGGER_AMOUNT_SELECTOR') {
-            if (!info.hasBank) {
-              botReply(() => ({
-                id: 'bot-' + Date.now(),
-                sender: 'bot',
-                time: nowTime(),
-                type: 'no_bank',
-                text: cleanResp || 'Cadastre sua conta bancária para solicitar o saque:',
-              }));
-              return;
-            }
-            if (!info.hasBots) {
-              botReply(() => ({
-                id: 'bot-' + Date.now(),
-                sender: 'bot',
-                time: nowTime(),
-                type: 'no_bots',
-                text: cleanResp || 'Para liberar o saque, ative um robô de rendimento:',
-              }));
-              return;
-            }
-            botReply(() => ({
-              id: 'bot-' + Date.now(),
-              sender: 'bot',
-              time: nowTime(),
-              type: 'amount_selector',
-              text: cleanResp || `Qual valor deseja retirar? (Mínimo: ${formatCurrency(MIN_WITHDRAW, 'KZ')}, taxa: ${FEE_PERCENT}%)`,
-            }));
-            return;
-          }
-
-          if (action === 'TRIGGER_HISTORY') {
-            setIsTyping(true);
-            const history = await fetchRecentHistory();
-            setIsTyping(false);
-            botReply(() => ({
-              id: 'bot-' + Date.now(),
-              sender: 'bot',
-              time: nowTime(),
-              type: 'text',
-              text: formatHistoryAsText(history),
-            }));
-            return;
-          }
-
-          if (action === 'TRIGGER_BANK_CONFIG') {
-            if (!info.hasBank) {
-              botReply(() => ({
-                id: 'bot-' + Date.now(),
-                sender: 'bot',
-                time: nowTime(),
-                type: 'no_bank',
-                text: cleanResp || 'Cadastre sua conta bancária:',
-              }));
-              return;
-            }
-          }
-
-          botReply(() => ({
-            id: 'bot-' + Date.now(),
-            sender: 'bot',
-            time: nowTime(),
-            type: 'text',
-            text: cleanResp,
-          }));
-          return;
-        }
+        botReply(() => ({
+          id: 'bot-' + Date.now(),
+          sender: 'bot',
+          time: nowTime(),
+          type: 'text',
+          text: response,
+        }));
       } catch (err) {
+        console.error('Erro ao carregar respostas locais da Wallet:', err);
         setIsTyping(false);
+        botReply(() => ({
+          id: 'bot-' + Date.now(),
+          sender: 'bot',
+          time: nowTime(),
+          type: 'text',
+          text: 'Não consegui preparar uma resposta agora. Tente novamente ou escolha uma das opções da Wallet.',
+        }));
       }
-
-      // Resposta padrão conversacional quando não identificou
-      botReply(() => ({
-        id: 'bot-' + Date.now(),
-        sender: 'bot',
-        time: nowTime(),
-        type: 'text',
-        text: 'Não entendi com clareza. Você pode pedir seu saldo, solicitar um saque (ex: sacar 500) ou enviar /historico.',
-      }));
     },
-    [inputText, info, pendingAmount, processWithdrawal, botReply, showToast, fetchRecentHistory, formatHistoryAsText, fetchData, lastIntent, lastBotResponse]
+    [inputText, info, messages, pendingAmount, pendingBankDeletion, processWithdrawal, botReply, showToast, fetchRecentHistory, formatHistoryAsText, fetchData]
   );
+
+  useEffect(() => {
+    if (searchParams.get('intent') !== 'add-bank' || hasProcessedEntryIntent.current) return;
+    hasProcessedEntryIntent.current = true;
+    setSearchParams({}, { replace: true });
+    void handleSendMessage('/adicionar_banco');
+  }, [searchParams, setSearchParams, handleSendMessage]);
 
   const handleConfirmButton = useCallback(() => {
     if (pendingAmount == null) return;
@@ -1063,6 +1348,41 @@ export default function wallet() {
     ]);
     processWithdrawal(pendingAmount);
   }, [pendingAmount, processWithdrawal]);
+
+  const handleBankSaved = useCallback(async (account: { holderName: string; bankName: string; iban: string }) => {
+    await new Promise((resolve) => window.setTimeout(resolve, 1000));
+    setShowAddBankModal(false);
+    setIsTyping(true);
+    await fetchData();
+    await new Promise((resolve) => window.setTimeout(resolve, 1500));
+    setIsTyping(false);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: 'bot-bank-saved-' + Date.now(),
+        sender: 'bot',
+        time: nowTime(),
+        type: 'bank_saved',
+        payload: {
+          intro: 'A sua conta bancária foi adicionada com sucesso, pelo nome de',
+          holderName: account.holderName,
+          bankName: account.bankName,
+          iban: account.iban.replace(/^AO06/i, '').replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim(),
+        },
+      },
+    ]);
+  }, [fetchData]);
+
+  const handleBankAlreadyExists = useCallback(() => {
+    setShowAddBankModal(false);
+    botReply(() => ({
+      id: 'bot-bank-exists-' + Date.now(),
+      sender: 'bot',
+      time: nowTime(),
+      type: 'text',
+      text: 'Já existe uma conta bancária cadastrada. Não é possível adicionar outra conta.',
+    }));
+  }, [botReply]);
 
   const handleCancelButton = useCallback(() => {
     setPendingAmount(null);
@@ -1147,7 +1467,7 @@ export default function wallet() {
         </button>
 
         {/* Cápsula central — Wallet */}
-        <div className="flex items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto">
+        <div className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
             <img src="/logo-tb.jpg" alt="Wallet" className="w-full h-full object-cover" />
             <span className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-white rounded-full flex items-center justify-center">
@@ -1163,11 +1483,9 @@ export default function wallet() {
             <h1 className="text-[15px] font-bold text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
               Wallet
             </h1>
-            <span
-              onClick={(e) => { e.stopPropagation(); handleSendMessage('/saldo'); }}
-              className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate"
-            >
-              {loading ? 'Carregando...' : `Saldo: ${formatCurrency(info.balance, 'KZ')}`}
+            <span className="mt-0.5 flex items-center gap-1 text-[12px] font-normal leading-[1.15] text-[#25ae60]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#25ae60]" />
+              Online
             </span>
           </div>
         </div>
@@ -1236,14 +1554,19 @@ export default function wallet() {
                 <div className="overflow-hidden rounded-xl bg-white dark:bg-[#17212b]">
                   {[
                     {
+                      command: '/adicionar_banco',
+                      title: 'Adicionar conta bancária',
+                      response: 'Após a verificação, abre-se o formulário para cadastrar o titular, o banco e o IBAN. Se já existir uma conta, a Wallet informa no chat.'
+                    },
+                    {
                       command: '/saldo',
                       title: 'Consultar saldo',
-                      response: 'Seu saldo é de [saldo atual da sua conta]. Para fazer um saque, envie /retirar ou digite o valor (ex: sacar 500).'
+                      response: 'Por favor, quero consultar o meu saldo disponível para retirada. A Wallet apresenta o saldo atualizado.'
                     },
                     {
                       command: '/retirar',
                       title: 'Iniciar retirada',
-                      response: 'A Wallet consulta os requisitos da conta e, se estiver tudo pronto, mostra o saldo disponível e pede que escolha ou escreva um valor. Horário, conta bancária, robô ativo e limites podem afetar o pedido.'
+                      response: 'Quero solicitar o levantamento para a minha conta bancária. A Wallet verifica os requisitos e orienta a escolha do valor.'
                     },
                     {
                       command: 'sacar 500',
@@ -1251,14 +1574,14 @@ export default function wallet() {
                       response: 'Se a retirada estiver disponível e cumprir os requisitos, verá um resumo com o valor, a taxa, o valor líquido e a conta bancária antes de confirmar.'
                     },
                     {
-                      command: '/banco',
+                      command: 'consultar banco',
                       title: 'Ver conta bancária',
-                      response: 'Se já houver uma conta cadastrada, a Wallet informa o banco e o IBAN. Caso contrário, orienta a cadastrar os dados bancários.'
+                      response: 'Consultar os meus dados bancários e o banco cadastrado.'
                     },
                     {
                       command: '/historico',
                       title: 'Consultar histórico',
-                      response: 'A Wallet apresenta os pedidos de retirada encontrados ou informa que ainda não há saques registados.'
+                      response: 'Por favor, dê-me o histórico de todas as retiradas; cada registo aparece numa descrição separada, com data, valor e estado.'
                     },
                     {
                       command: '/horario',
@@ -1268,14 +1591,18 @@ export default function wallet() {
                     {
                       command: '/taxa',
                       title: 'Ver taxas e limites',
-                      response: 'Taxa operacional: 10%. Valor mínimo: 100 KZ. Valor máximo: 100.000 KZ. Prazo: até 24h úteis.'
+                      response: 'Qual é a taxa cobrada em cada retirada? A taxa atual é de 10%.'
+                    },
+                    {
+                      command: '/deletar_conta',
+                      title: 'Deletar conta',
+                      response: 'A Wallet pede confirmação antes de remover a conta bancária cadastrada.'
                     }
                   ].map(({ command, title, response }) => (
                     <article key={command} className="px-4 py-3.5 border-b last:border-b-0 border-[#edf0f2] dark:border-white/10 text-[#222] dark:text-[#e6e6e6]">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <h4 className="text-[14px] font-medium">{title}</h4>
-                          <code className="inline-block mt-0.5 text-[14px] font-semibold text-[#2481cc]">{command}</code>
                         </div>
                         <button
                           type="button"
@@ -1380,22 +1707,27 @@ export default function wallet() {
                 {/* APRESENTAÇÃO / BOAS-VINDAS */}
                 {msg.type === 'welcome' && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
-                    <p className="mb-2">
-                      Olá! Que bom ver você por aqui! 😊 Sou o <strong>WithdrawBot</strong> 💸, seu assistente inteligente e oficial de retiradas.
-                    </p>
-                    <p className="text-[13px] text-gray-600 mb-2">
-                      💡 <em>Dica: você também pode digitar mensagens comuns como <strong>"qual meu saldo"</strong> ou <strong>"quero sacar 500"</strong>.</em>
-                    </p>
-                    <p className="text-[#707579] text-[13px] pt-1.5 border-t border-gray-100">
-                      {isWithdrawAllowed()
-                        ? '🟢 Retiradas abertas agora! Envie /retirar para começar 😊'
-                        : '🔴 Retiradas fechadas agora. Atendimento de Seg a Sex, das 09:00 às 18:00.'}
-                    </p>
+                    Olá, sou <strong className="font-semibold text-[#2481cc]">Assistente Wallet</strong>. Como estás?
                   </div>
                 )}
 
                 {/* TEXTO BOT PADRÃO COM FORMATAÇÃO */}
                 {msg.type === 'text' && msg.text && (
+                  <div className="text-[14px] text-black leading-relaxed font-normal">
+                    {renderBotText(msg.text)}
+                  </div>
+                )}
+
+                {(msg.type === 'bank_saved' || msg.type === 'bank_details') && msg.payload && (
+                  <div className="text-[14px] leading-relaxed text-black">
+                    {msg.payload.intro}{' '}
+                    <strong className="font-semibold text-[#2481cc]">{msg.payload.holderName}</strong>, entidade bancária{' '}
+                    <strong className="font-semibold text-[#2481cc]">{msg.payload.bankName}</strong>, número de referência{' '}
+                    <strong className="font-semibold text-[#2481cc]">{msg.payload.iban}</strong>.
+                  </div>
+                )}
+
+                {msg.type === 'confirm_delete_bank' && msg.text && (
                   <div className="text-[14px] text-black leading-relaxed font-normal">
                     {renderBotText(msg.text)}
                   </div>
@@ -1507,11 +1839,30 @@ export default function wallet() {
                 </div>
               )}
 
+              {msg.type === 'confirm_delete_bank' && pendingBankDeletion && (
+                <div className="w-full max-w-[80%] flex items-center gap-1 -mt-1.5 mb-2 pl-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('confirmar')}
+                    className="flex-1 rounded-lg bg-[#d94848] px-2 py-2 text-[13px] font-medium text-white active:bg-[#c53d3d]"
+                  >
+                    Deletar conta
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('cancelar')}
+                    className="flex-1 rounded-lg bg-[#6b7b8a] bg-opacity-70 px-2 py-2 text-[13px] font-medium text-white active:bg-opacity-90"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+
               {/* INLINE KEYBOARD: CADASTRAR BANCO */}
               {msg.type === 'no_bank' && (
                 <div className="w-full max-w-[80%] flex flex-col items-center justify-center gap-1 -mt-1.5 mb-2 pl-2">
                   <button
-                    onClick={() => navigate('/bank?redirect=/carteira')}
+                    onClick={() => handleSendMessage('/adicionar_banco')}
                     className="w-full bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-4 py-2 text-[14px] font-medium active:bg-opacity-90 transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
                   >
                     ➕ Cadastrar Conta Bancária
@@ -1552,7 +1903,7 @@ export default function wallet() {
                 className="w-1.5 h-1.5 rounded-full bg-[#707579] animate-bounce"
                 style={{ animationDelay: '300ms' }}
               />
-              <span className="text-[11.5px] text-[#707579] ml-1">WithdrawBot está digitando...</span>
+              <span className="text-[11.5px] text-[#707579] ml-1">Wallet está a escrever...</span>
             </div>
           </div>
         )}
@@ -1587,16 +1938,15 @@ export default function wallet() {
             </div>
             {quickReplies.map((qr) => (
               <button
-                key={qr.shortcut}
+                key={qr.command}
                 type="button"
                 onClick={() => {
                   setShowQuickHints(false);
-                  handleSendMessage(qr.shortcut);
+                  handleSendMessage(qr.command);
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-[#242f3d] rounded-lg transition-colors flex items-center justify-between text-xs cursor-pointer"
+                className="w-full text-left px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-[#242f3d] rounded-lg transition-colors text-[13px] text-gray-700 dark:text-gray-200 cursor-pointer"
               >
-                <span className="font-mono font-bold text-[#2481cc]">{qr.shortcut}</span>
-                <span className="text-gray-600 dark:text-gray-300 truncate max-w-[70%]">{qr.text}</span>
+                {qr.label}
               </button>
             ))}
           </div>
@@ -1620,6 +1970,16 @@ export default function wallet() {
               title="Comandos Rápidos"
             >
               <Zap className="w-5 h-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSendMessage('/limpar')}
+              className="p-1.5 rounded-full transition-all cursor-pointer shrink-0 mr-1 text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] active:bg-[#2481cc]/10"
+              title="Reiniciar conversa"
+              aria-label="Limpar e reiniciar conversa"
+            >
+              <RotateCcw className="w-5 h-5" />
             </button>
 
             {/* Campo de texto */}
@@ -1659,6 +2019,42 @@ export default function wallet() {
           </button>
         </div>
       </footer>
+
+      {showAddBankModal && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-3"
+          onClick={() => setShowAddBankModal(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wallet-add-bank-title"
+            className="flex h-[80dvh] max-h-[760px] w-[92vw] max-w-[520px] flex-col overflow-hidden rounded-[8px] bg-[#f0eff5] shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex h-14 shrink-0 items-center justify-between border-b border-black/5 px-4">
+              <h2 id="wallet-add-bank-title" className="text-[16px] font-semibold text-[#111827]">
+                Adicionar conta bancária
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAddBankModal(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[#667085] hover:bg-black/5"
+                aria-label="Fechar formulário bancário"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+            <div className="min-h-0 flex-1">
+              <AddBank
+                embedded
+                onSaved={handleBankSaved}
+                onAlreadyExists={handleBankAlreadyExists}
+              />
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
