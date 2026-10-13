@@ -32,14 +32,20 @@ serve(async (req) => {
       );
     }
 
-    // Validação estrita do número no backend quando country_code for fornecido
+    const rawPhoneDigits = String(phone).replace(/\D/g, "");
+    let cleanPhone = rawPhoneDigits;
+    let legacyEmail: string | null = null;
+
+    // Normalize numbers to one country-prefixed identity for both signup and login.
     if (country_code) {
       try {
         const callingCode = getCountryCallingCode(country_code);
-        const rawDigits = String(phone).replace(/\D/g, "");
+        const alreadyHasCallingCode =
+          rawPhoneDigits.startsWith(callingCode) &&
+          rawPhoneDigits.length > callingCode.length + 5;
         const fullE164 = phone.startsWith("+")
           ? phone
-          : `+${callingCode}${rawDigits}`;
+          : `+${alreadyHasCallingCode ? rawPhoneDigits : `${callingCode}${rawPhoneDigits}`}`;
         
         const parsed = parsePhoneNumberFromString(fullE164, country_code);
         if (!parsed || !parsed.isValid() || parsed.countryCallingCode !== callingCode) {
@@ -50,13 +56,16 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
+        cleanPhone = `${parsed.countryCallingCode}${parsed.nationalNumber}`;
+        if (action === "login" && rawPhoneDigits !== cleanPhone) {
+          legacyEmail = `${rawPhoneDigits}@user.com`;
+        }
       } catch (_err) {
         // Fallback gracioso se o código do país não for suportado
       }
     }
 
     // A "gambiarra" invisível no backend: transformamos o phone em email falso
-    const cleanPhone = String(phone).replace(/\D/g, "");
     const fakeEmail = `${cleanPhone}@user.com`;
 
     let result;
@@ -81,6 +90,14 @@ serve(async (req) => {
         email: fakeEmail,
         password,
       });
+
+      if (result.error && legacyEmail) {
+        const legacyResult = await supabase.auth.signInWithPassword({
+          email: legacyEmail,
+          password,
+        });
+        if (!legacyResult.error) result = legacyResult;
+      }
 
       // Se autenticado com sucesso e temos country_code, verificar se o país confere com o cadastrado
       if (result.data?.user && country_code) {

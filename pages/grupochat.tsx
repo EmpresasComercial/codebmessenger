@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -245,14 +245,24 @@ const formatSenderPhone = (phone?: string | null, countryCode?: string) => {
   const rawPhone = phone?.trim();
   if (!rawPhone || rawPhone === "Telefone Desconhecido") return "Telefone desconhecido";
 
-  const country = COUNTRIES.find((item) => item.code === countryCode);
+  const country = COUNTRIES.find((item) => item.code === countryCode?.toUpperCase());
+  const digits = rawPhone.replace(/\D/g, "");
+  const storedCountry = COUNTRIES.find((item) => {
+    const callingCode = item.dial_code.replace(/\D/g, "");
+    return digits.startsWith(callingCode) && digits.length > callingCode.length + 5;
+  });
+  const hasStoredCallingCode = Boolean(storedCountry && (
+    !country || storedCountry.code === country.code
+  ));
   const internationalPhone = rawPhone.startsWith("+")
     ? rawPhone
     : /^00/.test(rawPhone)
       ? `+${rawPhone.slice(2).replace(/\D/g, "")}`
-      : country
-        ? `${country.dial_code}${rawPhone.replace(/\D/g, "")}`
-        : undefined;
+      : hasStoredCallingCode
+        ? `+${digits}`
+        : country
+          ? `${country.dial_code}${digits}`
+          : undefined;
   const parsed = internationalPhone
     ? parsePhoneNumberFromString(internationalPhone)
     : undefined;
@@ -713,7 +723,22 @@ export default function grupochat() {
   const { language } = useLanguage();
   const { statusText } = useNetworkStatus();
 
-  const [publicMessages, setPublicMessages] = useState<any[]>([]);
+  const [publicMessages, setPublicMessages] = useState<any[]>(() => {
+    try {
+      const cached = localStorage.getItem('community_chat_cache');
+      if (!cached) return [];
+      const parsed = JSON.parse(cached);
+      if (!Array.isArray(parsed)) return [];
+      if (!navigator.onLine) return parsed;
+      return parsed.filter((message: any) =>
+        typeof message.id === 'number' &&
+        message.id > 1000000000000 &&
+        (message.status === 'sending' || message.status === 'failed')
+      );
+    } catch {
+      return [];
+    }
+  });
   const [, setIsLoading] = useState(true);
   const [publicInput, setPublicInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -742,6 +767,41 @@ export default function grupochat() {
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressTriggeredRef = useRef(false);
   const pressStartPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const communityMembers = useMemo(() => {
+    const members = new Map<string, { id: string; name: string; phone: string }>();
+
+    publicMessages.forEach((message) => {
+      const memberId = message.uid_emissor;
+      if (!memberId) return;
+
+      const profile = message.perfil || phoneCache[memberId];
+      const isCurrentUser = memberId === user?.id;
+      const metadataName = user?.user_metadata?.nome_exibicao
+        || user?.user_metadata?.full_name
+        || user?.user_metadata?.name;
+      const rawPhone = isCurrentUser
+        ? (profile?.telefone && profile.telefone !== 'Eu'
+          ? profile.telefone
+          : user?.phone || user?.user_metadata?.telefone || user?.user_metadata?.phone)
+        : profile?.telefone;
+      const formattedPhone = formatSenderPhone(rawPhone, profile?.countryCode);
+      const savedName = profile?.nome_exibicao?.trim();
+      const name = isCurrentUser
+        ? (typeof metadataName === 'string' && metadataName.trim() ? metadataName.trim() : 'Eu')
+        : savedName && savedName !== 'Membro'
+          ? savedName
+          : formattedPhone;
+
+      members.set(memberId, {
+        id: memberId,
+        name,
+        phone: formattedPhone,
+      });
+    });
+
+    return Array.from(members.values());
+  }, [publicMessages, user?.id, user?.phone, user?.user_metadata]);
 
   const startLongPress = useCallback((m: any, isMe: boolean, clientX: number, clientY: number) => {
     isLongPressTriggeredRef.current = false;
@@ -963,7 +1023,7 @@ export default function grupochat() {
         // 1. Atualizar mensagens IMEDIATAMENTE na tela sem esperar perfis
         const dataWithPhones = data.map((m: any) => ({
           ...m,
-          perfil: { 
+          perfil: {
             ...phoneCache[m.uid_emissor],
             telefone: phoneCache[m.uid_emissor]?.telefone || "Telefone Desconhecido",
             nome_exibicao: phoneCache[m.uid_emissor]?.nome_exibicao || "Membro",
@@ -974,22 +1034,25 @@ export default function grupochat() {
 
         const sorted = dataWithPhones.reverse();
         setPublicMessages(prev => {
-          const withoutTemp = prev.filter(m => {
-            if (typeof m.id === 'number' && m.id > 1000000000000) {
-              return !sorted.some((s: any) => s.uid_emissor === m.uid_emissor && s.mensagem === m.mensagem);
-            }
-            return true;
-          });
-
-          const msgMap = new Map();
-          withoutTemp.forEach(m => msgMap.set(m.id, m));
-          sorted.forEach((m: any) => msgMap.set(m.id, m));
-          const result = Array.from(msgMap.values()).sort((a, b) =>
+          const pendingLocal = prev.filter(m =>
+            typeof m.id === 'number' &&
+            m.id > 1000000000000 &&
+            (m.status === 'sending' || m.status === 'failed') &&
+            !sorted.some((serverMessage: any) =>
+              serverMessage.uid_emissor === m.uid_emissor &&
+              serverMessage.mensagem === m.mensagem
+            )
+          );
+          const result = [...sorted, ...pendingLocal].sort((a, b) =>
             new Date(a.data_registrada).getTime() - new Date(b.data_registrada).getTime()
           );
 
           try {
-            localStorage.setItem('community_chat_cache', JSON.stringify(result.slice(-50)));
+            if (result.length > 0) {
+              localStorage.setItem('community_chat_cache', JSON.stringify(result.slice(-50)));
+            } else {
+              localStorage.removeItem('community_chat_cache');
+            }
           } catch {}
 
           return result;
@@ -1042,27 +1105,65 @@ export default function grupochat() {
       console.error("Não foi possível carregar mensagens:", err);
     } finally {
       isFetchingRef.current = false;
-      if (isInitial) setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Carregar cache local INSTANTANEAMENTE (0ms)
-    try {
-      const cached = localStorage.getItem('community_chat_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPublicMessages(parsed);
-          setIsLoading(false);
-          scrollToBottom("auto");
+    if (navigator.onLine) {
+      setPublicMessages(prev => {
+        const pendingLocal = prev.filter(m =>
+          typeof m.id === 'number' &&
+          m.id > 1000000000000 &&
+          (m.status === 'sending' || m.status === 'failed')
+        );
+        try {
+          if (pendingLocal.length > 0) {
+            localStorage.setItem('community_chat_cache', JSON.stringify(pendingLocal));
+          } else {
+            localStorage.removeItem('community_chat_cache');
+          }
+        } catch {}
+        return pendingLocal;
+      });
+    }
+
+    if (!navigator.onLine) {
+      try {
+        const cached = localStorage.getItem('community_chat_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setPublicMessages(parsed);
+            setIsLoading(false);
+            scrollToBottom("auto");
+          }
         }
+      } catch (error) {
+        console.error('Não foi possível carregar o cache offline do grupo:', error);
       }
-    } catch {}
+    }
 
     fetchMessages(true);
 
     const handleSync = () => {
+      if (!navigator.onLine) return;
+      setPublicMessages(prev => {
+        const pendingLocal = prev.filter(m =>
+          typeof m.id === 'number' &&
+          m.id > 1000000000000 &&
+          (m.status === 'sending' || m.status === 'failed')
+        );
+        try {
+          if (pendingLocal.length > 0) {
+            localStorage.setItem('community_chat_cache', JSON.stringify(pendingLocal));
+          } else {
+            localStorage.removeItem('community_chat_cache');
+          }
+        } catch {}
+        return pendingLocal;
+      });
+      setIsLoading(true);
       fetchMessages(false);
     };
     window.addEventListener('online', handleSync);
@@ -1170,7 +1271,17 @@ export default function grupochat() {
     const channel = supabase.channel("tg_community_chat_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_gruop" }, (payload) => {
         if (payload.eventType === "DELETE") {
-          setPublicMessages(prev => prev.filter(m => m.id !== payload.old.id));
+          setPublicMessages(prev => {
+            const updated = prev.filter(m => m.id !== payload.old.id);
+            try {
+              if (updated.length > 0) {
+                localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
+              } else {
+                localStorage.removeItem('community_chat_cache');
+              }
+            } catch {}
+            return updated;
+          });
           return;
         }
         if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
@@ -1200,7 +1311,7 @@ export default function grupochat() {
             }
             const dataWithPhone = { 
               ...data, 
-              perfil: { 
+              perfil: {
                 telefone: senderProfile?.telefone || "Telefone Desconhecido",
                 nome_exibicao: senderProfile?.nome_exibicao || "Membro",
                 countryCode: senderProfile?.countryCode
@@ -1449,20 +1560,31 @@ export default function grupochat() {
         throw error;
       }
       if (insertedMsg) {
-        setPublicMessages(prev => prev.map(m => m.id === tempId ? {
-          ...insertedMsg,
-          perfil: { 
-            telefone: phoneCache[user.id]?.telefone || "Eu",
-            nome_exibicao: phoneCache[user.id]?.nome_exibicao || "Eu"
-          },
-          status: 'sent' as const
-        } : m));
+        setPublicMessages(prev => {
+          const updated = prev.map(m => m.id === tempId ? {
+            ...insertedMsg,
+              telefone: phoneCache[user.id]?.telefone || "Eu",
+              nome_exibicao: phoneCache[user.id]?.nome_exibicao || "Eu"
+            },
+            status: 'sent' as const
+          } : m);
+          try {
+            localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
+          } catch {}
+          return updated;
+        });
       }
       console.log('[CommunityChat] Mensagem inserida com sucesso');
       scrollToBottom();
     } catch (err: any) { 
       console.error("Ops! mensagem nÃ£o enviada", err);
-      setPublicMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' as const } : m));
+      setPublicMessages(prev => {
+        const updated = prev.map(m => m.id === tempId ? { ...m, status: 'failed' as const } : m);
+        try {
+          localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
+        } catch {}
+        return updated;
+      });
       showToast('Mensagem não enviada', 'error'); 
     } finally { 
       setIsSending(false); 
@@ -2086,22 +2208,26 @@ export default function grupochat() {
               <div className="min-h-[200px]">
                 {activeGroupTab === 'members' && (
                   <div className="divide-y divide-gray-100">
-                    {[
-                      { name: 'Pavel Durov', role: 'Founder', avatar: '/pavel_durov.jpg' },
-                      { name: 'Telegram Business', role: 'Administrator', avatar: '/logo-tb.jpg' },
-                    ].map((member) => (
-                      <div key={member.name} className="flex items-center gap-3 px-4 py-3 bg-white">
-                        <div className="w-[42px] h-[42px] rounded-full overflow-hidden shrink-0 bg-gray-200">
-                          <img src={member.avatar} alt={member.name} className="w-full h-full object-cover"
-                            onError={(e: any) => { e.target.src = '/logo-tb.jpg'; }}
-                          />
+                    {communityMembers.length > 0 ? communityMembers.map((member) => (
+                      <div key={member.id} className="flex items-center gap-3 px-4 py-3 bg-white">
+                        <div
+                          className="w-[42px] h-[42px] rounded-full shrink-0 flex items-center justify-center text-white text-[13px] font-semibold"
+                          style={{ backgroundColor: getUserColor(member.id) }}
+                        >
+                          {member.name.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-[15px] font-medium text-[#111] truncate">{member.name}</span>
-                          <span className="text-[12px]" style={{ color: '#8e8e93' }}>{member.role}</span>
+                          {member.phone !== member.name && member.phone !== 'Telefone desconhecido' && (
+                            <span className="text-[12px] truncate" style={{ color: '#8e8e93' }}>{member.phone}</span>
+                          )}
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <p className="px-4 py-6 text-center text-[13px]" style={{ color: '#8e8e93' }}>
+                        Ainda não há membros com mensagens no grupo
+                      </p>
+                    )}
                   </div>
                 )}
 

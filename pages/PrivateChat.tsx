@@ -27,6 +27,7 @@ import {
 import { useToast } from '../components/Toast';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import ChatsList from './ChatsList';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
@@ -77,13 +78,26 @@ export default function PrivateChat() {
     if (localKey) {
       try {
         const cached = localStorage.getItem(localKey);
-        if (cached) return JSON.parse(cached);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (typeof navigator !== 'undefined' && navigator.onLine) {
+            return Array.isArray(parsed)
+              ? parsed.filter((message: Message) =>
+                typeof message.id === 'string' &&
+                message.id.startsWith('local_') &&
+                (message.status === 'sending' || message.status === 'failed')
+              )
+              : [];
+          }
+          return parsed;
+        }
       } catch {}
     }
     return [];
   });
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(() => {
+    if (typeof navigator !== 'undefined' && navigator.onLine) return true;
     if (localKey) {
       try {
         const cached = localStorage.getItem(localKey);
@@ -177,46 +191,63 @@ export default function PrivateChat() {
         .order('created_at', { ascending: true })
         .limit(150);
 
-      if (!error && data) {
+      if (error) throw error;
+
+      const serverMessages = data || [];
+      setMessages(prev => {
+        const pendingLocal = prev.filter(m =>
+          typeof m.id === 'string' &&
+          m.id.startsWith('local_') &&
+          (m.status === 'sending' || m.status === 'failed') &&
+          !serverMessages.some((serverMessage: any) =>
+            serverMessage.remetente_id === m.remetente_id &&
+            serverMessage.mensagem === m.mensagem
+          )
+        );
+        const refreshed = [...serverMessages, ...pendingLocal].sort(
+          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+
         if (localKey) {
           try {
-            localStorage.setItem(localKey, JSON.stringify(data));
+            if (refreshed.length > 0) {
+              localStorage.setItem(localKey, JSON.stringify(refreshed));
+            } else {
+              localStorage.removeItem(localKey);
+            }
           } catch {}
         }
-        setMessages(prev => {
-          const unresolvedLocal = prev.filter(m =>
-            typeof m.id === 'string' &&
-            m.id.startsWith('local_') &&
-            (m.status === 'sending' || m.status === 'failed')
-          );
-          const withoutTemp = prev.filter(m => {
-            if (typeof m.id === 'string' && m.id.startsWith('local_')) {
-              if (m.status === 'sending' || m.status === 'failed') return true;
-              return !data.some((d: any) => d.remetente_id === m.remetente_id && d.mensagem === m.mensagem);
-            }
-            return true;
-          });
-          const confirmedData = data.filter((d: any) =>
-            !unresolvedLocal.some(m => m.remetente_id === d.remetente_id && m.mensagem === d.mensagem)
-          );
-          const msgMap = new Map<string, any>();
-          withoutTemp.forEach(m => msgMap.set(String(m.id), m));
-          confirmedData.forEach((m: any) => msgMap.set(String(m.id), m));
-          return Array.from(msgMap.values()).sort(
-            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          );
-        });
-        if (isInitial) scrollToBottom('auto');
-      }
-    } catch {
-      // silent
+
+        return refreshed;
+      });
+      if (isInitial) scrollToBottom('auto');
+    } catch (error) {
+      console.error('Não foi possível sincronizar as mensagens privadas:', error);
     } finally {
       isFetchingRef.current = false;
-      if (isInitial) setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    if (navigator.onLine && localKey && isUUID(contactId || '')) {
+      setMessages(prev => {
+        const pendingLocal = prev.filter(m =>
+          typeof m.id === 'string' &&
+          m.id.startsWith('local_') &&
+          (m.status === 'sending' || m.status === 'failed')
+        );
+        try {
+          if (pendingLocal.length > 0) {
+            localStorage.setItem(localKey, JSON.stringify(pendingLocal));
+          } else {
+            localStorage.removeItem(localKey);
+          }
+        } catch {}
+        return pendingLocal;
+      });
+    }
+
     fetchMessages(true);
     
     // Configura o Realtime para atualizar as mensagens sem polling constante (DDoS no banco)
@@ -230,6 +261,25 @@ export default function PrivateChat() {
       .subscribe();
 
     const handleSync = () => {
+      if (!navigator.onLine) return;
+      setIsLoading(true);
+      setMessages(prev => {
+        const pendingLocal = prev.filter(m =>
+          typeof m.id === 'string' &&
+          m.id.startsWith('local_') &&
+          (m.status === 'sending' || m.status === 'failed')
+        );
+        if (localKey) {
+          try {
+            if (pendingLocal.length > 0) {
+              localStorage.setItem(localKey, JSON.stringify(pendingLocal));
+            } else {
+              localStorage.removeItem(localKey);
+            }
+          } catch {}
+        }
+        return pendingLocal;
+      });
       fetchMessages(false);
     };
     window.addEventListener('online', handleSync);
@@ -504,11 +554,27 @@ export default function PrivateChat() {
       if (!inserted) {
         throw new Error('A persistência não confirmou a mensagem.');
       }
-      setMessages(prev => prev.map(m => m.id === tempId ? { ...inserted, status: 'sent' } : m));
+      setMessages(prev => {
+        const updated = prev.map(m => m.id === tempId ? { ...inserted, status: 'sent' } : m);
+        if (localKey) {
+          try {
+            localStorage.setItem(localKey, JSON.stringify(updated));
+          } catch {}
+        }
+        return updated;
+      });
       console.log('[PrivateChat] Mensagem inserida com sucesso');
     } catch (err: unknown) {
       console.error('[PrivateChat] Falha ao persistir mensagem:', err);
-      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
+      setMessages(prev => {
+        const updated = prev.map(m => m.id === tempId ? { ...m, status: 'failed' as const } : m);
+        if (localKey) {
+          try {
+            localStorage.setItem(localKey, JSON.stringify(updated));
+          } catch {}
+        }
+        return updated;
+      });
       showToast('Mensagem não enviada', 'error');
     }
   };
@@ -529,12 +595,17 @@ export default function PrivateChat() {
   };
 
   const formatPhoneClean = (val: string) => {
-    if (!val) return 'Contacto';
-    const clean = val.replace(/^\+?244\s*/, '').trim();
-    if (/^\d{9}$/.test(clean)) {
-      return `+244 ${clean.slice(0, 3)} ${clean.slice(3, 6)} ${clean.slice(6)}`;
-    }
-    return val;
+    const rawPhone = val?.trim();
+    if (!rawPhone) return 'Contacto';
+
+    const digits = rawPhone.replace(/\D/g, '');
+    const internationalPhone = rawPhone.startsWith('+')
+      ? rawPhone
+      : /^00/.test(rawPhone)
+        ? `+${rawPhone.slice(2).replace(/\D/g, '')}`
+        : `+${digits}`;
+    const parsed = parsePhoneNumberFromString(internationalPhone);
+    return parsed ? parsed.formatInternational() : rawPhone;
   };
 
   const formatProfileDate = (value: string | null | undefined) => {

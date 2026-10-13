@@ -36,6 +36,7 @@ import {
 import { useToast } from '../components/Toast';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { COUNTRIES, detectCountryFromPhone } from '../lib/countries';
+import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js/max';
 
 const hasImageAttachment = (message: any) => {
   let details = message?.detalhes;
@@ -91,8 +92,61 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
   const CACHE_KEY_CONTACTS = user ? `tg_cache_contacts_${user.id}` : 'tg_cache_contacts';
   const CACHE_KEY_COMM_LAST = 'tg_cache_community_last_msg';
+  const clearOfflineMessageCaches = () => {
+    if (!user || typeof navigator === 'undefined' || !navigator.onLine) return;
+
+    const privateCachePrefix = `private_chat_${user.id}_`;
+    const privateCacheKeys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+      .filter((key): key is string => Boolean(key?.startsWith(privateCachePrefix)));
+
+    privateCacheKeys.forEach((key) => {
+      try {
+        const cached = localStorage.getItem(key);
+        const messages = cached ? JSON.parse(cached) : [];
+        const pending = Array.isArray(messages)
+          ? messages.filter((message: any) =>
+            typeof message.id === 'string' &&
+            message.id.startsWith('local_') &&
+            (message.status === 'sending' || message.status === 'failed')
+          )
+          : [];
+
+        if (pending.length > 0) {
+          localStorage.setItem(key, JSON.stringify(pending));
+        } else {
+          localStorage.removeItem(key);
+        }
+      } catch (error) {
+        console.error(`Não foi possível limpar o cache offline da conversa ${key}:`, error);
+      }
+    });
+
+    try {
+      const cachedGroup = localStorage.getItem('community_chat_cache');
+      const groupMessages = cachedGroup ? JSON.parse(cachedGroup) : [];
+      const pendingGroupMessages = Array.isArray(groupMessages)
+        ? groupMessages.filter((message: any) =>
+          typeof message.id === 'number' &&
+          message.id > 1000000000000 &&
+          (message.status === 'sending' || message.status === 'failed')
+        )
+        : [];
+
+      if (pendingGroupMessages.length > 0) {
+        localStorage.setItem('community_chat_cache', JSON.stringify(pendingGroupMessages));
+      } else {
+        localStorage.removeItem('community_chat_cache');
+      }
+    } catch (error) {
+      console.error('Não foi possível limpar o cache offline do grupo:', error);
+    }
+
+    localStorage.removeItem(CACHE_KEY_CONTACTS);
+    localStorage.removeItem(CACHE_KEY_COMM_LAST);
+  };
 
   const [contacts, setContacts] = useState<any[]>(() => {
+    if (typeof navigator !== 'undefined' && navigator.onLine) return [];
     try {
       const cached = localStorage.getItem(user ? `tg_cache_contacts_${user.id}` : 'tg_cache_contacts');
       return cached ? JSON.parse(cached) : [];
@@ -101,6 +155,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     }
   });
   const [isLoading, setIsLoading] = useState(() => {
+    if (typeof navigator !== 'undefined' && navigator.onLine) return true;
     try {
       const cached = localStorage.getItem(user ? `tg_cache_contacts_${user.id}` : 'tg_cache_contacts');
       return !(cached && JSON.parse(cached).length > 0);
@@ -124,6 +179,12 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     || user?.user_metadata?.photo_url
     || user?.user_metadata?.picture
     || "";
+  const getProfileCountryCode = (metadata: unknown): string | undefined => {
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return undefined;
+    const values = metadata as Record<string, unknown>;
+    const countryCode = values.country_code ?? values.countryCode;
+    return typeof countryCode === 'string' ? countryCode.toUpperCase() : undefined;
+  };
   const formatDrawerPhone = (phone: string) => {
     const trimmedPhone = phone.trim();
     const detected = detectCountryFromPhone(trimmedPhone);
@@ -172,16 +233,25 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     isMe: boolean;
     timestamp: number;
   }>(() => {
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      return {
+        text: '',
+        sender: '',
+        time: '',
+        isMe: false,
+        timestamp: 0,
+      };
+    }
     try {
       const cached = localStorage.getItem(CACHE_KEY_COMM_LAST);
       if (cached) return JSON.parse(cached);
     } catch {}
     return {
-      text: "Bem-vindo à comunidade oficial de negócios e automações!",
-      sender: "Equipe Telegram",
-      time: "Hoje",
+      text: '',
+      sender: '',
+      time: '',
       isMe: false,
-      timestamp: Date.now() - 1000 * 60 * 15
+      timestamp: 0
     };
   });
   
@@ -192,13 +262,34 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
   const PAVEL_DUROV_ID = 'pavel-durov-ceo-00000000000000001';
 
-  const formatSenderPhone = (p: string) => {
-    if (!p) return 'Contacto';
-    const clean = p.replace(/^\+?244\s*/, '').trim();
-    if (/^\d{9}$/.test(clean)) {
-      return `+244 ${clean.slice(0, 3)} ${clean.slice(3, 6)} ${clean.slice(6)}`;
-    }
-    return p;
+  const formatSenderPhone = (phone?: string | null, countryCode?: string) => {
+    const rawPhone = phone?.trim();
+    if (!rawPhone) return 'Contacto';
+
+    const country = COUNTRIES.find((item) => item.code === countryCode?.toUpperCase());
+    const digits = rawPhone.replace(/\D/g, '');
+    const parsedDigitsAsInternational = digits ? parsePhoneNumberFromString(`+${digits}`) : undefined;
+    const matchingCallingCode = COUNTRIES.some((item) => {
+      const callingCode = item.dial_code.replace(/\D/g, '');
+      if (!digits.startsWith(callingCode) || digits.length <= callingCode.length + 5) return false;
+
+      const matchesSelectedCountry = country?.dial_code.replace(/\D/g, '') === callingCode;
+      return !country || matchesSelectedCountry || parsedDigitsAsInternational?.isValid() === true;
+    });
+    const internationalPhone = rawPhone.startsWith('+')
+      ? rawPhone
+      : /^00/.test(rawPhone)
+        ? `+${rawPhone.slice(2).replace(/\D/g, '')}`
+        : matchingCallingCode
+          ? `+${digits}`
+          : undefined;
+    const parsed = internationalPhone
+      ? parsePhoneNumberFromString(internationalPhone)
+      : country
+        ? parsePhoneNumberFromString(rawPhone, country.code as CountryCode)
+        : undefined;
+
+    return parsed ? parsed.formatInternational() : rawPhone;
   };
 
   const previewText = (text: string, max = 40) => {
@@ -240,12 +331,13 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   useEffect(() => {
     const fetchCommunityLastMessage = async () => {
       try {
-        const { data: latestMsg } = await supabase
+        const { data: latestMsg, error } = await supabase
           .from('chat_gruop')
           .select('mensagem, detalhes, data_registrada, uid_emissor')
           .order('data_registrada', { ascending: false })
           .limit(1)
           .maybeSingle();
+        if (error) throw error;
 
         if (latestMsg) {
           let senderLabel = "Membro";
@@ -254,13 +346,13 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           } else {
             const { data: prof } = await supabase
               .from('sys_t500')
-              .select('nome_exibicao, telefone')
+              .select('nome_exibicao, telefone, metadados')
               .eq('id', latestMsg.uid_emissor)
               .maybeSingle();
             if (prof?.nome_exibicao) {
               senderLabel = prof.nome_exibicao;
             } else if (prof?.telefone) {
-              senderLabel = formatSenderPhone(prof.telefone);
+              senderLabel = formatSenderPhone(prof.telefone, getProfileCountryCode(prof.metadados));
             }
           }
 
@@ -278,12 +370,25 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           try {
             localStorage.setItem(CACHE_KEY_COMM_LAST, JSON.stringify(newMsg));
           } catch {}
+        } else {
+          const emptyState = {
+            text: '',
+            sender: '',
+            time: '',
+            isMe: false,
+            timestamp: 0,
+          };
+          setCommunityLastMessage(emptyState);
+          localStorage.removeItem(CACHE_KEY_COMM_LAST);
         }
       } catch (err) {
         console.error('Erro ao carregar última mensagem da comunidade:', err);
       }
     };
 
+    if (navigator.onLine) {
+      clearOfflineMessageCaches();
+    }
     fetchCommunityLastMessage();
 
     const notifyCommunityMessage = async (message: any) => {
@@ -308,7 +413,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       try {
         const { data: profile, error } = await supabase
           .from('sys_t500')
-          .select('nome_exibicao, telefone')
+          .select('nome_exibicao, telefone, metadados')
           .eq('id', message.uid_emissor)
           .maybeSingle();
 
@@ -324,7 +429,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         }
 
         const senderName = profile?.nome_exibicao
-          || (profile?.telefone ? formatSenderPhone(profile.telefone) : 'Membro');
+          || (profile?.telefone ? formatSenderPhone(profile.telefone, getProfileCountryCode(profile.metadados)) : 'Membro');
         const messageText = typeof message.mensagem === 'string' ? message.mensagem.trim() : '';
         const body = messageText || (details.imagem_url || details.photo_url ? 'Enviou uma foto' : 'Enviou uma mensagem');
         const registration = await navigator.serviceWorker.ready;
@@ -352,6 +457,15 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       .subscribe();
 
     const handleSync = () => {
+      if (!navigator.onLine) return;
+      localStorage.removeItem(CACHE_KEY_COMM_LAST);
+      setCommunityLastMessage({
+        text: '',
+        sender: '',
+        time: '',
+        isMe: false,
+        timestamp: 0,
+      });
       fetchCommunityLastMessage();
     };
     window.addEventListener('online', handleSync);
@@ -378,6 +492,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             uniqueContacts.set(sub.membro_id, {
               id: sub.membro_id,
               telefone: sub.telefone,
+              countryCode: getProfileCountryCode(sub.metadados) || getProfileCountryCode(sub),
               nome_exibicao: sub.nome_exibicao,
               nivel: sub.nivel,
               patrocinador_id: sub.patrocinador_id,
@@ -401,7 +516,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             if (item.patrocinador_id && !uniqueContacts.has(item.patrocinador_id)) {
               const { data: pData } = await supabase
                 .from('sys_t500')
-                .select('telefone, nome_exibicao')
+                .select('telefone, nome_exibicao, metadados')
                 .eq('id', item.patrocinador_id)
                 .maybeSingle();
 
@@ -409,6 +524,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 uniqueContacts.set(item.patrocinador_id, {
                   id: item.patrocinador_id,
                   telefone: pData.telefone,
+                  countryCode: getProfileCountryCode(pData.metadados),
                   nome_exibicao: pData.nome_exibicao,
                   isSponsor: true
                 });
@@ -439,7 +555,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             if (missingIds.length > 0) {
               const { data: missingUsers } = await supabase
                 .from('sys_t500')
-                .select('id, telefone, nome_exibicao')
+                .select('id, telefone, nome_exibicao, metadados')
                 .in('id', missingIds);
 
               if (missingUsers) {
@@ -447,6 +563,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   uniqueContacts.set(u.id, {
                     id: u.id,
                     telefone: u.telefone,
+                    countryCode: getProfileCountryCode(u.metadados),
                     nome_exibicao: u.nome_exibicao,
                     isSubordinate: false
                   });
@@ -473,6 +590,28 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           }
         } catch {}
 
+        const contactsMissingCountry = Array.from(uniqueContacts.values())
+          .filter((contact: any) => !contact.countryCode)
+          .map((contact: any) => contact.id);
+        if (contactsMissingCountry.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .from('sys_t500')
+            .select('id, metadados')
+            .in('id', contactsMissingCountry);
+
+          if (profilesError) {
+            console.error('Erro ao carregar o país dos contactos:', profilesError);
+          } else {
+            profiles?.forEach((profile) => {
+              const contact = uniqueContacts.get(profile.id);
+              const countryCode = getProfileCountryCode(profile.metadados);
+              if (contact && countryCode) {
+                uniqueContacts.set(profile.id, { ...contact, countryCode });
+              }
+            });
+          }
+        }
+
         const sorted = Array.from(uniqueContacts.values()).sort((a: any, b: any) => {
           const timeA = a.lastMessageTimestamp ? Number(a.lastMessageTimestamp) : 0;
           const timeB = b.lastMessageTimestamp ? Number(b.lastMessageTimestamp) : 0;
@@ -491,6 +630,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       }
     };
 
+    if (navigator.onLine) {
+      localStorage.removeItem(CACHE_KEY_CONTACTS);
+    }
     fetchContacts();
 
     const contactChannel = supabase.channel('chatslist_contacts_sync')
@@ -506,6 +648,10 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       .subscribe();
 
     const handleSync = () => {
+      if (!navigator.onLine) return;
+      clearOfflineMessageCaches();
+      setContacts([]);
+      setIsLoading(true);
       fetchContacts();
     };
     window.addEventListener('online', handleSync);
@@ -594,7 +740,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
     return list.filter(c => {
       const rawTel = (c.telefone || '').toLowerCase();
-      const formattedTel = formatSenderPhone(c.telefone).toLowerCase();
+      const formattedTel = formatSenderPhone(c.telefone, c.countryCode).toLowerCase();
       const name = (c.nome_exibicao || '').toLowerCase();
       const digitsOnly = rawTel.replace(/\D/g, '');
 
@@ -628,7 +774,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         name: 'Telegram Empresa',
         isVerified: true,
         lastMessage: communityLastMessage.text,
-        senderPrefix: `${communityLastMessage.sender}: `,
+        senderPrefix: communityLastMessage.sender ? `${communityLastMessage.sender}: ` : null,
         time: communityLastMessage.time,
         timestamp: communityLastMessage.timestamp,
         isMe: communityLastMessage.isMe,
@@ -773,7 +919,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           id: `contact-${c.id}`,
           contactId: c.id,
           folder: 'all' as ChatFolder,
-          name: c.nome_exibicao || formatSenderPhone(c.telefone),
+          name: c.nome_exibicao || formatSenderPhone(c.telefone, c.countryCode),
           isVerified: false,
           tag: null,
           isSubordinate: isSub,
@@ -1255,7 +1401,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-1.5 min-w-0 pr-2">
                             <h3 className="text-[15px] font-medium text-[#111] dark:text-white truncate leading-tight">
-                              {contact.nome_exibicao || formatSenderPhone(contact.telefone)}
+                              {contact.nome_exibicao || formatSenderPhone(contact.telefone, contact.countryCode)}
                             </h3>
                             {isOnline && (
                               <span className="h-2 w-2 shrink-0 rounded-full bg-[#10b981]" title="Online agora" />

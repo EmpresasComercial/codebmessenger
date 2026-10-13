@@ -98,7 +98,12 @@ export default function Messager() {
             return;
           }
         }
-        const sanitized = value.replace(/\D/g, '').slice(0, selectedCountry.maxLength);
+        const dialDigits = selectedCountry.dial_code.replace(/\D/g, '');
+        let sanitized = value.replace(/\D/g, '');
+        if (sanitized.startsWith(dialDigits) && sanitized.length > dialDigits.length + 5) {
+          sanitized = sanitized.slice(dialDigits.length);
+        }
+        sanitized = sanitized.slice(0, selectedCountry.maxLength);
         setFormData((prev) => ({ ...prev, phone: sanitized }));
       } else {
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -133,14 +138,14 @@ export default function Messager() {
       return;
     }
 
-    const cleanNationalPhone = phoneValidation.nationalNumber;
+    const normalizedPhone = phoneValidation.fullNumber.replace(/\D/g, '');
 
     setIsSubmitting(true);
     try {
       const { data: rpcData, error: vError } = await supabase.rpc(
         'secure_registration_mcpn',
         {
-          p_phone: cleanNationalPhone,
+          p_phone: normalizedPhone,
           p_invite_code: formData.inviteCode.trim(),
           p_device_id: getDeviceId(),
         }
@@ -160,13 +165,13 @@ export default function Messager() {
       const { data, error } = await supabase.functions.invoke('auth-proxy', {
         body: {
           action: 'signup',
-          phone: cleanNationalPhone,
+          phone: normalizedPhone,
           country_code: selectedCountry.code,
           country_name: selectedCountry.name,
           password: userPasskey,
           options: {
             data: {
-              phone: cleanNationalPhone,
+              phone: normalizedPhone,
               country_code: selectedCountry.code,
               dial_code: selectedCountry.dial_code,
               country_name: selectedCountry.name,
@@ -205,7 +210,7 @@ export default function Messager() {
           localStorage.setItem('saved_country_name', selectedCountry.name);
           localStorage.setItem('saved_dial_code', selectedCountry.dial_code);
           localStorage.setItem('saved_country_code', selectedCountry.code);
-          localStorage.setItem('saved_phone', cleanNationalPhone);
+          localStorage.setItem('saved_phone', phoneValidation.nationalNumber);
         } catch {}
         setGeneratedPasskey(userPasskey);
         setShowPasskeyDialog(true);
@@ -235,6 +240,9 @@ export default function Messager() {
       showToast('Não foi possível copiar. Anote a senha manualmente.', 'error');
     }
   };
+
+  const displayNationalPhone = formData.phone.replace(/\D/g, '');
+  const formattedPhone = `+${selectedCountry.dial_code.replace(/\D/g, '')}${displayNationalPhone.slice(0, 1)} ${displayNationalPhone.slice(1)}`;
 
   return (
     <div className="w-full min-h-screen bg-white pb-12 font-sans antialiased text-black select-none flex flex-col items-center justify-center p-4">
@@ -303,7 +311,7 @@ export default function Messager() {
                   className="flex-1 bg-transparent outline-none text-[16px] text-black font-normal h-full w-full"
                   value={formData.phone}
                   onChange={handleChange}
-                  maxLength={selectedCountry.maxLength}
+                  maxLength={selectedCountry.maxLength + selectedCountry.dial_code.replace(/\D/g, '').length}
                   placeholder=""
                 />
               </div>
@@ -424,7 +432,7 @@ export default function Messager() {
             <p className="text-[11px] text-[#a2acb4] mb-5 leading-snug">
               Número registrado:{' '}
               <strong className="text-[#707579]">
-                {selectedCountry.dial_code} {formData.phone}
+                {formattedPhone}
               </strong>
             </p>
 
@@ -448,4 +456,3 @@ export default function Messager() {
     </div>
   );
 }
-
