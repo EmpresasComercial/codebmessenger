@@ -28,32 +28,32 @@ export default function ChangePassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.currentPassword) {
-      showToast('Por favor, informe a senha atual.', 'error');
+      showToast(t('password.current_required'), 'error');
       return;
     }
     if (formData.newPassword.length < 6) {
-      showToast('A nova senha deve ter pelo menos 6 caracteres.', 'error');
+      showToast(t('password.minimum_length'), 'error');
       return;
     }
     if (formData.newPassword !== formData.confirmPassword) {
-      showToast(t('password.match_error') || 'As senhas não coincidem.', 'error');
+      showToast(t('password.match_error'), 'error');
       return;
     }
 
     setIsSubmitting(true);
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error('Sessão inválida. Faça login novamente.');
+      if (userError || !user) throw new Error(t('password.session_invalid'));
 
       const email = user.email || (user.user_metadata?.phone ? `${user.user_metadata.phone}@user.com` : null);
-      if (!email) throw new Error('Identificação de usuário não encontrada.');
+      if (!email) throw new Error(t('password.identity_missing'));
 
       // 1. Valida se a senha atual está correta tentando autenticar
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password: formData.currentPassword
       });
-      if (signInError) throw new Error('A senha atual está incorreta.');
+      if (signInError) throw new Error(t('password.current_incorrect'));
 
       // 2. Atualiza a senha pelo método oficial padronizado do Supabase passando a senha atual
       const { error: updateError } = await supabase.auth.updateUser({
@@ -62,24 +62,32 @@ export default function ChangePassword() {
       });
       if (updateError) {
         if (updateError.message.includes('Current password required') || updateError.message.includes('current password')) {
-          throw new Error('A confirmação da senha atual é obrigatória.');
+          throw new Error(t('password.current_confirmation_required'));
         }
         if (updateError.message.includes('New password should be different')) {
-          throw new Error('A nova senha deve ser diferente da senha atual.');
+          throw new Error(t('password.must_differ'));
         }
-        throw updateError;
+        console.error('Password update failed:', updateError);
+        throw new Error(t('password.update_failed'));
       }
 
-      showToast(t('password.success') || 'Senha redefinida com sucesso!', 'success');
+      showToast(t('password.success'), 'success');
       setTimeout(() => navigate(-1), 1200);
     } catch (err: any) {
-      let msg = err.message || t('common.error');
-      if (msg.includes('Current password required')) {
-        msg = 'A confirmação da senha atual é obrigatória.';
-      } else if (msg.includes('Invalid login credentials')) {
-        msg = 'A senha atual está incorreta.';
+      const message = typeof err?.message === 'string' ? err.message : '';
+      if (!message || ![
+        t('password.session_invalid'),
+        t('password.identity_missing'),
+        t('password.current_incorrect'),
+        t('password.current_confirmation_required'),
+        t('password.must_differ'),
+        t('password.update_failed'),
+      ].includes(message)) {
+        console.error('Password update failed:', err);
+        showToast(t('password.update_failed'), 'error');
+        return;
       }
-      showToast(msg, 'error');
+      showToast(message, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -95,7 +103,7 @@ export default function ChangePassword() {
             <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
           </svg>
         </button>
-        <span className="text-[18px] font-semibold flex-1">Redefinir Senha de Segurança</span>
+        <span className="text-[18px] font-semibold flex-1">{t('password.title')}</span>
       </div>
 
       <form onSubmit={handleSubmit} id="change-pass-form" className="px-3 flex flex-col gap-4">
@@ -118,7 +126,7 @@ export default function ChangePassword() {
               name="currentPassword"
               type={showCurrentPass ? 'text' : 'password'}
               className="flex-1 bg-transparent outline-none text-[16px] text-black placeholder:text-[#c7c7cc]"
-              placeholder="Senha atual"
+              placeholder={t('password.old_label')}
               value={formData.currentPassword}
               onChange={handleChange}
             />
@@ -133,7 +141,7 @@ export default function ChangePassword() {
               name="newPassword"
               type={showNewPass ? 'text' : 'password'}
               className="flex-1 bg-transparent outline-none text-[16px] text-black placeholder:text-[#c7c7cc]"
-              placeholder="Nova senha (mínimo 6 caracteres)"
+              placeholder={t('password.new_label')}
               value={formData.newPassword}
               onChange={handleChange}
             />
@@ -148,7 +156,7 @@ export default function ChangePassword() {
               name="confirmPassword"
               type={showConfirmPass ? 'text' : 'password'}
               className="flex-1 bg-transparent outline-none text-[16px] text-black placeholder:text-[#c7c7cc]"
-              placeholder="Confirmar nova senha"
+              placeholder={t('password.confirm_placeholder')}
               value={formData.confirmPassword}
               onChange={handleChange}
             />
@@ -165,7 +173,7 @@ export default function ChangePassword() {
           disabled={isSubmitting || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
           className="w-full h-[50px] rounded-none bg-[#2481cc] hover:bg-[#1f73b7] text-white font-semibold text-[16px] flex items-center justify-center disabled:opacity-40 active:scale-[0.99] transition-all shadow-[0_4px_12px_rgba(36,129,204,0.35)] cursor-pointer"
         >
-          {isSubmitting ? <Loader2 className="animate-spin h-5 w-5 text-white" /> : 'Redefinir Senha'}
+          {isSubmitting ? <Loader2 className="animate-spin h-5 w-5 text-white" /> : t('password.btn_update')}
         </button>
 
       </form>

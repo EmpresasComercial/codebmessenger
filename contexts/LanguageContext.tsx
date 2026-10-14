@@ -1,14 +1,21 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { arTranslations } from './translations/ar';
+import { esTranslations } from './translations/es';
+import { zhTranslations } from './translations/zh';
+import supplementalTranslations, { type SupplementalTranslationKey } from './translations/supplemental';
 
-type Language = 'pt' | 'en' | 'fr';
+export const supportedLanguages = [
+  { code: 'pt', name: 'Português (Brasil)', nativeName: 'Português (Brasil)' },
+  { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'fr', name: 'French', nativeName: 'Français' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
+  { code: 'zh-hans', name: 'Chinese (Simplified)', nativeName: '简体中文' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español' },
+] as const;
 
-interface LanguageContextType {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
-}
+export type Language = (typeof supportedLanguages)[number]['code'];
 
-const translations: Record<Language, Record<string, string>> = {
+const translations = {
   pt: {
     'about.title': 'Introdução',
     'about.who_we_are_title': 'Quem Somos',
@@ -359,6 +366,24 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.settings': 'Configurações',
     'profile.team': 'Minha Equipe',
     'profile.title': 'Perfil do Utilizador',
+    'profile.edit': 'Editar perfil',
+    'profile.wallet_subtitle': 'Solicite o levantamento dos seus fundos',
+    'profile.payment_subtitle': 'Faça um depósito na sua conta',
+    'profile.intro_subtitle': 'Descubra novas funcionalidades',
+    'profile.community_subtitle': 'Converse com membros da comunidade',
+    'profile.notifications_subtitle': 'Sons, chamadas e emblemas',
+    'profile.notifications_updated': 'Configuração de notificações atualizada',
+    'profile.download_subtitle': 'Baixe e instale o aplicativo',
+    'profile.channel_subtitle': 'Aceda aos anúncios do Telegram e às provas de levantamento',
+    'profile.bank_subtitle': 'Adicionar cartão bancário',
+    'profile.faq_subtitle': 'Tire as suas dúvidas',
+    'profile.password_subtitle': 'Altere a sua senha de acesso',
+    'profile.privacy_subtitle': 'Ver a versão e atualizar a aplicação',
+    'profile.help_section': 'Ajuda',
+    'profile.translate_messages': 'Traduzir mensagens',
+    'profile.show_translate_button': 'Mostrar o botão Traduzir',
+    'profile.translate_full_chats': 'Traduzir conversas inteiras',
+    'profile.do_not_translate': 'Não traduzir',
     'profile.total_withdrawn': 'Total Retirada',
     'profile.team_commissions': 'Comissões equipe',
     'profile.user_cloud': 'Utilizador Telegram Business',
@@ -422,6 +447,7 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.identity_confirm': 'Confirmação de identidade institucional',
     'settings.invite_code': 'Código de convite',
     'settings.language': 'Idioma',
+    'settings.languages_count': '6 idiomas',
     'settings.logout': 'Encerrar Sessão',
     'settings.lost_access': 'Perdeu o acesso?',
     'settings.lost_access_sub': 'Recupere sua conta usando o processo oficial de verificação Telegram Business.',
@@ -568,6 +594,59 @@ const translations: Record<Language, Record<string, string>> = {
     'withdraw.guide_limits': 'Valor mínimo de retirada 100 Kz e máximo 100.000 Kz.',
     'withdraw.guide_tax': 'Taxa operacional de retirada: 10%.',
     'withdraw.guide_support': 'Atendimento ao cliente de segunda a sexta, das 09:00 às 21:00, pelo canal do WhatsApp.',
+    'auth.login_error': 'Não foi possível entrar. Verifique os seus dados.',
+    'auth.login_description': 'Introduza o seu número de telefone e a sua senha para entrar.',
+    'auth.hide_password': 'Ocultar senha',
+    'auth.show_password': 'Mostrar senha',
+    'common.country': 'País',
+    'common.change_country': 'Mudar país',
+    'common.connection_error': 'Erro de conexão. Tente novamente.',
+    'common.connecting': 'Conectando...',
+    'auth.signup_password_error': 'Por favor, insira uma senha com no mínimo 6 caracteres.',
+    'auth.signup_description': 'Bem-vindo ao Telegram Business. Registe-se gratuitamente.',
+    'auth.passkey_instructions': 'Esta é a sua senha de acesso. Guarde-a para entrar na sua conta.',
+    'auth.copied_clipboard': 'Copiado para a área de transferência!',
+    'auth.registered_phone': 'Número registado:',
+    'auth.copy_password': 'Copiar senha',
+    'auth.return_to_account': 'Entrar na minha conta',
+    'chat.search_placeholder': 'Buscar conversas, bots ou mensagens...',
+    'chat.loading_chats': 'Carregando conversas...',
+    'chat.open_menu': 'Abrir menu de navegação',
+    'chat.search': 'Pesquisar',
+    'chat.automatic_messages': 'Mensagens Automáticas & Configurações',
+    'chat.close_menu': 'Fechar menu',
+    'chat.main_navigation': 'Navegação principal',
+    'chat.edit_profile': 'Editar perfil',
+    'chat.online_now': 'Online agora',
+    'chat.typing': 'digitando...',
+    'chat.new_conversation': 'Nova Conversa',
+    'chat.back': 'Voltar',
+    'chat.tab_chats': 'Conversas',
+    'chat.tab_groups': 'Grupos',
+    'chat.tab_channels': 'Canais',
+    'chat.tab_bots': 'Bots',
+    'chat.tab_unread': 'Mensagens lidas',
+    'chat.group_telegram': 'Grupo Telegram',
+    'chat.wallet': 'Carteira',
+    'chat.payment_wallet': 'Carteira de pagamentos',
+    'chat.introduction': 'Introdução ao Telegram',
+    'chat.download_apk': 'Baixar APK',
+    'chat.bank_wallet': 'Carteira bancária',
+    'chat.notifications': 'Notificações',
+    'chat.channel_posts': 'Canal',
+    'chat.faq': 'Perguntas Frequentes',
+    'chat.reset_password': 'Redefinir Senha',
+    'chat.settings': 'Definições',
+    'chat.terms_privacy': 'Termos e privacidade',
+    'chat.about_telegram': 'Sobre o Telegram',
+    'chat.phone_missing': 'Telefone não disponível',
+    'chat.notifications_enabled': 'Notificações ativadas',
+    'chat.notifications_denied': 'Permissão para notificações não concedida',
+    'chat.notifications_error': 'Não foi possível atualizar as notificações',
+    'chat.notifications_unavailable': 'Notificações não disponíveis neste dispositivo',
+    'chat.logout_failed': 'Não foi possível terminar a sessão',
+    'chat.logout_success': 'Sessão terminada com sucesso',
+    'chat.logout': 'Terminar sessão',
   },
   en: {
     'about.title': 'Introduction',
@@ -909,6 +988,24 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.settings': 'Settings',
     'profile.team': 'My Team',
     'profile.title': 'User Profile',
+    'profile.edit': 'Edit profile',
+    'profile.wallet_subtitle': 'Request a withdrawal of your funds',
+    'profile.payment_subtitle': 'Make a deposit into your account',
+    'profile.intro_subtitle': 'Discover new features',
+    'profile.community_subtitle': 'Chat with community members',
+    'profile.notifications_subtitle': 'Sounds, calls, and badges',
+    'profile.notifications_updated': 'Notification settings updated',
+    'profile.download_subtitle': 'Download and install the app',
+    'profile.channel_subtitle': 'View Telegram announcements and withdrawal receipts',
+    'profile.bank_subtitle': 'Add a bank card',
+    'profile.faq_subtitle': 'Find answers to your questions',
+    'profile.password_subtitle': 'Change your sign-in password',
+    'profile.privacy_subtitle': 'View the version and update the app',
+    'profile.help_section': 'Help',
+    'profile.translate_messages': 'Translate messages',
+    'profile.show_translate_button': 'Show the Translate button',
+    'profile.translate_full_chats': 'Translate entire chats',
+    'profile.do_not_translate': 'Do not translate',
     'profile.total_withdrawn': 'Total Withdrawn',
     'profile.team_commissions': 'Team Commissions',
     'profile.user_cloud': 'Telegram Business User',
@@ -972,6 +1069,7 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.identity_confirm': 'Institutional identity confirmation',
     'settings.invite_code': 'Invite code',
     'settings.language': 'Language',
+    'settings.languages_count': '6 languages',
     'settings.logout': 'Logout Session',
     'settings.lost_access': 'Lost access?',
     'settings.lost_access_sub': 'Recover your account using the official Telegram Business verification process.',
@@ -1118,6 +1216,69 @@ const translations: Record<Language, Record<string, string>> = {
     'withdraw.guide_limits': 'Minimum withdrawal 400 Kz and maximum 100,000 Kz.',
     'withdraw.guide_tax': 'Operational withdrawal fee: 14%.',
     'withdraw.guide_support': 'Customer service Monday to Monday from 10:00 to 22:00.',
+    'auth.login_error': 'Unable to sign in. Check your details.',
+    'auth.login_description': 'Enter your phone number and password to sign in.',
+    'auth.hide_password': 'Hide password',
+    'auth.show_password': 'Show password',
+    'common.country': 'Country',
+    'common.change_country': 'Change country',
+    'common.connection_error': 'Connection error. Please try again.',
+    'common.connecting': 'Connecting...',
+    'auth.signup_password_error': 'Please enter a password with at least 6 characters.',
+    'auth.signup_description': 'Welcome to Telegram Business. Sign up for free.',
+    'auth.passkey_instructions': 'This is your access password. Save it to sign in to your account.',
+    'auth.copied_clipboard': 'Copied to clipboard!',
+    'auth.registered_phone': 'Registered phone:',
+    'auth.copy_password': 'Copy password',
+    'auth.return_to_account': 'Sign in to my account',
+    'chat.search_placeholder': 'Search chats, bots or messages...',
+    'chat.loading_chats': 'Loading chats...',
+    'chat.open_menu': 'Open navigation menu',
+    'chat.search': 'Search',
+    'chat.automatic_messages': 'Automatic Messages & Settings',
+    'chat.close_menu': 'Close menu',
+    'chat.main_navigation': 'Main navigation',
+    'chat.edit_profile': 'Edit profile',
+    'chat.online_now': 'Online now',
+    'chat.typing': 'typing...',
+    'chat.new_conversation': 'New conversation',
+    'chat.back': 'Back',
+    'chat.tab_chats': 'Chats',
+    'chat.tab_groups': 'Groups',
+    'chat.tab_channels': 'Channels',
+    'chat.tab_bots': 'Bots',
+    'chat.tab_unread': 'Read messages',
+    'chat.group_telegram': 'Telegram Group',
+    'chat.wallet': 'Wallet',
+    'chat.payment_wallet': 'Payment wallet',
+    'chat.introduction': 'Introduction to Telegram',
+    'chat.download_apk': 'Download APK',
+    'chat.bank_wallet': 'Bank wallet',
+    'chat.notifications': 'Notifications',
+    'chat.channel_posts': 'Channel',
+    'chat.faq': 'Frequently asked questions',
+    'chat.reset_password': 'Reset password',
+    'chat.settings': 'Settings',
+    'chat.terms_privacy': 'Terms and privacy',
+    'chat.about_telegram': 'About Telegram',
+    'chat.phone_missing': 'Phone unavailable',
+    'chat.notifications_enabled': 'Notifications enabled',
+    'chat.notifications_denied': 'Notification permission was not granted',
+    'chat.notifications_error': 'Unable to update notifications',
+    'chat.notifications_unavailable': 'Notifications are unavailable on this device',
+    'chat.logout_failed': 'Unable to sign out',
+    'chat.logout_success': 'Signed out successfully',
+    'chat.logout': 'Sign out',
+    'home.service_windows_setup': 'Windows setup',
+    'home.service_windows_setup_desc': 'Sale and installation of official Windows setups.',
+    'home.service_office_packs': 'Office packages',
+    'home.service_office_packs_desc': 'Telegram Business 365 and Office 2021 licensing.',
+    'home.service_activation': 'Official activation',
+    'home.service_activation_desc': 'Genuine activation of Windows and Office.',
+    'home.service_drivers': 'Drivers and support',
+    'home.service_drivers_desc': 'Complete driver installation for your hardware.',
+    'home.service_maintenance': 'Technical maintenance',
+    'home.service_maintenance_desc': 'Repair and optimization of Telegram Business systems.',
   },
   fr: {
     'about.title': 'Introduction',
@@ -1451,6 +1612,24 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.settings': 'Paramètres',
     'profile.team': 'Mon équipe',
     'profile.title': 'Profil de l\'utilisateur',
+    'profile.edit': 'Modifier le profil',
+    'profile.wallet_subtitle': 'Demandez le retrait de vos fonds',
+    'profile.payment_subtitle': 'Effectuez un dépôt sur votre compte',
+    'profile.intro_subtitle': 'Découvrez de nouvelles fonctionnalités',
+    'profile.community_subtitle': 'Discutez avec les membres de la communauté',
+    'profile.notifications_subtitle': 'Sons, appels et badges',
+    'profile.notifications_updated': 'Paramètres de notification mis à jour',
+    'profile.download_subtitle': 'Téléchargez et installez l’application',
+    'profile.channel_subtitle': 'Consultez les annonces Telegram et les preuves de retrait',
+    'profile.bank_subtitle': 'Ajouter une carte bancaire',
+    'profile.faq_subtitle': 'Trouvez les réponses à vos questions',
+    'profile.password_subtitle': 'Modifiez votre mot de passe de connexion',
+    'profile.privacy_subtitle': 'Voir la version et mettre à jour l’application',
+    'profile.help_section': 'Aide',
+    'profile.translate_messages': 'Traduire les messages',
+    'profile.show_translate_button': 'Afficher le bouton Traduire',
+    'profile.translate_full_chats': 'Traduire des conversations entières',
+    'profile.do_not_translate': 'Ne pas traduire',
     'profile.total_withdrawn': 'Total retiré',
     'profile.team_commissions': 'Commissions d\'équipe',
     'profile.user_cloud': 'Utilisateur Telegram Business',
@@ -1514,6 +1693,7 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.identity_confirm': 'Confirmation d\'identité institutionnelle',
     'settings.invite_code': 'Code d\'invitation',
     'settings.language': 'Langue',
+    'settings.languages_count': '6 langues',
     'settings.logout': 'Déconnexion',
     'settings.lost_access': 'Accès perdu ?',
     'settings.lost_access_sub': 'Récupérez votre compte en utilisant le processus de vérification officiel de Telegram Business.',
@@ -1660,16 +1840,103 @@ const translations: Record<Language, Record<string, string>> = {
     'withdraw.guide_limits': 'Retrait minimum 400 Kz et maximum 100 000 Kz.',
     'withdraw.guide_tax': 'Frais de retrait opérationnels : 14%.',
     'withdraw.guide_support': 'Service client du lundi au lundi de 10h00 à 22h00.',
+    'auth.login_error': 'Connexion impossible. Vérifiez vos informations.',
+    'auth.login_description': 'Saisissez votre numéro de téléphone et votre mot de passe pour vous connecter.',
+    'auth.hide_password': 'Masquer le mot de passe',
+    'auth.show_password': 'Afficher le mot de passe',
+    'common.country': 'Pays',
+    'common.change_country': 'Changer de pays',
+    'common.connection_error': 'Erreur de connexion. Réessayez.',
+    'common.connecting': 'Connexion en cours...',
+    'auth.signup_password_error': 'Veuillez saisir un mot de passe d’au moins 6 caractères.',
+    'auth.signup_description': 'Bienvenue sur Telegram Business. Inscrivez-vous gratuitement.',
+    'auth.passkey_instructions': 'Voici votre mot de passe d’accès. Conservez-le pour vous connecter à votre compte.',
+    'auth.copied_clipboard': 'Copié dans le presse-papiers !',
+    'auth.registered_phone': 'Téléphone enregistré :',
+    'auth.copy_password': 'Copier le mot de passe',
+    'auth.return_to_account': 'Se connecter à mon compte',
+    'chat.search_placeholder': 'Rechercher des conversations, des bots ou des messages...',
+    'chat.loading_chats': 'Chargement des conversations...',
+    'chat.open_menu': 'Ouvrir le menu de navigation',
+    'chat.search': 'Rechercher',
+    'chat.automatic_messages': 'Messages automatiques et paramètres',
+    'chat.close_menu': 'Fermer le menu',
+    'chat.main_navigation': 'Navigation principale',
+    'chat.edit_profile': 'Modifier le profil',
+    'chat.online_now': 'En ligne',
+    'chat.typing': 'écrit...',
+    'chat.new_conversation': 'Nouvelle conversation',
+    'chat.back': 'Retour',
+    'chat.tab_chats': 'Conversations',
+    'chat.tab_groups': 'Groupes',
+    'chat.tab_channels': 'Chaînes',
+    'chat.tab_bots': 'Bots',
+    'chat.tab_unread': 'Messages lus',
+    'chat.group_telegram': 'Groupe Telegram',
+    'chat.wallet': 'Portefeuille',
+    'chat.payment_wallet': 'Portefeuille de paiement',
+    'chat.introduction': 'Présentation de Telegram',
+    'chat.download_apk': 'Télécharger l’APK',
+    'chat.bank_wallet': 'Portefeuille bancaire',
+    'chat.notifications': 'Notifications',
+    'chat.channel_posts': 'Chaîne',
+    'chat.faq': 'Foire aux questions',
+    'chat.reset_password': 'Réinitialiser le mot de passe',
+    'chat.settings': 'Paramètres',
+    'chat.terms_privacy': 'Conditions et confidentialité',
+    'chat.about_telegram': 'À propos de Telegram',
+    'chat.phone_missing': 'Téléphone indisponible',
+    'chat.notifications_enabled': 'Notifications activées',
+    'chat.notifications_denied': 'Autorisation des notifications non accordée',
+    'chat.notifications_error': 'Impossible de mettre à jour les notifications',
+    'chat.notifications_unavailable': 'Notifications indisponibles sur cet appareil',
+    'chat.logout_failed': 'Impossible de se déconnecter',
+    'chat.logout_success': 'Déconnexion réussie',
+    'chat.logout': 'Se déconnecter',
+    'about.mission_title': 'Notre mission',
+    'about.mission_content': 'Permettre à chacun et à chaque organisation de la planète d’accomplir davantage.',
+    'about.values_title': 'Nos valeurs',
+    'about.values_list': 'Respect, intégrité, responsabilité, innovation, diversité et inclusion.',
+    'about.ai_title': 'Leadership du commerce électronique',
+    'about.ai_content': 'Aujourd’hui, Telegram Business est la plateforme leader du commerce électronique et de l’innovation mondiale.',
+    'auth.forgot_password': 'Mot de passe oublié ?',
+    'auth.invite_code': 'Code d’invitation',
+    'auth.invite_error_empty': 'Veuillez saisir le code d’invitation',
+    'auth.invite_placeholder': 'Saisir le code',
+    'home.service_windows_setup': 'Configuration Windows',
+    'home.service_windows_setup_desc': 'Vente et installation de configurations Windows officielles.',
+    'home.service_office_packs': 'Packs Office',
+    'home.service_office_packs_desc': 'Licences Telegram Business 365 et Office 2021.',
+    'home.service_activation': 'Activation officielle',
+    'home.service_activation_desc': 'Activation authentique de Windows et Office.',
+    'home.service_drivers': 'Pilotes et assistance',
+    'home.service_drivers_desc': 'Installation complète des pilotes de votre matériel.',
+    'home.service_maintenance': 'Maintenance technique',
+    'home.service_maintenance_desc': 'Réparation et optimisation des systèmes Telegram Business.',
   },
-};
+  ar: arTranslations,
+  'zh-hans': zhTranslations,
+  es: esTranslations,
+} satisfies Record<Language, Record<string, string>>;
+
+type TranslationKey = keyof typeof translations.pt | SupplementalTranslationKey;
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: TranslationKey) => string;
+}
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+function isLanguage(value: string | null): value is Language {
+  return supportedLanguages.some(({ code }) => code === value);
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  // Inicializar com o idioma salvo ou padrão 'pt'
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('app_language') as Language;
-    return (saved === 'pt' || saved === 'en' || saved === 'fr') ? saved : 'pt';
+    const saved = localStorage.getItem('app_language');
+    return isLanguage(saved) ? saved : 'pt';
   });
 
   const setLanguage = (lang: Language) => {
@@ -1677,8 +1944,21 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('app_language', lang);
   };
 
-  const t = (key: string) => {
-    return translations[language][key] || key;
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+  }, [language]);
+
+  const t = (key: TranslationKey) => {
+    const supplemental = supplementalTranslations[language] as Partial<Record<SupplementalTranslationKey, string>>;
+    const baseSupplemental = supplementalTranslations.pt as Partial<Record<SupplementalTranslationKey, string>>;
+    const catalog = translations[language] as Record<string, string>;
+    const baseCatalog = translations.pt as Record<string, string>;
+    return supplemental[key as SupplementalTranslationKey]
+      ?? catalog[key]
+      ?? baseSupplemental[key as SupplementalTranslationKey]
+      ?? baseCatalog[key]
+      ?? key;
   };
 
   return (
@@ -1695,4 +1975,3 @@ export function useLanguage() {
   }
   return context;
 }
-

@@ -7,11 +7,13 @@ import {
   Clock,
   ChevronDown,
   X,
-  Zap
+  Zap,
+  RotateCcw
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "../../components/Toast";
 import { formatCurrency } from "../../lib/currency";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 /* ─── SVG Doodle Background (Telegram BotFather style) ─────────── */
 const DOODLE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2372a072' stroke-width='1.2' opacity='0.45'%3E%3Ccircle cx='30' cy='28' r='10'/%3E%3Cpath d='M22 20L19 13L25 19'/%3E%3Cpath d='M38 20L41 13L35 19'/%3E%3Ccircle cx='26' cy='25' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='34' cy='25' r='1.5' fill='%2372a072'/%3E%3Cpath d='M30 31L28 33L30 32L32 33Z'/%3E%3Cpath d='M19 27L24 28'/%3E%3Cpath d='M41 27L36 28'/%3E%3Cpath d='M164 15L167 7L170 15L178 15L172 20L174 28L167 23L160 28L162 20L156 15Z'/%3E%3Cpath d='M95 52C95 44 84 38 84 49C84 58 95 67 95 67C95 67 106 58 106 49C106 38 95 44 95 52Z'/%3E%3Ccircle cx='20' cy='112' r='7'/%3E%3Ccircle cx='10' cy='103' r='3.5'/%3E%3Ccircle cx='30' cy='103' r='3.5'/%3E%3Ccircle cx='14' cy='97' r='3'/%3E%3Ccircle cx='26' cy='97' r='3'/%3E%3Crect x='150' cy='100' width='26' height='19' rx='2'/%3E%3Crect x='148' y='93' width='30' height='9' rx='2'/%3E%3Cline x1='163' y1='93' x2='163' y2='119'/%3E%3Cpath d='M159 93C156 87 163 84 163 93'/%3E%3Cpath d='M167 93C170 87 163 84 163 93'/%3E%3Ccircle cx='163' cy='162' r='10'/%3E%3Cpath d='M155 154L152 146L158 153'/%3E%3Cpath d='M171 154L174 146L168 153'/%3E%3Ccircle cx='159' cy='160' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='167' cy='160' r='1.5' fill='%2372a072'/%3E%3Cpath d='M163 164L161 166L163 165L165 166Z'/%3E%3Cpath d='M152 162L158 163'/%3E%3Cpath d='M174 162L168 163'/%3E%3Cpath d='M57 143C57 138 51 135 51 140C51 145 57 150 57 150C57 150 63 145 63 140C63 135 57 138 57 143Z'/%3E%3Cpath d='M140 44C140 39 134 36 134 41C134 46 140 51 140 51C140 51 146 46 146 41C146 36 140 39 140 44Z'/%3E%3Cpath d='M64 72L66 64L68 72L76 72L70 77L72 85L66 81L60 85L62 77L56 72Z'/%3E%3Cpath d='M127 134L129 126L131 134L139 134L133 139L135 147L129 143L123 147L125 139L119 134Z'/%3E%3Cpath d='M95 110L95 128'/%3E%3Ccircle cx='92' cy='129' r='4'/%3E%3Cpath d='M95 110L106 106L106 120'/%3E%3Ccircle cx='103' cy='121' r='4'/%3E%3C/g%3E%3C/svg%3E")`;
@@ -201,6 +203,7 @@ function GrayButton({ children, onClick, disabled }: { children: React.ReactNode
 export default function TelegramBotsChat() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [purchasedBots, setPurchasedBots] = useState<PurchasedBotItem[]>([]);
@@ -212,6 +215,7 @@ export default function TelegramBotsChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [showCommandsModal, setShowCommandsModal] = useState(false);
+  const pendingReplyTimeouts = useRef<Set<number>>(new Set());
 
   const quickReplies = [
     { shortcut: "/bots", text: "Ver catálogo completo de Bots de rendimento" },
@@ -387,10 +391,37 @@ export default function TelegramBotsChat() {
 
   const simulateBotReply = useCallback((builder: () => ChatMessage, delay = 650) => {
     setIsTyping(true);
-    setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
+      pendingReplyTimeouts.current.delete(timeoutId);
       setIsTyping(false);
       setMessages((prev) => [...prev, builder()]);
     }, delay);
+    pendingReplyTimeouts.current.add(timeoutId);
+  }, []);
+
+  const restartConversation = useCallback(() => {
+    try {
+      localStorage.removeItem(CHAT_STORAGE_KEY);
+    } catch (error) {
+      console.error("Não foi possível limpar o histórico do BotFather:", error);
+      showToast("Não foi possível limpar o histórico da conversa.", "error");
+      return;
+    }
+
+    pendingReplyTimeouts.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    pendingReplyTimeouts.current.clear();
+    setIsTyping(false);
+    setAwaitingCoupon(false);
+    setInputText("");
+    setShowCommandsModal(false);
+    setShowScrollDown(false);
+    setMessages([{ id: "welcome-botfather-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "welcome" }]);
+    showToast("Conversa reiniciada.", "success");
+  }, [showToast]);
+
+  useEffect(() => () => {
+    pendingReplyTimeouts.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    pendingReplyTimeouts.current.clear();
   }, []);
 
   /* ── Tratar Comandos e Mensagens do Usuário ── */
@@ -496,7 +527,7 @@ export default function TelegramBotsChat() {
         if (activeBots.length === 0) {
           simulateBotReply(() => ({
             id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-            text: `Você ainda não tem Bots ativos. Envie /bots para ver as opções disponíveis.`
+            text: `${t('bots.no_active_bots')} /bots ${t('bots.view_options')}`
           }));
           return;
         }
@@ -513,9 +544,7 @@ export default function TelegramBotsChat() {
       }
 
       if (normalized === "limpar" || normalized === "reset" || normalized === "clear") {
-        try { localStorage.removeItem(CHAT_STORAGE_KEY); } catch (e) {}
-        setMessages([{ id: "welcome-botfather-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "welcome" }]);
-        showToast("Histórico de conversa reiniciado.", "success");
+        restartConversation();
         return;
       }
 
@@ -602,7 +631,7 @@ export default function TelegramBotsChat() {
         text: `Unrecognized command. Say what?`
       }));
     },
-    [inputText, products, purchasedBots, userBalance, simulateBotReply, loadData, awaitingCoupon]
+    [inputText, products, purchasedBots, userBalance, simulateBotReply, loadData, awaitingCoupon, restartConversation]
   );
 
   /* ── Ação de Compra de Bot Direto no Chat ── */
@@ -686,30 +715,30 @@ export default function TelegramBotsChat() {
       {/* ── MODAL DE COMANDOS ── */}
       {showCommandsModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+          className="botfather-commands-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-[2px]"
           onClick={() => setShowCommandsModal(false)}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="botfather-commands-title"
-            className="w-full max-w-sm max-h-[min(70dvh,32rem)] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-3 shadow-xl dark:border-gray-700 dark:bg-[#182533]"
+            className="botfather-commands-dialog w-full max-w-sm max-h-[min(70dvh,32rem)] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-gray-700 dark:bg-[#182533]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="mb-2 flex items-center justify-between px-1">
-              <span id="botfather-commands-title" className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="mb-3 flex items-center justify-between border-b border-gray-100 px-1 pb-2.5 dark:border-gray-700">
+              <span id="botfather-commands-title" className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
                 <Zap className="h-4 w-4 text-[#2481cc]" /> Comandos rápidos
               </span>
               <button
                 type="button"
                 onClick={() => setShowCommandsModal(false)}
-                aria-label="Fechar comandos rápidos"
+                aria-label={t("common.close")}
                 className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-black dark:hover:bg-[#242f3d] dark:hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="divide-y divide-gray-100 dark:divide-gray-700">
               {quickReplies.map(({ shortcut, text }) => (
                 <button
                   key={shortcut}
@@ -718,10 +747,10 @@ export default function TelegramBotsChat() {
                     setShowCommandsModal(false);
                     handleSendMessage(shortcut);
                   }}
-                  className="flex min-h-14 flex-col items-start justify-center rounded-xl bg-gray-50 px-2.5 py-2 text-left transition-colors hover:bg-gray-100 active:bg-gray-200 dark:bg-[#202d3b] dark:hover:bg-[#2a3949] dark:active:bg-[#33465a]"
+                  className="flex min-h-10 w-full items-center justify-between gap-3 px-2 py-2 text-left transition-colors hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-[#202d3b] dark:active:bg-[#2a3949]"
                 >
-                  <span className="font-mono text-xs font-semibold text-[#2481cc]">{shortcut}</span>
-                  <span className="mt-0.5 line-clamp-1 text-[11px] text-gray-600 dark:text-gray-300">{text}</span>
+                  <span className="shrink-0 font-mono text-xs font-semibold text-[#2481cc]">{shortcut}</span>
+                  <span className="min-w-0 truncate text-right text-[11px] text-gray-600 dark:text-gray-300">{text}</span>
                 </button>
               ))}
             </div>
@@ -736,7 +765,7 @@ export default function TelegramBotsChat() {
         <button
           onClick={() => navigate(-1)}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
-          aria-label="Voltar"
+          aria-label={t("common.back")}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M5 12l7-7M5 12l7 7" />
@@ -801,7 +830,7 @@ export default function TelegramBotsChat() {
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
                     <p className="font-bold text-[14.5px] mb-1.5">Bots em Execução ({msg.payload?.bots?.length || 0}):</p>
                     {!msg.payload?.bots || msg.payload.bots.length === 0 ? (
-                      <p className="text-[#3a3a3c]">Você ainda não tem Bots ativos. Envie /bots para abrir o catálogo.</p>
+                      <p className="text-[#3a3a3c]">{t('bots.no_active_bots')} /bots {t('bots.open_catalog')}</p>
                     ) : (
                       <div className="space-y-3">
                         {msg.payload.bots.map((bot: PurchasedBotItem, idx: number) => (
@@ -816,7 +845,7 @@ export default function TelegramBotsChat() {
                             {bot.ativo && (
                               <div className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-[#2481cc]">
                                 <Clock className="w-3.5 h-3.5" />
-                                <span>Próximo crédito em:</span>
+                                <span>{t('bots.next_credit_in')}</span>
                                 <PurchasedBotCountdown dataInicio={bot.data_inicio} />
                               </div>
                             )}
@@ -829,14 +858,27 @@ export default function TelegramBotsChat() {
 
                 {msg.type === "catalog" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="font-bold text-[14.5px] mb-1.5">Bots Disponíveis para Compra:</p>
-                    <div className="space-y-3">
+                    <p className="font-bold text-[14.5px] mb-2">{t('bots.available')}</p>
+                    <div className="space-y-2">
                       {msg.payload?.products?.map((prod: ProductItem, idx: number) => (
-                        <div key={prod.id || idx} className="text-[13.5px] text-[#3a3a3c]">
-                          <span className="font-bold text-[#1c1c1e]">{idx + 1}. {displayBotName(prod.nome)}</span> — {formatCurrency(prod.preco, "KZ")}<br />
-                          <span className="text-[#8a8a8e] text-[12.5px]">
-                            Renda: <span className="text-[#25ae60] font-medium">+{formatCurrency(prod.renda_diaria, "KZ")}/dia</span> • Duração: {prod.duracao_dias} dias • Renda Total: {formatCurrency(prod.renda_diaria * prod.duracao_dias, "KZ")}
-                          </span>
+                        <div key={prod.id || idx} className="flex items-center gap-2 border-b border-gray-100 py-2 last:border-0 dark:border-gray-700">
+                          <div className="min-w-0 flex-1 text-[12.5px] leading-snug text-[#3a3a3c]">
+                            <p className="break-words font-semibold text-[#1c1c1e]">{displayBotName(prod.nome)}</p>
+                            <p className="mt-0.5 text-[11.5px] text-[#707579]">
+                              {t('bots.price')}: <span className="font-semibold text-[#1c1c1e]">{formatCurrency(prod.preco, "KZ")}</span> · {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(prod.renda_diaria, "KZ")}</span>
+                            </p>
+                            <p className="text-[11.5px] text-[#707579]">
+                              {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e]">{prod.duracao_dias} {t('common.days')}</span> · {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7]">{formatCurrency(prod.renda_diaria * prod.duracao_dias, "KZ")}</span>
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleBuyProduct(prod)}
+                            disabled={buyingId === prod.id}
+                            className="shrink-0 rounded-md px-2 py-1.5 text-xs font-medium text-[#2481cc] transition-colors hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-[#202d3b]"
+                          >
+                            {buyingId === prod.id ? <><Loader2 className="mr-1 inline h-3 w-3 animate-spin" />{t('bots.activating')}</> : t('bots.activate')}
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -844,31 +886,37 @@ export default function TelegramBotsChat() {
                 )}
 
                 {msg.type === "single_bot" && msg.payload?.product && (
-                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="font-bold text-[14.5px] text-[#1a7ac7] mb-1.5">Informações do {displayBotName(msg.payload.product.nome)}:</p>
-                    <p className="text-[13.5px] text-[#3a3a3c] space-y-1">
-                      • Preço: {formatCurrency(msg.payload.product.preco, "KZ")}<br />
-                      • Renda Diária: <span className="text-[#25ae60] font-semibold">+{formatCurrency(msg.payload.product.renda_diaria, "KZ")} / dia</span><br />
-                      • Duração: {msg.payload.product.duracao_dias} dias<br />
-                      • Renda Total: <span className="text-[#1a7ac7] font-semibold">{formatCurrency(msg.payload.product.renda_diaria * msg.payload.product.duracao_dias, "KZ")}</span><br />
-                      • Limite: {msg.payload.boughtCount >= msg.payload.maxLimit ? (
-                        <span className="text-amber-600 font-semibold">Atingido ({msg.payload.boughtCount}/{msg.payload.maxLimit})</span>
-                      ) : (
-                        <span>{msg.payload.boughtCount}/{msg.payload.maxLimit} comprados</span>
-                      )}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1 text-[12.5px] leading-snug text-[#3a3a3c]">
+                      <p className="break-words font-semibold text-[#1c1c1e]">{displayBotName(msg.payload.product.nome)}</p>
+                      <p className="mt-0.5 text-[11.5px] text-[#707579]">
+                        {t('bots.price')}: <span className="font-semibold text-[#1c1c1e]">{formatCurrency(msg.payload.product.preco, "KZ")}</span> · {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(msg.payload.product.renda_diaria, "KZ")}</span>
+                      </p>
+                      <p className="text-[11.5px] text-[#707579]">
+                        {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e]">{msg.payload.product.duracao_dias} {t('common.days')}</span> · {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7]">{formatCurrency(msg.payload.product.renda_diaria * msg.payload.product.duracao_dias, "KZ")}</span>
+                      </p>
+                      <p className="text-[11.5px] text-[#707579]">{t('bots.limit')}: {msg.payload.boughtCount}/{msg.payload.maxLimit}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleBuyProduct(msg.payload.product)}
+                      disabled={buyingId === msg.payload.product.id || msg.payload.remaining <= 0}
+                      className="shrink-0 rounded-md px-2 py-1.5 text-xs font-medium text-[#2481cc] transition-colors hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-[#202d3b]"
+                    >
+                      {buyingId === msg.payload.product.id ? <><Loader2 className="mr-1 inline h-3 w-3 animate-spin" />{t('bots.activating')}</> : msg.payload.remaining <= 0 ? t('bots.limit') : t('bots.activate')}
+                    </button>
                   </div>
                 )}
 
                 {msg.type === "purchase_success" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="font-bold text-[#25ae60] text-[14.5px] mb-1">Bot ativado com sucesso!</p>
-                    <p className="mb-1 text-[#3a3a3c]">Chave de Ativação (HTTP API):</p>
+                    <p className="font-bold text-[#25ae60] text-[14.5px] mb-1">{t('bots.activated_successfully')}</p>
+                    <p className="mb-1 text-[#3a3a3c]">{t('bots.activation_key')} (HTTP API):</p>
                     <div className="bg-[#e8f4fd] rounded-[8px] px-2.5 py-1 font-mono text-[12.5px] text-[#1a7ac7] select-all my-1.5">
-                      8723751541:AAF1i3n8zKtRJd5_mJmVDw0vQvJhMjzUjWU
+                      {t('bots.activation_key_unavailable')}
                     </div>
                     <p className="text-[13px] text-[#8a8a8e]">
-                      O Bot <span className="font-semibold text-[#1c1c1e]">{msg.payload?.product?.nome}</span> está ativo. Rendimento de <span className="font-semibold text-[#25ae60]">+{formatCurrency(msg.payload?.product?.renda_diaria, "KZ")}</span> creditado diariamente.
+                      {t('bots.bot_prefix')} <span className="font-semibold text-[#1c1c1e]">{displayBotName(msg.payload?.product?.nome || "Bot")}</span> {t('bots.active_income_prefix')} <span className="font-semibold text-[#25ae60]">+{formatCurrency(msg.payload?.product?.renda_diaria, "KZ")}</span> {t('bots.daily_credit_suffix')}
                     </p>
                   </div>
                 )}
@@ -880,25 +928,6 @@ export default function TelegramBotsChat() {
                 )}
               </BotBubble>
 
-              {msg.type === "catalog" && msg.payload?.products && (
-                <div className="w-full max-w-[80%] flex flex-col items-center justify-center gap-1 -mt-1.5 mb-2 pl-2">
-                  {msg.payload.products.map((prod: ProductItem) => {
-                    const isBuyingThis = buyingId === prod.id;
-                    return (
-                      <GrayButton key={prod.id} onClick={() => handleBuyProduct(prod)} disabled={isBuyingThis}>
-                        {isBuyingThis ? <><Loader2 className="w-4 h-4 animate-spin" /> A ativar...</> : `Ativar ${displayBotName(prod.nome)}`}
-                      </GrayButton>
-                    );
-                  })}
-                </div>
-              )}
-              {msg.type === "single_bot" && msg.payload?.product && (
-                <div className="w-full max-w-[80%] flex items-center justify-center -mt-1.5 mb-2 pl-2">
-                  <GrayButton onClick={() => handleBuyProduct(msg.payload.product)} disabled={buyingId === msg.payload.product.id || msg.payload.remaining <= 0}>
-                    {buyingId === msg.payload.product.id ? <><Loader2 className="w-4 h-4 animate-spin" /> A ativar...</> : msg.payload.remaining <= 0 ? "⚠️ Limite atingido" : `Ativar ${displayBotName(msg.payload.product.nome)}`}
-                  </GrayButton>
-                </div>
-              )}
             </React.Fragment>
           );
         })}
@@ -938,6 +967,16 @@ export default function TelegramBotsChat() {
               <Zap className="w-5 h-5" />
             </button>
 
+            <button
+              type="button"
+              onClick={restartConversation}
+              className="mr-1 shrink-0 rounded-full p-1.5 text-[#707579] transition-colors hover:bg-gray-100 hover:text-[#2481cc] dark:hover:bg-[#242f3d]"
+              title="Reiniciar conversa"
+              aria-label="Reiniciar conversa"
+            >
+              <RotateCcw className="h-5 w-5" />
+            </button>
+
             <input
               type="text"
               value={inputText}
@@ -948,14 +987,14 @@ export default function TelegramBotsChat() {
                   handleSendMessage();
                 }
               }}
-              placeholder="Mensagem"
+              placeholder={t("chat.input_placeholder")}
               className="flex-1 min-w-0 w-0 px-1 py-1 text-[14.5px] sm:text-[15px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] font-normal leading-snug"
             />
           </div>
           <button
             onClick={() => handleSendMessage()}
             className="w-[46px] h-[46px] sm:w-[48px] sm:h-[48px] rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_8px_rgba(36,129,204,0.4)] cursor-pointer"
-            aria-label="Enviar"
+            aria-label={t("common.send")}
           >
             <Send className="w-5 h-5 ml-0.5" />
           </button>

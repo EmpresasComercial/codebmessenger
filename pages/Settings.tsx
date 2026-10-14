@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '../contexts/LanguageContext';
+import { type Language, supportedLanguages, useLanguage } from '../contexts/LanguageContext';
 import { 
   Search, MoreVertical, Camera, CreditCard, MessageSquare, ShieldAlert, 
   Volume2, Building2, MessagesSquare, Smartphone, Globe, ChevronRight,
@@ -9,7 +9,9 @@ import {
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
   const [showLanguage, setShowLanguage] = useState(false);
+  const selectedLanguage = supportedLanguages.find(({ code }) => code === language)!;
 
   return (
     <div className="w-full min-h-screen bg-[#f1f1f2] font-sans text-black pb-24 overflow-x-hidden">
@@ -23,8 +25,8 @@ export default function Settings() {
           <span className="text-[18px] font-bold text-black tracking-tight">Telegram Premium</span>
         </div>
         <div className="flex items-center gap-3 text-black">
-          <button className="active:opacity-50"><Search className="w-5 h-5" strokeWidth={2.5} /></button>
-          <button className="active:opacity-50"><MoreVertical className="w-5 h-5" strokeWidth={2.5} /></button>
+          <button className="active:opacity-50" aria-label={t('chat.search')}><Search className="w-5 h-5" strokeWidth={2.5} /></button>
+          <button className="active:opacity-50" aria-label={t('chat.open_menu')}><MoreVertical className="w-5 h-5" strokeWidth={2.5} /></button>
         </div>
       </header>
 
@@ -54,32 +56,32 @@ export default function Settings() {
           <SettingsItem 
             icon={<CreditCard className="w-5 h-5 text-white" />}
             iconBg="bg-[#3390ec]"
-            title="Conta"
-            subtitle="Adicionar cartão bancário"
+            title={t('profile.account')}
+            subtitle={t('settings.add_bank_card')}
             onClick={() => navigate('/carteira?intent=add-bank')}
           />
           
           <SettingsItem 
             icon={<MessageSquare className="w-5 h-5 text-white" />}
             iconBg="bg-[#f2a93b]"
-            title="Chat Settings"
-            subtitle="Wallpaper, Night Mode, Animations"
+            title={t('chat.settings')}
+            subtitle={t('settings.chat_appearance')}
             onClick={() => navigate('/bank')}
           />
           
           <SettingsItem 
             icon={<ShieldAlert className="w-5 h-5 text-white" />}
             iconBg="bg-[#25D366]"
-            title="Redefinir Senha de Segurança"
-            subtitle="Altere a sua senha de acesso"
+            title={t('settings.security_password')}
+            subtitle={t('profile.password_subtitle')}
             onClick={() => navigate('/alterar-senha')}
           />
 
           <SettingsItem 
             icon={<Volume2 className="w-5 h-5 text-white fill-white" />}
             iconBg="bg-[#fe384f]"
-            title="Notifications"
-            subtitle="Sounds, Calls, Badges"
+            title={t('chat.notifications')}
+            subtitle={t('settings.notification_options')}
             onClick={() => {
               if ('Notification' in window) {
                 Notification.requestPermission();
@@ -90,32 +92,32 @@ export default function Settings() {
           <SettingsItem 
             icon={<Building2 className="w-5 h-5 text-white" />}
             iconBg="bg-[#3390ec]"
-            title="Informações Bancárias"
-            subtitle="Ver conta bancária adicionada"
+            title={t('profile.bank_info')}
+            subtitle={t('settings.view_bank_account')}
             onClick={() => navigate('/informacao-bancaria')}
           />
 
           <SettingsItem 
             icon={<MessagesSquare className="w-5 h-5 text-white" />}
             iconBg="bg-[#3390ec]"
-            title="Pastas de Chat"
-            subtitle="Aceder ao chat da comunidade"
+            title={t('settings.chat_folders')}
+            subtitle={t('settings.open_community')}
             onClick={() => navigate('/org')}
           />
 
           <SettingsItem 
             icon={<Smartphone className="w-5 h-5 text-white" />}
             iconBg="bg-[#46c2ca]"
-            title="Termos de uso e privacidade"
-            subtitle="Ver versão e actualizar a aplicação"
+            title={t('devices.title')}
+            subtitle={t('profile.privacy_subtitle')}
             onClick={() => navigate('/devices')}
           />
 
           <SettingsItem 
             icon={<Globe className="w-5 h-5 text-white" />}
             iconBg="bg-[#b375d6]"
-            title="Idioma"
-            subtitle="Português (Brasil)"
+            title={t('settings.language')}
+            subtitle={selectedLanguage.nativeName}
             isLast={true}
             onClick={() => setShowLanguage(true)}
           />
@@ -144,7 +146,7 @@ export default function Settings() {
           <SettingsItem 
             icon={<Gift className="w-5 h-5 text-white" />}
             iconBg="bg-[#f2a93b]"
-            title="Send a Gift"
+            title={t('settings.send_gift')}
             isLast={true}
           />
         </div>
@@ -152,27 +154,27 @@ export default function Settings() {
         {/* CARD 3: AJUDA */}
         <div className="bg-white rounded-[16px] overflow-hidden mb-6">
           <div className="px-4 py-2 pt-3">
-            <span className="text-[14px] font-semibold text-[#00a884] tracking-wide">Ajuda</span>
+            <span className="text-[14px] font-semibold text-[#00a884] tracking-wide">{t('profile.help_section')}</span>
           </div>
 
           <SettingsItem 
             icon={<MessageSquare className="w-5 h-5 text-white" />}
             iconBg="bg-[#f2a93b]"
-            title="Fazer uma Pergunta"
+            title={t('settings.ask_question')}
             onClick={() => navigate('/org')}
           />
 
           <SettingsItem 
             icon={<HelpCircle className="w-5 h-5 text-white" />}
             iconBg="bg-[#3390ec]"
-            title="Perguntas Frequentes"
+            title={t('settings.faq')}
             onClick={() => navigate('/help-faq')}
           />
 
           <SettingsItem 
             icon={<Lightbulb className="w-5 h-5 text-white fill-white" />}
             iconBg="bg-[#b375d6]"
-            title="Recursos do Telegram"
+            title={t('settings.telegram_resources')}
             isLast={true}
           />
         </div>
@@ -184,13 +186,13 @@ export default function Settings() {
         <div className="fixed inset-0 z-50 bg-[#f1f1f2] overflow-y-auto">
           {/* Header */}
           <div className="flex items-center px-4 pt-5 pb-3 bg-[#f1f1f2] sticky top-0">
-            <button onClick={() => setShowLanguage(false)} className="mr-4 active:opacity-50">
+            <button onClick={() => setShowLanguage(false)} className="mr-4 active:opacity-50" aria-label={t('common.back')}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
               </svg>
             </button>
-            <span className="text-[18px] font-semibold flex-1">Idioma</span>
-            <button className="active:opacity-50">
+            <span className="text-[18px] font-semibold flex-1">{t('settings.language')}</span>
+            <button className="active:opacity-50" aria-label={t('chat.search')}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
@@ -201,32 +203,35 @@ export default function Settings() {
             {/* Traduzir Mensagens card */}
             <div className="bg-white rounded-[16px] overflow-hidden">
               <div className="px-4 pt-3 pb-1">
-                <span className="text-[13px] font-semibold text-[#25D366]">Traduzir Mensagens</span>
+                <span className="text-[13px] font-semibold text-[#25D366]">{t('profile.translate_messages')}</span>
               </div>
-              <TranslateRow label="Mostrar o Botão Traduzir" defaultOn={true} />
-              <TranslateRow label="Traduzir Chats Inteiros" locked={true} />
+              <TranslateRow label={t('profile.show_translate_button')} defaultOn={true} />
+              <TranslateRow label={t('profile.translate_full_chats')} locked={true} />
               <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-[16px] text-black">Não Traduzir</span>
-                <span className="text-[14px] font-medium text-[#25D366]">3 Idiomas</span>
+                <span className="text-[16px] text-black">{t('profile.do_not_translate')}</span>
+                <span className="text-[14px] font-medium text-[#25D366]">{t('settings.languages_count')}</span>
               </div>
             </div>
             <p className="text-[13px] text-[#8e8e93] px-2 -mt-2">
-              O botão 'Traduzir' aparecerá quando você tocar uma vez em uma mensagem de texto.
+              {t('settings.translate_button_hint')}
             </p>
 
             {/* Language list card */}
             <div className="bg-white rounded-[16px] overflow-hidden">
               <div className="px-4 pt-3 pb-1">
-                <span className="text-[13px] font-semibold text-[#25D366]">Idioma</span>
+                <span className="text-[13px] font-semibold text-[#25D366]">{t('settings.language')}</span>
               </div>
-              <LangRow label="Português (Brasil)" sub="Portuguese (Brazil)" code="pt" available />
-              <LangRow label="English" sub="English" code="en" available />
-              <LangRow label="Français" sub="French" code="fr" available />
-              <LangRow label="العربية" sub="Arabic" code="ar" />
-              <LangRow label="Беларуская" sub="Belarusian" code="be" />
-              <LangRow label="Català" sub="Catalan" code="ca" />
-              <LangRow label="简体中文" sub="Chinese (Simplified)" code="zh-hans" />
-              <LangRow label="繁體中文" sub="Chinese (Traditional)" code="zh-hant" isLast />
+              <div role="radiogroup" aria-label={t('settings.language')}>
+                {supportedLanguages.map(({ code, name, nativeName }, index) => (
+                  <LangRow
+                    key={code}
+                    label={nativeName}
+                    sub={name}
+                    code={code}
+                    isLast={index === supportedLanguages.length - 1}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -260,14 +265,23 @@ function TranslateRow({ label, defaultOn = false, locked = false }: { label: str
 }
 
 // Language row
-function LangRow({ label, sub, code, available = false, isLast = false }: { label: string; sub: string; code: string; available?: boolean; isLast?: boolean }) {
+function LangRow({ label, sub, code, isLast = false }: { label: string; sub: string; code: Language; isLast?: boolean }) {
   const { language, setLanguage } = useLanguage();
   const isSelected = language === code;
-  const handleClick = () => { if (available) setLanguage(code as any); };
+  const handleClick = () => setLanguage(code);
   return (
     <div
-      className={`flex items-center px-4 py-3 ${!isLast ? 'border-b border-[#e5e5e5]' : ''} ${available ? 'cursor-pointer active:bg-gray-50' : 'opacity-60 cursor-default'}`}
+      className={`flex items-center px-4 py-3 cursor-pointer active:bg-gray-50 ${!isLast ? 'border-b border-[#e5e5e5]' : ''}`}
       onClick={handleClick}
+      role="radio"
+      aria-checked={isSelected}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          handleClick();
+        }
+      }}
     >
       {/* Radio */}
       <div className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center mr-4 shrink-0 ${
@@ -278,7 +292,6 @@ function LangRow({ label, sub, code, available = false, isLast = false }: { labe
       <div className="flex flex-col flex-1">
         <span className="text-[16px] text-black leading-tight">{label}</span>
         <span className="text-[13px] text-[#8e8e93]">{sub}</span>
-        {!available && <span className="text-[11px] text-[#c7c7cc] font-light">indisponível</span>}
       </div>
     </div>
   );

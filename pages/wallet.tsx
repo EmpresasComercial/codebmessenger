@@ -22,6 +22,7 @@ import {
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
+import { useLanguage } from '../contexts/LanguageContext';
 import AddBank from './AddBank';
 
 const MIN_WITHDRAW = 100;
@@ -343,6 +344,7 @@ export default function wallet() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   const [info, setInfo] = useState<WithdrawInfo>({
     balance: 0,
@@ -643,7 +645,7 @@ export default function wallet() {
 
   const formatHistoryAsText = useCallback((list: any[]) => {
     if (!list || list.length === 0) {
-      return 'Histórico de Retiradas:\nNenhum saque registado ainda na sua conta. Para realizar uma retirada, envie /retirar.';
+      return `${t('withdraw.history_title')}:\n${t('withdraw.empty')} Para realizar uma retirada, envie /retirar.`;
     }
 
     const itemsText = list.map((item: any) => {
@@ -669,14 +671,14 @@ export default function wallet() {
           })
         : 'Recente';
 
-      const bankStr = item.banco_destino || item.bank_name || info.bankName || 'Conta Bancária';
+      const bankStr = item.banco_destino || item.bank_name || info.bankName || t('withdraw.bank_acc');
       const ibanStr = item.iban_snapshot || item.iban || (info.iban ? `...${info.iban.slice(-4)}` : '');
 
       return `No dia ${dateStr}, levantaste o montante de ${formatCurrency(amount, 'KZ')} pela conta ${bankStr}${ibanStr ? ` (${ibanStr})` : ''}, com o estado ${statusEmoji} ${statusLabel}.`;
     }).join('\n\n');
 
-    return `Histórico de Retiradas (${list.length} registos):\n\n${itemsText}\n\nPara solicitar um novo saque, envie /retirar.`;
-  }, [info.bankName, info.iban]);
+    return `${t('withdraw.history_title')} (${list.length} registos):\n\n${itemsText}\n\nPara solicitar um novo saque, envie /retirar.`;
+  }, [info.bankName, info.iban, t]);
 
   const handleSendMessage = useCallback(
     async (textToSend?: string) => {
@@ -1207,7 +1209,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'no_bank',
-            text: 'Cadastre primeiro sua conta bancária para solicitar retiradas:',
+            text: t('withdraw.bank_required'),
           }));
           return;
         }
@@ -1324,7 +1326,7 @@ export default function wallet() {
         }));
       }
     },
-    [inputText, info, messages, pendingAmount, pendingBankDeletion, processWithdrawal, botReply, showToast, fetchRecentHistory, formatHistoryAsText, fetchData]
+    [inputText, info, messages, pendingAmount, pendingBankDeletion, processWithdrawal, botReply, showToast, fetchRecentHistory, formatHistoryAsText, fetchData, t]
   );
 
   useEffect(() => {
@@ -1459,7 +1461,7 @@ export default function wallet() {
         <button
           onClick={() => navigate(-1)}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
-          aria-label="Voltar"
+          aria-label={t('common.back')}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M5 12l7-7M5 12l7 7" />
@@ -1495,8 +1497,8 @@ export default function wallet() {
           <button
             onClick={() => setShowHelpModal(true)}
             className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 cursor-pointer"
-            aria-label="Ajuda e instruções da Wallet"
-            title="Ajuda e instruções"
+            aria-label={t('withdraw.guide_title')}
+            title={t('withdraw.guide_title')}
           >
             <MoreVertical className="w-[22px] h-[22px]" />
           </button>
@@ -1515,13 +1517,13 @@ export default function wallet() {
               type="button"
               onClick={() => setShowHelpModal(false)}
               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/15 transition-colors"
-              aria-label="Fechar instruções"
+              aria-label={t('common.close')}
             >
               <ChevronDown className="w-6 h-6 rotate-90" />
             </button>
             <div className="min-w-0">
               <h2 id="wallet-help-title" className="text-[17px] font-semibold">
-                Ajuda da Wallet
+                {t('withdraw.guide_title')}
               </h2>
               <p className="text-[13px] text-white/75">
                 Como consultar e pedir uma retirada
@@ -1532,25 +1534,25 @@ export default function wallet() {
           <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-5">
             <div className="max-w-2xl mx-auto space-y-5 pb-8">
               <section className="overflow-hidden rounded-xl bg-white dark:bg-[#17212b] text-[#222] dark:text-[#e6e6e6]">
-                <h3 className="px-4 pt-4 pb-2 text-[15px] font-semibold text-[#2481cc]">Como funciona</h3>
+                <h3 className="px-4 pt-4 pb-2 text-[15px] font-semibold text-[#2481cc]">{t('withdraw.info_title')}</h3>
                 <ol className="px-4 pb-2 text-[14px]">
                   <li className="flex gap-3 border-b border-[#edf0f2] dark:border-white/10 py-2.5">
                     <span className="text-[#2481cc] font-semibold">1</span>
-                    <span>Escolha um exemplo ou escreva o comando na conversa.</span>
+                    <span>{t('wallet.help_step1')}</span>
                   </li>
                   <li className="flex gap-3 border-b border-[#edf0f2] dark:border-white/10 py-2.5">
                     <span className="text-[#2481cc] font-semibold">2</span>
-                    <span>Envie a mensagem. A Wallet consulta os dados da sua conta e responde no chat.</span>
+                    <span>{t('wallet.help_step2')}</span>
                   </li>
                   <li className="flex gap-3 py-2.5">
                     <span className="text-[#2481cc] font-semibold">3</span>
-                    <span>Para retirar, confira o resumo antes de confirmar. Envie <code className="text-[#2481cc]">/cancelar</code> para interromper.</span>
+                    <span>{t('wallet.help_step3')} <code className="text-[#2481cc]">/cancelar</code> {t('wallet.cancel_command_info')}</span>
                   </li>
                 </ol>
               </section>
 
               <section>
-                <h3 className="px-1 mb-2 text-[14px] font-semibold uppercase tracking-wide text-[#52718a] dark:text-[#91a8bb]">Comandos e respostas</h3>
+                <h3 className="px-1 mb-2 text-[14px] font-semibold uppercase tracking-wide text-[#52718a] dark:text-[#91a8bb]">{t('wallet.commands_and_replies')}</h3>
                 <div className="overflow-hidden rounded-xl bg-white dark:bg-[#17212b]">
                   {[
                     {
@@ -1616,7 +1618,7 @@ export default function wallet() {
                         </button>
                       </div>
                       <p className="mt-2 text-[13px] leading-relaxed text-[#707579] dark:text-[#aab7c4]">
-                        <span className="font-medium text-[#52718a] dark:text-[#91a8bb]">Resposta: </span>{response}
+                        <span className="font-medium text-[#52718a] dark:text-[#91a8bb]">{t('wallet.response')}: </span>{response}
                       </p>
                     </article>
                   ))}
@@ -1707,7 +1709,7 @@ export default function wallet() {
                 {/* APRESENTAÇÃO / BOAS-VINDAS */}
                 {msg.type === 'welcome' && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
-                    Olá, sou <strong className="font-semibold text-[#2481cc]">Assistente Wallet</strong>. Como estás?
+                    {t('wallet.welcome')}
                   </div>
                 )}
 
@@ -1740,24 +1742,24 @@ export default function wallet() {
                       Perfeito! Dá uma conferida no seu resumo: 📋
                     </p>
                     <p className="text-[13.5px] text-gray-800">
-                      • <strong>Valor a retirar:</strong> {formatCurrency(msg.payload.amount, 'KZ')}
+                      • <strong>{t('withdraw.amount')}:</strong> {formatCurrency(msg.payload.amount, 'KZ')}
                       <br />
-                      • <strong>Taxa operacional (10%):</strong> -{formatCurrency(msg.payload.fee, 'KZ')}
+                      • <strong>{t('wallet.operational_fee')}:</strong> -{formatCurrency(msg.payload.fee, 'KZ')}
                       <br />
-                      • <strong>Você vai receber:</strong>{' '}
+                      • <strong>{t('withdraw.net_amount')}:</strong>{' '}
                       <span className="text-[#25ae60] font-bold">
                         {formatCurrency(msg.payload.net, 'KZ')}
                       </span> 💵
                       <br />
-                      • <strong>Destino:</strong> {msg.payload.bankName}
+                      • <strong>{t('withdraw.bank_acc')}:</strong> {msg.payload.bankName}
                       <br />
-                      • <strong>IBAN:</strong>{' '}
+                      • <strong>{t('bank.iban')}:</strong>{' '}
                       <code className="font-mono text-[12px] text-[#2481cc] bg-gray-50 px-1 rounded">
                         {msg.payload.iban}
                       </code>
                     </p>
                     <p className="mt-2 text-[13px] text-gray-600">
-                      Está tudo certinho? É só clicar em <strong>Confirmar</strong> abaixo! 😊
+                      Está tudo certinho? É só clicar em <strong>{t('common.confirm')}</strong> abaixo! 😊
                     </p>
                   </div>
                 )}
@@ -1826,14 +1828,14 @@ export default function wallet() {
                       disabled={isProcessing}
                       className="flex-1 bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-2 py-2 text-[13px] font-medium active:bg-opacity-90 transition-colors disabled:opacity-50 flex justify-center items-center gap-1 cursor-pointer"
                     >
-                      {isProcessing ? '⏳ Proc...' : '✅ Confirmar'}
+                      {isProcessing ? '⏳ Proc...' : `✅ ${t('common.confirm')}`}
                     </button>
                     <button
                       onClick={handleCancelButton}
                       disabled={isProcessing}
                       className="flex-1 bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-2 py-2 text-[13px] font-medium active:bg-opacity-90 transition-colors disabled:opacity-50 flex justify-center items-center gap-1 cursor-pointer"
                     >
-                      ✕ Cancelar
+                      ✕ {t('common.cancel')}
                     </button>
                   </div>
                 </div>
@@ -1846,14 +1848,14 @@ export default function wallet() {
                     onClick={() => handleSendMessage('confirmar')}
                     className="flex-1 rounded-lg bg-[#d94848] px-2 py-2 text-[13px] font-medium text-white active:bg-[#c53d3d]"
                   >
-                    Deletar conta
+                    {t('bank.remove')}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSendMessage('cancelar')}
                     className="flex-1 rounded-lg bg-[#6b7b8a] bg-opacity-70 px-2 py-2 text-[13px] font-medium text-white active:bg-opacity-90"
                   >
-                    Cancelar
+                    {t('common.cancel')}
                   </button>
                 </div>
               )}
@@ -1865,7 +1867,7 @@ export default function wallet() {
                     onClick={() => handleSendMessage('/adicionar_banco')}
                     className="w-full bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-4 py-2 text-[14px] font-medium active:bg-opacity-90 transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
                   >
-                    ➕ Cadastrar Conta Bancária
+                    ➕ {t('bank.bind')}
                   </button>
                 </div>
               )}
@@ -1903,7 +1905,7 @@ export default function wallet() {
                 className="w-1.5 h-1.5 rounded-full bg-[#707579] animate-bounce"
                 style={{ animationDelay: '300ms' }}
               />
-              <span className="text-[11.5px] text-[#707579] ml-1">Wallet está a escrever...</span>
+              <span className="text-[11.5px] text-[#707579] ml-1">{t('wallet.typing')}</span>
             </div>
           </div>
         )}
@@ -2013,7 +2015,7 @@ export default function wallet() {
           <button
             onClick={() => handleSendMessage()}
             className="w-[46px] h-[46px] sm:w-[48px] sm:h-[48px] rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_8px_rgba(36,129,204,0.4)] cursor-pointer"
-            aria-label="Enviar"
+            aria-label={t('common.send')}
           >
             <Send className="w-5 h-5 ml-0.5" />
           </button>
@@ -2034,13 +2036,13 @@ export default function wallet() {
           >
             <header className="flex h-14 shrink-0 items-center justify-between border-b border-black/5 px-4">
               <h2 id="wallet-add-bank-title" className="text-[16px] font-semibold text-[#111827]">
-                Adicionar conta bancária
+                {t('bank.add_new')}
               </h2>
               <button
                 type="button"
                 onClick={() => setShowAddBankModal(false)}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-[#667085] hover:bg-black/5"
-                aria-label="Fechar formulário bancário"
+                aria-label={t('common.close')}
               >
                 <X className="h-5 w-5" />
               </button>

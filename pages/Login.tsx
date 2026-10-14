@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { Eye, EyeOff, Loader2, ChevronDown } from 'lucide-react';
 import {
@@ -14,6 +15,7 @@ import CountryModal from '../components/CountryModal';
 export default function Login() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasskey, setShowPasskey] = useState(false);
@@ -89,7 +91,7 @@ export default function Login() {
     if (!phoneValidation.isValid) {
       showToast(
         phoneValidation.errorMessage ||
-          `Introduza um número de telefone válido de ${selectedCountry.name}.`,
+          t('auth.phone_error_invalid'),
         'error'
       );
       return;
@@ -97,7 +99,7 @@ export default function Login() {
 
     // 2. Validate password
     if (!cleanPasskey || cleanPasskey.length < 4) {
-      showToast('Por favor, insira a sua senha.', 'error');
+      showToast(t('auth.password_error_empty'), 'error');
       return;
     }
 
@@ -127,16 +129,16 @@ export default function Login() {
           error.message?.includes('COUNTRY_MISMATCH') ||
           error.message?.includes('pertence a outro país')
         ) {
-          showToast(`Introduza um número de telefone válido de ${selectedCountry.name}.`, 'error');
+          showToast(t('auth.phone_error_invalid'), 'error');
         } else if (
           error.message?.includes('Introduza um número de telefone válido') ||
           error.message?.includes('Invalid phone number')
         ) {
-          showToast(`Introduza um número de telefone válido de ${selectedCountry.name}.`, 'error');
+          showToast(t('auth.phone_error_invalid'), 'error');
         } else if (error.message?.includes('Invalid login credentials')) {
-          showToast('Por favor, verifique as credenciais de acesso inválidas.', 'error');
+          showToast(t('auth.password_error_wrong'), 'error');
         } else {
-          showToast(error.message || 'Ops! Falha ao autenticar. Verifique os seus dados.', 'error');
+          showToast(error.message || t('auth.login_error'), 'error');
         }
         setIsSubmitting(false);
         return;
@@ -149,13 +151,13 @@ export default function Login() {
           localStorage.setItem('saved_country_code', selectedCountry.code);
           localStorage.setItem('saved_country_name', selectedCountry.name);
         } catch {}
-        showToast('Bem-vindo de volta!', 'success');
+        showToast(t('auth.welcome_back'), 'success');
         navigate('/org');
       } else {
-        showToast('Não foi possível iniciar sessão. Verifique os seus dados.', 'error');
+        showToast(t('auth.login_error'), 'error');
       }
     } catch (err: any) {
-      showToast(err.message || 'Ops! Ocorreu uma falha na conexão. Tente novamente.', 'error');
+      showToast(err.message || t('common.connection_error'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -176,7 +178,7 @@ export default function Login() {
           Telegram
         </h1>
         <p className="text-[13px] text-[#8e8e93] text-center mb-6 leading-snug max-w-[280px]">
-          Introduza o seu número de telefone e chave de acesso para entrar.
+          {t('auth.login_description')}
         </p>
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
@@ -185,7 +187,7 @@ export default function Login() {
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
                 <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  Country
+                  {t('common.country')}
                 </label>
               </div>
               <button
@@ -193,7 +195,7 @@ export default function Login() {
                 onClick={() => setShowCountryModal(true)}
                 style={{ borderRadius: '12px' }}
                 className="w-full h-[54px] auth-input-btn border border-[#dfdfe0] bg-white flex items-center justify-between px-3.5 hover:border-[#3390ec] focus:border-[#3390ec] focus:outline-none transition-colors cursor-pointer"
-                title="Mudar país"
+                title={t('common.change_country')}
               >
                 <span className="text-[16px] text-black font-normal flex items-center gap-2.5 truncate">
                   <span className="text-[22px] leading-none select-none">
@@ -209,7 +211,7 @@ export default function Login() {
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
                 <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  Your phone number
+                  {t('auth.phone_label')}
                 </label>
               </div>
               <div
@@ -237,7 +239,7 @@ export default function Login() {
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
                 <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  Password
+                  {t('auth.password_label')}
                 </label>
               </div>
               <div
@@ -256,7 +258,7 @@ export default function Login() {
                   type="button"
                   onClick={togglePasskey}
                   className="ml-2 text-[#a2a6aa] hover:text-[#3390ec] transition-colors shrink-0 cursor-pointer"
-                  aria-label={showPasskey ? 'Ocultar senha' : 'Ver senha'}
+                  aria-label={showPasskey ? t('auth.hide_password') : t('auth.show_password')}
                 >
                   {showPasskey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -274,7 +276,7 @@ export default function Login() {
               {isSubmitting ? (
                 <Loader2 className="animate-spin h-5 w-5 text-white" />
               ) : (
-                'Conectar-se'
+                t('auth.login')
               )}
             </button>
 
@@ -283,7 +285,7 @@ export default function Login() {
               onClick={() => navigate('/messager')}
               className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-medium text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
             >
-              Não tem conta? Inscrever-se
+              {t('auth.no_account')} {t('auth.create_one')}
             </button>
           </div>
         </form>

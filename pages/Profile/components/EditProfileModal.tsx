@@ -3,6 +3,7 @@ import { Phone, AtSign, ArrowDownCircle, ArrowUpCircle, Users } from "lucide-rea
 import { formatCurrency } from "../../../lib/currency";
 import { supabase } from "../../../lib/supabase";
 import { useToast } from "../../../components/Toast";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export default function EditProfileModal({
   onSaved,
 }: EditProfileModalProps) {
   const { showToast } = useToast();
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [firstName, setFirstName] = useState(initialData.firstName);
   const [lastName, setLastName] = useState(initialData.lastName);
@@ -58,7 +60,7 @@ export default function EditProfileModal({
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { showToast("Máximo 5MB", "error"); return; }
+    if (file.size > 5 * 1024 * 1024) { showToast(t("profile.image_too_large"), "error"); return; }
     setAvatarFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
@@ -67,7 +69,7 @@ export default function EditProfileModal({
   };
 
   const handleSave = async () => {
-    if (!firstName.trim()) { showToast("O nome não pode estar vazio", "error"); return; }
+    if (!firstName.trim()) { showToast(t("profile.name_required"), "error"); return; }
     setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -85,7 +87,7 @@ export default function EditProfileModal({
           finalAvatarUrl = publicUrl;
         } else {
           console.error("Erro no upload do avatar:", upErr);
-          showToast("Aviso: Não foi possível salvar a imagem no servidor.", "error");
+          showToast(t("profile.avatar_upload_failed"), "error");
         }
       }
 
@@ -107,11 +109,11 @@ export default function EditProfileModal({
           .eq("id", user.id);
       } catch { /* silencia */ }
 
-      showToast("Perfil atualizado!", "success");
+      showToast(t("profile.updated"), "success");
       onSaved({ firstName: firstName.trim(), lastName: lastName.trim(), bio: bio.trim(), avatarUrl: finalAvatarUrl });
       onClose();
     } catch (err: any) {
-      showToast(err?.message || "Erro ao guardar", "error");
+      showToast(err?.message || t("profile.save_failed"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -139,13 +141,13 @@ export default function EditProfileModal({
           onClick={onClose}
           disabled={isSaving}
           className="p-1 -ml-1 rounded-full active:opacity-50 transition-opacity mr-3"
-          aria-label="Voltar"
+          aria-label={t("common.back")}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M5 12l7-7M5 12l7 7" />
           </svg>
         </button>
-        <span className="text-[20px] font-bold text-black flex-1">Conta</span>
+        <span className="text-[20px] font-bold text-black flex-1">{t("profile.account")}</span>
         <button
           onClick={handleSave}
           disabled={isSaving || !firstName.trim()}
@@ -153,7 +155,7 @@ export default function EditProfileModal({
         >
           {isSaving
             ? <span className="w-4 h-4 border-2 border-[#3390ec] border-t-transparent rounded-full animate-spin inline-block" />
-            : "Guardar"
+            : t("common.save")
           }
         </button>
       </div>
@@ -169,7 +171,7 @@ export default function EditProfileModal({
           <div className="relative">
             <div className="w-[100px] h-[100px] rounded-full overflow-hidden">
               {displayAvatar ? (
-                <img src={displayAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                <img src={displayAvatar} alt={t("profile.avatar_alt")} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-[#3390ec] to-[#1e6dc8] flex items-center justify-center">
                   <span className="text-[42px] font-bold text-white">
@@ -183,7 +185,7 @@ export default function EditProfileModal({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4" fill="white"/></svg>
             </div>
           </div>
-          <p className="text-[13px] text-[#3390ec] mt-2 font-medium">Alterar foto de perfil</p>
+          <p className="text-[13px] text-[#3390ec] mt-2 font-medium">{t("profile.change_photo")}</p>
         </div>
 
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
@@ -191,14 +193,14 @@ export default function EditProfileModal({
         {/* ── CARD: SEU NOME ── */}
         <div className="bg-white rounded-[14px] overflow-hidden shadow-2xs border border-gray-100 mb-2">
           <div className="px-4 pt-3 pb-1">
-            <span className="text-[13px] font-semibold text-[#4faf64]">Seu nome</span>
+            <span className="text-[13px] font-semibold text-[#4faf64]">{t("profile.your_name")}</span>
           </div>
           <input
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             maxLength={64}
-            placeholder="Nome"
+            placeholder={t("profile.first_name")}
             className="w-full px-4 py-3 text-[17px] text-black bg-white outline-none border-b border-[#e5e5e5] placeholder:text-[#c7c7cc]"
           />
           <input
@@ -206,7 +208,7 @@ export default function EditProfileModal({
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             maxLength={64}
-            placeholder="Sobrenome"
+            placeholder={t("profile.last_name")}
             className="w-full px-4 py-3 text-[17px] text-black bg-white outline-none placeholder:text-[#c7c7cc]"
           />
         </div>
@@ -214,7 +216,7 @@ export default function EditProfileModal({
         {/* ── CARD: BIO ── */}
         <div className="bg-white rounded-[14px] overflow-hidden shadow-2xs border border-gray-100">
           <div className="flex items-center justify-between px-4 pt-3 pb-1">
-            <span className="text-[13px] font-semibold text-[#4faf64]">Bio</span>
+            <span className="text-[13px] font-semibold text-[#4faf64]">{t("profile.bio")}</span>
             <span className={`text-[13px] tabular-nums ${bioRemaining < 10 ? "text-red-500" : "text-[#8e8e93]"}`}>
               {bioRemaining}
             </span>
@@ -223,11 +225,11 @@ export default function EditProfileModal({
             value={bio}
             onChange={(e) => setBio(e.target.value.slice(0, 70))}
             maxLength={70}
-            placeholder="Bio"
+            placeholder={t("profile.bio")}
             rows={2}
             className="w-full px-4 py-2 text-[17px] text-black bg-white outline-none resize-none placeholder:text-[#c7c7cc]"
           />
-          <p className="px-4 pb-3 text-[13px] text-[#8e8e93]">Algumas palavras sobre você.</p>
+          <p className="px-4 pb-3 text-[13px] text-[#8e8e93]">{t("profile.bio_about_you")}</p>
         </div>
 
         {/* ── SPACER ── */}
@@ -236,7 +238,7 @@ export default function EditProfileModal({
         {/* ── CARD: SUAS INFORMAÇÕES ── */}
         <div className="bg-white rounded-[14px] overflow-hidden shadow-2xs border border-gray-100">
           <div className="px-4 pt-3 pb-1">
-            <span className="text-[13px] font-semibold text-[#4faf64]">Suas Informações</span>
+            <span className="text-[13px] font-semibold text-[#4faf64]">{t("profile.your_information")}</span>
           </div>
 
           {/* Telefone */}
@@ -246,7 +248,7 @@ export default function EditProfileModal({
             </div>
             <div className="flex flex-col">
               <span className="text-[17px] text-black font-normal">{initialData.phone}</span>
-              <span className="text-[13px] text-[#8e8e93]">Toque para alterar o número de telefone</span>
+              <span className="text-[13px] text-[#8e8e93]">{t("profile.phone_change_hint")}</span>
             </div>
           </div>
 
@@ -257,7 +259,7 @@ export default function EditProfileModal({
             </div>
             <div className="flex flex-col">
               <span className="text-[17px] text-black font-normal">{telegramUsername}</span>
-              <span className="text-[13px] text-[#8e8e93]">Nome de Usuário</span>
+              <span className="text-[13px] text-[#8e8e93]">{t("profile.username")}</span>
             </div>
           </div>
 
@@ -268,7 +270,7 @@ export default function EditProfileModal({
             </div>
             <div className="flex flex-col">
               <span className="text-[17px] text-black font-normal">{formatCurrency(totalDeposits, 'KZ')}</span>
-              <span className="text-[13px] text-[#8e8e93]">Total Recarregado</span>
+              <span className="text-[13px] text-[#8e8e93]">{t("profile.total_recharged")}</span>
             </div>
           </div>
         </div>
@@ -285,7 +287,7 @@ export default function EditProfileModal({
             </div>
             <div className="flex flex-col">
               <span className="text-[17px] text-black font-normal">{formatCurrency(totalWithdrawals, 'KZ')}</span>
-              <span className="text-[13px] text-[#8e8e93]">Total Retirado</span>
+              <span className="text-[13px] text-[#8e8e93]">{t("profile.total_withdrawn")}</span>
             </div>
           </div>
 
@@ -296,7 +298,7 @@ export default function EditProfileModal({
             </div>
             <div className="flex flex-col">
               <span className="text-[17px] text-black font-normal">{formatCurrency(comissaoEquipe, 'KZ')}</span>
-              <span className="text-[13px] text-[#8e8e93]">Total Ganho pela Equipe</span>
+              <span className="text-[13px] text-[#8e8e93]">{t("profile.team_total_earned")}</span>
             </div>
           </div>
         </div>

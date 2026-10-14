@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -19,9 +19,11 @@ interface ToastState {
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
+const AUTO_DISMISS_MS = 2200;
 
 function cleanToastMessage(msg: string): string {
   if (!msg) return '';
+
   return msg
     .replace(/SEGURANÇA\s+Telegram Business\b[:\s]*/gi, '')
     .replace(/\bMICROSOFT\b[:\s]*/gi, '')
@@ -36,59 +38,76 @@ function isErrorMessage(msg: string): boolean {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null);
 
-  const showToast = useCallback(
-    (message: string, typeOrOptions?: ToastType | ToastOptions) => {
-      let type: ToastType = 'info';
+  const showToast = useCallback((message: string, typeOrOptions?: ToastType | ToastOptions) => {
+    let type: ToastType = 'info';
 
-      if (typeof typeOrOptions === 'string') {
-        type = typeOrOptions;
-      } else if (typeOrOptions) {
-        type = typeOrOptions.type ?? 'info';
-      }
+    if (typeof typeOrOptions === 'string') {
+      type = typeOrOptions;
+    } else if (typeOrOptions) {
+      type = typeOrOptions.type ?? 'info';
+    }
 
-      if (isErrorMessage(message) && type !== 'warning') {
-        type = 'error';
-      }
+    if (isErrorMessage(message) && type !== 'warning') {
+      type = 'error';
+    }
 
-      setToast({
-        id: Date.now(),
-        message: cleanToastMessage(message),
-        type,
-      });
-    },
-    []
-  );
+    setToast({
+      id: Date.now() + Math.random(),
+      message: cleanToastMessage(message),
+      type,
+    });
+  }, []);
 
   useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => {
-        setToast(null);
-      }, 2500); // Mais leve e ágil
-      return () => clearTimeout(timer);
-    }
+    if (!toast) return;
+
+    const timer = window.setTimeout(() => setToast(null), AUTO_DISMISS_MS);
+    return () => window.clearTimeout(timer);
   }, [toast]);
 
-  const contextValue = useMemo(() => ({ showToast }), [showToast]);
-
   return (
-    <ToastContext.Provider value={contextValue}>
+    <ToastContext.Provider value={{ showToast }}>
       {children}
+
       <AnimatePresence>
         {toast && (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.94 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="fixed inset-0 z-[9999] pointer-events-none p-4 flex items-center justify-center"
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+            style={{
+              position: 'fixed',
+              top: 18,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 9999,
+              pointerEvents: 'none',
+            }}
           >
-            <div 
-              className="bg-black/75 backdrop-blur-md text-white rounded-full px-4.5 py-2 max-w-[85vw] text-center shadow-none select-none"
+            <div
+              style={{
+                maxWidth: 'min(85vw, 420px)',
+                padding: '10px 16px',
+                borderRadius: 999,
+                backgroundColor: '#ffffff',
+                color: '#111111',
+                border: '1px solid rgba(0, 0, 0, 0.05)',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+                userSelect: 'none',
+                textAlign: 'center',
+              }}
             >
-              <p 
-                className="font-normal text-[14.5px] text-white/95 leading-snug tracking-wide"
-                style={{ fontFamily: '"Times New Roman", Times, serif' }}
+              <p
+                style={{
+                  margin: 0,
+                  color: '#111111',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                  fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                }}
               >
                 {toast.message}
               </p>
@@ -102,8 +121,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 export function useToast(): ToastContextType {
   const context = useContext(ToastContext);
+
   if (!context) {
     throw new Error('useToast must be used within a ToastProvider');
   }
+
   return context;
 }

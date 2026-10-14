@@ -6,6 +6,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import Layout from './components/Layout';
+import { LanguageSelector } from './components/LanguageSelector';
 import { ToastProvider } from './components/Toast';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -149,6 +150,7 @@ export default function App() {
               <PresenceProvider>
                 <ConnectivityOverlay />
                 <GlobalLoadingIndicator />
+                <LanguageSelector className="fixed right-3 top-3 z-[9998] rounded-md bg-white/90 shadow-sm" variant="bordered" />
                 <Suspense fallback={<PageSkeleton />}>
                 <Routes>
                   <Route path="/"         element={<RootRedirect />} />

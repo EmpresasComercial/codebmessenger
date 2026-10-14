@@ -2,33 +2,35 @@ import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle, Users, Bot, Settings, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const navItems = [
     {
-      name: 'Chats',
+      name: t('nav.home'),
       path: '/org',
       aliasPaths: ['/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'],
       icon: (isActive: boolean) => <MessageCircle className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />,
       badge: 3
     },
     {
-      name: 'Contatos',
+      name: t('nav.invite'),
       path: '/contactos',
       aliasPaths: ['/contactos', '/convite'],
       icon: (isActive: boolean) => <Users className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     },
     {
-      name: 'Botfather',
+      name: t('nav.products'),
       path: '/botfather',
       aliasPaths: ['/botfather', '/bot-pay', '/operacoes'],
       icon: (isActive: boolean) => <Sparkles className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     },
     {
-      name: 'Definições',
+      name: t('nav.profile'),
       path: '/definicoes',
       aliasPaths: ['/definicoes', '/perfil', '/settings', '/configuracoes-conta'],
       icon: (isActive: boolean) => <Settings className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
@@ -45,8 +47,8 @@ export default function Navbar() {
         <button
           onClick={() => navigate('/web')}
           className="fixed bottom-[72px] right-4 sm:right-6 z-40 w-14 h-14 rounded-full bg-[#50a8eb] dark:bg-[#50a8eb] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(80,168,235,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
-          title="Nova Mensagem"
-          aria-label="Nova Mensagem"
+          title={t('nav.new_message')}
+          aria-label={t('nav.new_message')}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path d="M19.0498 7.41504L16.5847 4.94998C16.3894 4.75471 16.0728 4.75471 15.8776 4.94998L14.4124 6.41517L17.5847 9.58742L19.0498 8.1222C19.2451 7.92694 19.2451 7.61036 19.0498 7.41504Z" />

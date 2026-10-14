@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/Toast';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { getDeviceId } from '../lib/device';
 import { subscribeToPushNotifications } from '../lib/pushNotifications';
@@ -17,6 +18,7 @@ export default function Messager() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ phone: '', inviteCode: '' });
@@ -119,8 +121,7 @@ export default function Messager() {
     const phoneValidation = validatePhoneNumber(formData.phone, selectedCountry);
     if (!phoneValidation.isValid) {
       showToast(
-        phoneValidation.errorMessage ||
-          `Introduza um número de telefone válido de ${selectedCountry.name}.`,
+        formData.phone.trim() ? t('auth.phone_error_invalid') : t('auth.phone_error_empty'),
         'error'
       );
       return;
@@ -128,13 +129,13 @@ export default function Messager() {
 
     // 2. Password validation
     if (!userPasskey || userPasskey.trim().length < 6) {
-      showToast('Por favor, insira uma senha com no mínimo 6 caracteres.', 'error');
+      showToast(t('auth.signup_password_error'), 'error');
       return;
     }
 
     // 3. Invite code validation
     if (!formData.inviteCode || formData.inviteCode.trim().length < 3) {
-      showToast('Por favor, insira o código de convite.', 'error');
+      showToast(t('auth.invite_error_empty'), 'error');
       return;
     }
 
@@ -157,7 +158,7 @@ export default function Messager() {
 
       const validation = rpcData as { success: boolean; message: string } | null;
       if (validation && !validation.success) {
-        showToast(validation.message || 'Ops! Código de convite inválido ou expirado.', 'error');
+        showToast(t('auth.invite_error_invalid'), 'error');
         setIsSubmitting(false);
         return;
       }
@@ -194,9 +195,10 @@ export default function Messager() {
           error.message.includes('already registered') ||
           error.message.includes('User already registered')
         ) {
-          showToast('Ops! Este número de telefone já está cadastrado. Conecte-se.', 'error');
+          showToast(t('auth.phone_already_registered'), 'error');
         } else {
-          showToast(error.message || 'Ops! Erro ao registrar número.', 'error');
+          console.error('Registration failed:', error);
+          showToast(t('auth.signup_failed'), 'error');
         }
         setIsSubmitting(false);
         return;
@@ -216,11 +218,9 @@ export default function Messager() {
         setShowPasskeyDialog(true);
       }
     } catch (err: any) {
-      let msg = err.message || 'Ops! Ocorreu um erro ao processar o cadastro.';
-      if (msg.includes('email rate limit exceeded')) {
-        msg = 'Ops! Limite de tentativas excedido, tente mais tarde.';
-      }
-      showToast(msg, 'error');
+      const isRateLimited = typeof err?.message === 'string' && err.message.includes('email rate limit exceeded');
+      console.error('Registration failed:', err);
+      showToast(isRateLimited ? t('auth.signup_rate_limited') : t('auth.signup_failed'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -237,7 +237,7 @@ export default function Messager() {
       setPasskeyDialogCopied(true);
       setTimeout(() => setPasskeyDialogCopied(false), 2500);
     } catch {
-      showToast('Não foi possível copiar. Anote a senha manualmente.', 'error');
+      showToast(t('auth.copy_password_failed'), 'error');
     }
   };
 
@@ -260,7 +260,7 @@ export default function Messager() {
         </h1>
 
         <p className="text-[13px] text-[#8e8e93] text-center mb-6 leading-snug max-w-[290px]">
-          Bem-vindo ao Telegram Business free, inscreva-se gratuitamente
+          {t('auth.signup_description')}
         </p>
 
         <form onSubmit={executeRegistration} className="w-full flex flex-col gap-4">
@@ -269,7 +269,7 @@ export default function Messager() {
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
                 <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  Country
+                  {t('common.country')}
                 </label>
               </div>
               <button
@@ -277,7 +277,7 @@ export default function Messager() {
                 onClick={() => setShowCountryModal(true)}
                 style={{ borderRadius: '12px' }}
                 className="w-full h-[54px] auth-input-btn border border-[#dfdfe0] bg-white flex items-center justify-between px-3.5 hover:border-[#3390ec] focus:border-[#3390ec] focus:outline-none transition-colors cursor-pointer"
-                title="Mudar país"
+                title={t('common.change_country')}
               >
                 <span className="text-[16px] text-black font-normal flex items-center gap-2.5 truncate">
                   <span className="text-[22px] leading-none select-none">
@@ -293,7 +293,7 @@ export default function Messager() {
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
                 <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  Your phone number
+                  {t('auth.phone_label')}
                 </label>
               </div>
               <div
@@ -321,7 +321,7 @@ export default function Messager() {
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
                 <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  Password
+                  {t('auth.password_label')}
                 </label>
               </div>
               <div
@@ -340,7 +340,7 @@ export default function Messager() {
                   type="button"
                   onClick={() => setShowUserPasskey((v) => !v)}
                   className="ml-2 text-[#a2a6aa] hover:text-[#3390ec] transition-colors shrink-0 cursor-pointer"
-                  aria-label={showUserPasskey ? 'Ocultar senha' : 'Ver senha'}
+                  aria-label={showUserPasskey ? t('auth.hide_password') : t('auth.show_password')}
                 >
                   {showUserPasskey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -351,7 +351,7 @@ export default function Messager() {
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
                 <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  Invite Code
+                  {t('auth.invite_code')}
                 </label>
               </div>
               <div
@@ -380,7 +380,7 @@ export default function Messager() {
               {isSubmitting ? (
                 <Loader2 className="animate-spin h-5 w-5 text-white" />
               ) : (
-                'Inscrever-se'
+                t('auth.signup_button')
               )}
             </button>
 
@@ -389,7 +389,7 @@ export default function Messager() {
               onClick={() => navigate('/login')}
               className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-medium text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
             >
-              Já tenho conta — Conectar-se
+              {t('auth.has_account')} {t('auth.login')}
             </button>
           </div>
         </form>
@@ -400,7 +400,7 @@ export default function Messager() {
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white w-full max-w-[340px] rounded-[24px] shadow-2xl p-6 flex flex-col items-center text-center">
             <p className="text-[13px] text-[#707579] leading-snug mb-4 max-w-[260px]">
-              Esta é a sua senha de acesso. Guarde-a para entrar na sua conta.
+              {t('auth.passkey_instructions')}
             </p>
             <div className="w-full bg-[#f0f7ff] border-2 border-[#3390ec] rounded-[18px] px-5 py-4 flex items-center justify-between mb-2">
               <span className="text-[24px] font-black text-[#3390ec] tracking-[4px] font-mono flex-1 text-center truncate">
@@ -413,7 +413,7 @@ export default function Messager() {
                     ? 'bg-green-100 text-green-600'
                     : 'bg-[#3390ec]/10 text-[#3390ec] hover:bg-[#3390ec]/20'
                 }`}
-                title="Copiar senha"
+                title={t('auth.copy_password')}
               >
                 {passkeyDialogCopied ? (
                   <Check className="w-5 h-5" />
@@ -425,12 +425,12 @@ export default function Messager() {
 
             {passkeyDialogCopied && (
               <p className="text-[12px] text-green-600 font-semibold mb-2">
-                ✓ Copiado para a área de transferência!
+                {t('auth.copied_clipboard')}
               </p>
             )}
 
             <p className="text-[11px] text-[#a2acb4] mb-5 leading-snug">
-              Número registrado:{' '}
+              {t('auth.registered_phone')}{' '}
               <strong className="text-[#707579]">
                 {formattedPhone}
               </strong>
@@ -440,7 +440,7 @@ export default function Messager() {
               onClick={handlePasskeyDialogClose}
               className="w-full h-[46px] rounded-[22px] bg-[#3390ec] hover:bg-[#2b7bc9] text-white font-semibold text-[14px] uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm cursor-pointer"
             >
-              ENTRAR NA MINHA CONTA
+              {t('auth.return_to_account')}
             </button>
           </div>
         </div>

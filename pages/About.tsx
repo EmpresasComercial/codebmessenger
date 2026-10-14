@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function About() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   return (
     <div className="w-full min-h-screen bg-white text-[#222222] font-sans antialiased pb-28 select-none">
@@ -34,7 +36,7 @@ export default function About() {
             type="button"
             onClick={() => navigate(-1)}
             className="w-9 h-9 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
-            aria-label="Voltar"
+            aria-label={t('common.back')}
           >
             <ChevronLeft className="w-5 h-5 stroke-[2.2]" />
           </button>
@@ -115,9 +117,7 @@ export default function About() {
         {/* 4. POR QUE O TELEGRAM? (9 PATOS OFICIAIS COM ANIMAÇÃO, SEM BORDAS/CARDS) */}
         <section className="pt-6">
           <div className="text-center mb-10">
-            <h2 className="text-[28px] font-bold text-[#222222]">
-              Por que o Telegram?
-            </h2>
+            <h2 className="text-[28px] font-bold text-[#222222]">{t('about.why_telegram')}</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8 text-center">
@@ -127,15 +127,15 @@ export default function About() {
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-bounce">
                 <img
                   src="/tg_duck_simples.png"
-                  alt="Simples"
+                  alt={t('about.feature_simple_title')}
                   className="w-20 h-20 object-contain hover:scale-110 active:scale-95 transition-transform duration-300"
                 />
               </div>
               <h3 className="text-[17px] font-bold text-[#168acd] mb-1">
-                Simples
+                {t('about.feature_simple_title')}
               </h3>
               <p className="text-[13.5px] text-[#555555] leading-relaxed max-w-[220px]">
-                O <b className="font-semibold text-gray-900">Telegram</b> é tão simples que você já sabe como usar.
+                {t('about.feature_simple_text')}
               </p>
             </div>
 
@@ -144,15 +144,15 @@ export default function About() {
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-wiggle">
                 <img
                   src="/tg_duck_privado.png"
-                  alt="Privado"
+                  alt={t('about.feature_private_title')}
                   className="w-20 h-20 object-contain hover:scale-110 active:scale-95 transition-transform duration-300"
                 />
               </div>
               <h3 className="text-[17px] font-bold text-[#168acd] mb-1">
-                Privado
+                {t('about.feature_private_title')}
               </h3>
               <p className="text-[13.5px] text-[#555555] leading-relaxed max-w-[220px]">
-                Mensagens no <b className="font-semibold text-gray-900">Telegram</b> têm forte criptografia e podem autodestruir.
+                {t('about.feature_private_text')}
               </p>
             </div>
 
@@ -161,15 +161,15 @@ export default function About() {
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-float">
                 <img
                   src="/tg_duck_sincronizado.png"
-                  alt="Sincronizado"
+                  alt={t('about.feature_synced_title')}
                   className="w-20 h-20 object-contain hover:scale-110 active:scale-95 transition-transform duration-300"
                 />
               </div>
               <h3 className="text-[17px] font-bold text-[#168acd] mb-1">
-                Sincronizado
+                {t('about.feature_synced_title')}
               </h3>
               <p className="text-[13.5px] text-[#555555] leading-relaxed max-w-[220px]">
-                O <b className="font-semibold text-gray-900">Telegram</b> te permite acessar seus chats com vários dispositivos.
+                {t('about.feature_synced_text')}
               </p>
             </div>
 
@@ -178,15 +178,15 @@ export default function About() {
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-bounce">
                 <img
                   src="/tg_duck_rapido.png"
-                  alt="Rápido"
+                  alt={t('about.feature_fast_title')}
                   className="w-20 h-20 object-contain hover:scale-110 active:scale-95 transition-transform duration-300"
                 />
               </div>
               <h3 className="text-[17px] font-bold text-[#168acd] mb-1">
-                Rápido
+                {t('about.feature_fast_title')}
               </h3>
               <p className="text-[13.5px] text-[#555555] leading-relaxed max-w-[220px]">
-                O <b className="font-semibold text-gray-900">Telegram</b> entrega as mensagens mais rápido que qualquer app.
+                {t('about.feature_fast_text')}
               </p>
             </div>
 
@@ -195,15 +195,15 @@ export default function About() {
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-wiggle">
                 <img
                   src="/tg_duck_poderoso.png"
-                  alt="Poderoso"
+                  alt={t('about.feature_powerful_title')}
                   className="w-20 h-20 object-contain hover:scale-110 active:scale-95 transition-transform duration-300"
                 />
               </div>
               <h3 className="text-[17px] font-bold text-[#168acd] mb-1">
-                Poderoso
+                {t('about.feature_powerful_title')}
               </h3>
               <p className="text-[13.5px] text-[#555555] leading-relaxed max-w-[220px]">
-                O <b className="font-semibold text-gray-900">Telegram</b> não tem limites para o tamanho das suas mídias e chats.
+                {t('about.feature_powerful_text')}
               </p>
             </div>
 
@@ -212,15 +212,17 @@ export default function About() {
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-float">
                 <img
                   src="/tg_duck_aberto.png"
-                  alt="Aberto"
+                  alt={t('about.feature_open_title')}
                   className="w-20 h-20 object-contain hover:scale-110 active:scale-95 transition-transform duration-300"
                 />
               </div>
               <h3 className="text-[17px] font-bold text-[#168acd] mb-1">
-                Aberto
+                {t('about.feature_open_title')}
               </h3>
               <p className="text-[13.5px] text-[#555555] leading-relaxed max-w-[220px]">
-                O <b className="font-semibold text-gray-900">Telegram</b> tem uma <a href="https://core.telegram.org/api" target="_blank" rel="noopener noreferrer" className="text-[#168acd] hover:underline">API</a> aberta e código-fonte livre para todos.
+                {t('about.feature_open_before')}
+                <a href="https://core.telegram.org/api" target="_blank" rel="noopener noreferrer" className="text-[#168acd] hover:underline">API</a>
+                {t('about.feature_open_after')}
               </p>
             </div>
 
@@ -229,15 +231,15 @@ export default function About() {
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-bounce">
                 <img
                   src="/tg_duck_seguro.png"
-                  alt="Seguro"
+                  alt={t('about.feature_secure_title')}
                   className="w-20 h-20 object-contain hover:scale-110 active:scale-95 transition-transform duration-300"
                 />
               </div>
               <h3 className="text-[17px] font-bold text-[#168acd] mb-1">
-                Seguro
+                {t('about.feature_secure_title')}
               </h3>
               <p className="text-[13.5px] text-[#555555] leading-relaxed max-w-[220px]">
-                O <b className="font-semibold text-gray-900">Telegram</b> protege as mensagens contra ataques de hackers.
+                {t('about.feature_secure_text')}
               </p>
             </div>
 
@@ -246,15 +248,15 @@ export default function About() {
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-wiggle">
                 <img
                   src="/tg_duck_social.png"
-                  alt="Social"
+                  alt={t('about.feature_social_title')}
                   className="w-20 h-20 object-contain hover:scale-110 active:scale-95 transition-transform duration-300"
                 />
               </div>
               <h3 className="text-[17px] font-bold text-[#168acd] mb-1">
-                Social
+                {t('about.feature_social_title')}
               </h3>
               <p className="text-[13.5px] text-[#555555] leading-relaxed max-w-[220px]">
-                O <b className="font-semibold text-gray-900">Telegram</b> suporta grupos de até 200.000 membros.
+                {t('about.feature_social_text')}
               </p>
             </div>
 
@@ -263,15 +265,15 @@ export default function About() {
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-float">
                 <img
                   src="/tg_duck_expressivo.png"
-                  alt="Expressivo"
+                  alt={t('about.feature_expressive_title')}
                   className="w-20 h-20 object-contain hover:scale-110 active:scale-95 transition-transform duration-300"
                 />
               </div>
               <h3 className="text-[17px] font-bold text-[#168acd] mb-1">
-                Expressivo
+                {t('about.feature_expressive_title')}
               </h3>
               <p className="text-[13.5px] text-[#555555] leading-relaxed max-w-[220px]">
-                O <b className="font-semibold text-gray-900">Telegram</b> permite que você personalize o app por completo.
+                {t('about.feature_expressive_text')}
               </p>
             </div>
 

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 // URL da Edge Function (não acessa banco diretamente)
@@ -151,6 +152,7 @@ export default function pavelDurov() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { session } = useAuth();
+  const { t } = useLanguage();
 
   const [posts, setPosts] = useState<ChannelPost[]>([]);
   const [inputText, setInputText] = useState('');
@@ -357,7 +359,7 @@ export default function pavelDurov() {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(`${post.title ? post.title + '\n\n' : ''}${post.content}`);
     }
-    showToast('Link e conteúdo do post copiados para encaminhar!', 'success');
+    showToast(t('social.post_copied'), 'success');
   };
 
   // Envio de anúncio ou mensagem de texto comum
@@ -575,7 +577,7 @@ export default function pavelDurov() {
           type="button"
           onClick={() => navigate(-1)}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
-          aria-label="Voltar"
+          aria-label={t('common.back')}
         >
           <ArrowLeft className="w-6 h-6 stroke-[2]" />
         </button>
@@ -842,8 +844,8 @@ export default function pavelDurov() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-0.5"
-              title="Anexar comprovativo de retirada"
-              aria-label="Anexar comprovativo de retirada"
+              title={t('recharge.proof_label')}
+              aria-label={t('recharge.proof_label')}
             >
               <Paperclip className="w-5 h-5 -rotate-45" />
             </button>
@@ -904,7 +906,7 @@ export default function pavelDurov() {
                     className="absolute bottom-2 right-2 px-2.5 py-1 rounded-full bg-black/70 hover:bg-black/90 text-white text-[12px] font-medium backdrop-blur-xs flex items-center gap-1 transition-colors"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Trocar</span>
+                    <span>{t('social.change')}</span>
                   </button>
                 </div>
               )}
@@ -912,7 +914,7 @@ export default function pavelDurov() {
               {/* Campo Valor da Retirada */}
               <div>
                 <label className="block text-[13px] font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Valor recebido (Kz) <span className="text-red-500">*</span>
+                  {t('social.received_value')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <input
@@ -935,11 +937,11 @@ export default function pavelDurov() {
               {/* Campo Comentário / Depoimento */}
               <div>
                 <label className="block text-[13px] font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Comentário (opcional)
+                  {t('social.your_comment')} (opcional)
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Partilhe a sua experiência com o saque ou agradecimento..."
+                  placeholder={t('social.message_placeholder')}
                   value={proofComment}
                   onChange={(e) => setProofComment(e.target.value.slice(0, 250))}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#182533] text-[14px] text-[#111827] dark:text-white outline-none focus:border-[#2481cc] transition-colors resize-none"
@@ -960,7 +962,7 @@ export default function pavelDurov() {
                   disabled={isSubmittingProof}
                   className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[14px] font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
 
                 <button
@@ -971,10 +973,10 @@ export default function pavelDurov() {
                   {isSubmittingProof ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Enviando...</span>
+                      <span>{t('social.sending')}</span>
                     </>
                   ) : (
-                    <span>Enviar Comprovativo</span>
+                    <span>{t('social.send_proof')}</span>
                   )}
                 </button>
               </div>
@@ -995,7 +997,7 @@ export default function pavelDurov() {
             type="button"
             onClick={() => setFullscreenImage(null)}
             className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
-            aria-label="Fechar imagem"
+            aria-label={t('common.close')}
           >
             <X className="w-6 h-6" />
           </button>

@@ -34,6 +34,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { COUNTRIES, detectCountryFromPhone } from '../lib/countries';
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js/max';
@@ -102,6 +103,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   const user = session?.user;
   const { isUserOnline } = usePresence();
   const { showToast } = useToast();
+  const { t } = useLanguage();
   const { statusText } = useNetworkStatus();
 
   // typingUsers: Map<contactId, true> — contatos que estão digitando agora
@@ -780,11 +782,11 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
   // Estrutura das abas solicitadas: Conversas | Grupos | Canais | Bots | Mensagens lidas
   const folders: { id: ChatFolder; label: string; count?: number }[] = [
-    { id: 'all', label: 'Conversas', count: contacts.length + 5 },
-    { id: 'groups', label: 'Grupos', count: 1 },
-    { id: 'channels', label: 'Canais', count: 1 },
-    { id: 'bots', label: 'Bots', count: 3 },
-    { id: 'unread', label: 'Mensagens lidas', count: contacts.filter(c => !c.isMe && Boolean(c.lastMessage)).length },
+    { id: 'all', label: t('chat.tab_chats'), count: contacts.length + 5 },
+    { id: 'groups', label: t('chat.tab_groups'), count: 1 },
+    { id: 'channels', label: t('chat.tab_channels'), count: 1 },
+    { id: 'bots', label: t('chat.tab_bots'), count: 3 },
+    { id: 'unread', label: t('chat.tab_unread'), count: contacts.filter(c => !c.isMe && Boolean(c.lastMessage)).length },
   ];
 
   const now = new Date();
@@ -1038,7 +1040,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   setSearchQuery("");
                 }}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0"
-                title="Voltar"
+                title={t('chat.back')}
               >
                 <X className="w-5 h-5 text-[#111] dark:text-white" />
               </button>
@@ -1048,7 +1050,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 <input
                   type="text"
                   autoFocus
-                  placeholder="Buscar conversas, bots ou mensagens..."
+                  placeholder={t('chat.search_placeholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-transparent text-sm text-[#111] dark:text-white placeholder:text-[#707579] outline-none border-none"
@@ -1078,7 +1080,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     type="button"
                     onClick={() => setIsNavigationDrawerOpen(true)}
                     className="mr-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#707579] transition-colors hover:bg-black/5 dark:text-[#9eaab6] dark:hover:bg-white/5"
-                    aria-label="Abrir menu de navegação"
+                    aria-label={t('chat.open_menu')}
                     aria-expanded={isNavigationDrawerOpen}
                   >
                     <Menu className="h-6 w-6" />
@@ -1097,7 +1099,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               <button
                 onClick={() => setIsSearching(true)}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer"
-                title="Pesquisar"
+                title={t('chat.search')}
               >
                 <Search className="w-5 h-5 text-[#111] dark:text-white" />
               </button>
@@ -1112,7 +1114,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 }
               }}
               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer"
-              title="Mensagens Automáticas & Configurações"
+              title={t('chat.automatic_messages')}
             >
               <MoreVertical className="w-5 h-5 text-[#111] dark:text-white" />
             </button>
@@ -1125,11 +1127,11 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               type="button"
               className="absolute inset-0 h-full w-full cursor-default bg-black/40"
               onClick={() => setIsNavigationDrawerOpen(false)}
-              aria-label="Fechar menu"
+              aria-label={t('chat.close_menu')}
             />
             <nav
               className="absolute inset-y-0 left-0 flex w-[280px] flex-col overflow-y-auto overscroll-contain bg-white pb-4 shadow-xl dark:bg-[#17212b] md:pb-4"
-              aria-label="Navegação principal"
+              aria-label={t('chat.main_navigation')}
             >
               <div className="border-b border-gray-100 bg-[#2481cc] px-4 pb-3 pt-5 text-white dark:border-[#202b36] dark:bg-[#1c242f]">
                 <button
@@ -1139,7 +1141,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     navigate("/perfil");
                   }}
                   className="block w-full cursor-pointer text-left"
-                  aria-label="Editar perfil"
+                  aria-label={t('chat.edit_profile')}
                 >
                   <div className="mb-3 flex items-start justify-between">
                     <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[20px] font-semibold">
@@ -1155,7 +1157,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-semibold">{drawerName}</p>
                       <p className="mt-0.5 truncate text-[13px] text-white/75">
-                        {drawerPhone ? formatDrawerPhone(drawerPhone) : "Telefone não disponível"}
+                        {drawerPhone ? formatDrawerPhone(drawerPhone) : t('chat.phone_missing')}
                       </p>
                     </div>
                     <ChevronDown className="h-4 w-4 shrink-0 text-white/80" />
@@ -1163,8 +1165,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 </button>
               </div>
               {[
-                { label: "Grupo Telegram", path: "/web", icon: MessageCircle },
-                { label: "Convidar amigos", path: "/contactos", icon: UserRoundPlus },
+                { label: t('chat.group_telegram'), path: "/web", icon: MessageCircle },
+                { label: t('invite.title'), path: "/contactos", icon: UserRoundPlus },
               ].map(({ label, path, icon: Icon }) => (
                 <button
                   key={label}
@@ -1185,36 +1187,36 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               ))}
               <div className="my-2 shrink-0 border-t border-gray-100 dark:border-[#202b36]" />
               {[
-                { label: "Carteira wallet", path: "/carteira", icon: Wallet },
-                { label: "Payment Wallet", path: "/sand-pay", icon: PlusCircle },
-                { label: "Introdução ao Telegram", path: "/sobre-telegram business", icon: Lightbulb },
-                { label: "Download APK", path: "/android?setln=pt", icon: Download },
-                { label: "Carteira bancária", path: "/carteira?intent=add-bank", icon: CreditCard },
-                { label: "Notificações", action: "notifications", icon: Bell },
-                { label: "Canal postes", path: "/canal-oficial", icon: MessagesSquare },
-                { label: "Perguntas Frequentes", path: "/help-faq", icon: HelpCircle },
-                { label: "Redefinir Senha", path: "/alterar-senha", icon: ShieldAlert },
-                { label: "Definições", path: "/definicoes", icon: Settings },
-                { label: "Idioma", path: "/definicoes", icon: Globe, state: { openLanguage: true } },
-                { label: "Termo e privacidade", path: "/devices", icon: Smartphone },
-              ].map(({ label, path, icon: Icon, state }) => (
+                { label: t('chat.wallet'), path: "/carteira", icon: Wallet },
+                { label: t('chat.payment_wallet'), path: "/sand-pay", icon: PlusCircle },
+                { label: t('chat.introduction'), path: "/sobre-telegram business", icon: Lightbulb },
+                { label: t('chat.download_apk'), path: "/android?setln=pt", icon: Download },
+                { label: t('chat.bank_wallet'), path: "/carteira?intent=add-bank", icon: CreditCard },
+                { label: t('chat.notifications'), action: "notifications", icon: Bell },
+                { label: t('chat.channel_posts'), path: "/canal-oficial", icon: MessagesSquare },
+                { label: t('chat.faq'), path: "/help-faq", icon: HelpCircle },
+                { label: t('chat.reset_password'), path: "/alterar-senha", icon: ShieldAlert },
+                { label: t('chat.settings'), path: "/definicoes", icon: Settings },
+                { label: t('settings.language'), path: "/definicoes", icon: Globe, state: { openLanguage: true } },
+                { label: t('chat.terms_privacy'), path: "/devices", icon: Smartphone },
+              ].map(({ label, path, icon: Icon, state, action }) => (
                 <button
                   key={label}
                   type="button"
                   onClick={() => {
                     setIsNavigationDrawerOpen(false);
-                    if (label === "Notificações") {
+                    if (action === "notifications") {
                       if ("Notification" in window) {
                         Notification.requestPermission().then((permission) => {
                           showToast(
                             permission === "granted"
-                              ? "Notificações ativadas"
-                              : "Permissão para notificações não concedida",
+                              ? t('chat.notifications_enabled')
+                              : t('chat.notifications_denied'),
                             permission === "granted" ? "success" : "info"
                           );
-                        }).catch(() => showToast("Não foi possível atualizar as notificações", "error"));
+                        }).catch(() => showToast(t('chat.notifications_error'), "error"));
                       } else {
-                        showToast("Notificações não disponíveis neste dispositivo", "info");
+                        showToast(t('chat.notifications_unavailable'), "info");
                       }
                       return;
                     }
@@ -1228,7 +1230,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               ))}
               <div className="my-2 shrink-0 border-t border-gray-100 dark:border-[#202b36]" />
               {[
-                { label: "Sobre o Telegram", path: "/sobre-telegram business", icon: Info },
+                { label: t('chat.about_telegram'), path: "/sobre-telegram business", icon: Info },
               ].map(({ label, path, icon: Icon }) => (
                 <button
                   key={label}
@@ -1250,16 +1252,16 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   setIsNavigationDrawerOpen(false);
                   const { error } = await supabase.auth.signOut();
                   if (error) {
-                    showToast("Não foi possível terminar a sessão", "error");
+                    showToast(t('chat.logout_failed'), "error");
                     return;
                   }
-                  showToast("Sessão terminada com sucesso", "success");
+                  showToast(t('chat.logout_success'), "success");
                   navigate("/login");
                 }}
                 className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
               >
                 <LogOut className="h-5 w-5" />
-                Terminar sessão
+                {t('chat.logout')}
               </button>
             </nav>
           </div>
@@ -1304,7 +1306,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-8 space-y-2">
             <Loader2 className="w-7 h-7 text-[#2481cc] animate-spin" />
-            <span className="text-[13px] text-[#707579] dark:text-[#9eaab6]">Carregando conversas...</span>
+            <span className="text-[13px] text-[#707579] dark:text-[#9eaab6]">{t('chat.loading_chats')}</span>
           </div>
         ) : (
           <>
@@ -1332,7 +1334,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                           {chat.name}
                         </h3>
                         {isOnline && (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-[#10b981]" title="Online agora" />
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-[#10b981]" title={t('chat.online_now')} />
                         )}
                         {chat.isVerified && <OfficialVerifiedBadge />}
                         {chat.tag && (
@@ -1359,9 +1361,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                         return (
                           <p className="text-[13.5px] truncate leading-snug overflow-hidden whitespace-nowrap">
                             {isCommunityTyping ? (
-                              <span className="text-[#4dcd5e] font-medium italic">{communityTypingUser} está digitando...</span>
+                              <span className="text-[#4dcd5e] font-medium italic">{communityTypingUser} {t('chat.typing')}</span>
                             ) : isTyping ? (
-                              <span className="text-[#4dcd5e] font-medium italic">digitando...</span>
+                              <span className="text-[#4dcd5e] font-medium italic">{t('chat.typing')}</span>
                             ) : (
                               <span className="text-[#707579] dark:text-[#9eaab6]">
                                 {chat.senderPrefix && (
@@ -1429,14 +1431,14 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                               {contact.nome_exibicao || formatSenderPhone(contact.telefone, contact.countryCode)}
                             </h3>
                             {isOnline && (
-                              <span className="h-2 w-2 shrink-0 rounded-full bg-[#10b981]" title="Online agora" />
+                              <span className="h-2 w-2 shrink-0 rounded-full bg-[#10b981]" title={t('chat.online_now')} />
                             )}
                           </div>
                         </div>
 
                         <p className="text-[13px] leading-snug mt-[1px] truncate">
                           {typingUsers[contact.id] ? (
-                            <span className="text-[#4dcd5e] font-medium italic">digitando...</span>
+                            <span className="text-[#4dcd5e] font-medium italic">{t('chat.typing')}</span>
                           ) : (
                             <span className="text-[#707579] dark:text-[#9eaab6]">
                               visto às {timeStr}
@@ -1473,12 +1475,12 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           {/* ── BOTÃO DE AÇÃO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÁPIS) ── */}
           <button
             onClick={() => {
-              showToast('Iniciando novo chat...', 'info');
+              showToast(t('chat.new_conversation'), 'info');
               navigate('/web');
             }}
             className="fixed bottom-[74px] right-4 z-40 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-gradient-to-tr from-[#1e96c8] to-[#50a2e9] text-white shadow-[0_4px_16px_rgba(36,129,204,0.45)] transition-all hover:scale-105 active:scale-95"
-            title="Nova Conversa"
-            aria-label="Nova Conversa"
+            title={t('chat.new_conversation')}
+            aria-label={t('chat.new_conversation')}
           >
             <Edit3 className="h-5 w-5 stroke-[1.8]" />
           </button>

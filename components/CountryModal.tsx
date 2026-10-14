@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, X, Check } from 'lucide-react';
 import { COUNTRIES, Country } from '../lib/countries';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface CountryModalProps {
   isOpen: boolean;
@@ -15,8 +16,11 @@ export default function CountryModal({
   selectedCountry,
   onSelectCountry,
 }: CountryModalProps) {
+  const { t, language } = useLanguage();
   const [search, setSearch] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const locale = language === 'zh-hans' ? 'zh-Hans' : language;
+  const countryNames = useMemo(() => new Intl.DisplayNames([locale], { type: 'region' }), [locale]);
 
   useEffect(() => {
     if (isOpen) {
@@ -36,13 +40,15 @@ export default function CountryModal({
 
     return COUNTRIES.filter((c) => {
       const nameNorm = normalize(c.name);
+      const localizedName = normalize(countryNames.of(c.code.toUpperCase()) || c.name);
       return (
         nameNorm.includes(queryNormalized) ||
+        localizedName.includes(queryNormalized) ||
         c.dial_code.includes(query) ||
         c.code.toLowerCase().includes(query)
       );
     });
-  }, [search]);
+  }, [search, countryNames]);
 
   if (!isOpen) return null;
 
@@ -55,10 +61,10 @@ export default function CountryModal({
           onClick={onClose}
           className="text-[#3390ec] text-[17px] font-medium cursor-pointer hover:opacity-80 transition-opacity"
         >
-          Voltar
+          {t('common.back')}
         </button>
         <h2 className="flex-1 text-center text-[17px] font-semibold text-black">
-          Escolha um país
+          {t('country.choose')}
         </h2>
         <div className="w-[48px]" />
       </div>
@@ -70,7 +76,7 @@ export default function CountryModal({
           <input
             ref={inputRef}
             type="text"
-            placeholder="Pesquisar país ou código"
+            placeholder={t('country.search_placeholder')}
             className="bg-transparent outline-none flex-1 text-[16px] text-black placeholder:text-[#8e8e93]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -80,7 +86,7 @@ export default function CountryModal({
               type="button"
               onClick={() => setSearch('')}
               className="bg-[#8e8e93] hover:bg-[#707579] text-white rounded-full p-0.5 ml-2 cursor-pointer transition-colors"
-              aria-label="Limpar pesquisa"
+              aria-label={t('country.clear_search')}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -107,7 +113,7 @@ export default function CountryModal({
                 {c.emoji}
               </span>
               <span className="flex-1 text-[16px] font-medium text-black truncate">
-                {c.name}
+                {countryNames.of(c.code.toUpperCase()) || c.name}
               </span>
               <span className="text-[#8e8e93] text-[16px] mr-3 font-normal shrink-0">
                 {c.dial_code}

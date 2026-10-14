@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   ChevronLeft, Copy, Share2, Check, 
   QrCode, X, Link2
@@ -10,6 +11,7 @@ import {
 export default function ContactsInvite() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { t } = useLanguage();
   const [inviteCode, setInviteCode] = useState<string>('---');
   const defaultDomain = typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')
     ? window.location.origin
@@ -77,14 +79,14 @@ export default function ContactsInvite() {
     navigator.clipboard.writeText(text);
     if (isCode) {
       setCopiedCode(true);
-      showToast('Código de convite copiado!', 'success');
+      showToast(t('invite.copy_toast'), 'success');
       setTimeout(() => setCopiedCode(false), 2000);
     } else {
       setCopiedLink(true);
-      showToast('Link copiado!', 'success');
+      showToast(t('invite.copy_toast'), 'success');
       setTimeout(() => setCopiedLink(false), 2000);
     }
-  }, [showToast]);
+  }, [showToast, t]);
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -116,7 +118,7 @@ export default function ContactsInvite() {
           type="button"
           onClick={handleBack}
           className="flex h-9 w-9 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100 active:scale-95"
-          aria-label="Voltar"
+          aria-label={t('common.back')}
         >
           <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
         </button>
@@ -129,10 +131,10 @@ export default function ContactsInvite() {
           controls
           playsInline
           preload="metadata"
-          aria-label="Vídeo sobre o programa de convites"
+          aria-label={t('invite.program_video_alt')}
         >
           <source src="/affiliate-programs-7s.mp4" type="video/mp4" />
-          O seu navegador não suporta a reprodução de vídeo.
+          {t('invite.video_unsupported')}
         </video>
 
         <section className="mx-auto w-full max-w-[420px] space-y-5 px-1 text-center">
@@ -141,18 +143,18 @@ export default function ContactsInvite() {
           </div>
           <div className="space-y-2">
             <h2 className="text-[24px] font-semibold leading-tight text-black">
-              Link de Indicação
+              {t('invite.link_label')}
             </h2>
             <p className="text-[15px] leading-5 text-[#333333]">
-              Partilhe este link e ganhe comissões sobre as recargas da sua equipa: 10% no nível 1, 6% no nível 2 e 2% no nível 3.
+              {t('invite.link_description')}
             </p>
           </div>
           <div className="space-y-2">
-            <p className="text-[14px] text-[#333333]">Recompensas do programa</p>
+            <p className="text-[14px] text-[#333333]">{t('invite.rewards_title')}</p>
             <div className="inline-flex flex-wrap justify-center gap-2 rounded-full bg-[#f1f1f5] px-4 py-2 text-[13px] font-medium text-[#222222]">
-              <span>300 AOA ao registar</span>
+              <span>{t('invite.signup_reward')}</span>
               <span aria-hidden="true">·</span>
-              <span>500 AOA por 10 convites</span>
+              <span>{t('invite.ten_invite_reward')}</span>
             </div>
           </div>
           <div className="space-y-3 pt-1">
@@ -160,7 +162,7 @@ export default function ContactsInvite() {
               <button
                 type="button"
                 onClick={() => copyToClipboard(inviteCode, true)}
-                aria-label="Copiar código de convite"
+                aria-label={`${t('common.copy')} ${t('invite.code_label').toLocaleLowerCase()}`}
                 className="flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] bg-[#f1f1f5] px-4 text-left font-mono text-[14px] text-[#222222] transition-colors hover:bg-[#e8e8ee]"
               >
                 <span className="truncate">{inviteCode}</span>
@@ -176,7 +178,7 @@ export default function ContactsInvite() {
               className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-[#0878ff] text-[15px] font-semibold text-white transition-colors hover:bg-[#006be6]"
             >
               {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              <span>{copiedLink ? 'Copiado!' : 'Copiar Link'}</span>
+              <span>{copiedLink ? t('common.copied') : `${t('common.copy')} ${t('invite.link_label').toLocaleLowerCase()}`}</span>
             </button>
           </div>
         </section>
@@ -188,7 +190,7 @@ export default function ContactsInvite() {
             className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 px-4 text-[14px] text-[#2481cc] transition-colors hover:bg-gray-50"
           >
             <Share2 className="h-4 w-4" />
-            Partilhar
+            {t('invite.btn_share')}
           </button>
           <button
             type="button"
@@ -196,21 +198,21 @@ export default function ContactsInvite() {
             className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 px-4 text-[14px] text-[#2481cc] transition-colors hover:bg-gray-50"
           >
             <QrCode className="h-4 w-4" />
-            Código QR
+            {t('invite.qr_code')}
           </button>
         </div>
 
         <section className="space-y-6 border-t border-gray-200 pt-8 text-[15px] leading-7 text-[#333333]">
           <section id="participando-de-programas-de-afiliados" className="space-y-3">
             <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
-              Programa de Convites Telegram Business
+              {t('invite.program_heading')}
             </h2>
             <p>
-              Partilhe o seu link de convite para trazer amigos para o Telegram Business. Quando se registam pelo seu link, passam a fazer parte da sua equipa e as recargas qualificadas podem gerar comissões para si.
+              {t('invite.program_description')}
             </p>
             <img
               src="/affiliate-programs-referral.png"
-              alt="Programa de afiliados: comissões confiáveis, transparentes e simples"
+              alt={t('invite.program_image_alt')}
               className="mx-auto block h-auto w-full max-w-[520px] rounded-xl"
               loading="lazy"
             />
@@ -218,20 +220,20 @@ export default function ContactsInvite() {
 
           <section id="compartilhando-link-afiliado" className="space-y-3">
             <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
-              Convide Amigos
+              {t('invite.title')}
             </h2>
             <p>
-              Use o botão para copiar ou partilhar o seu link por mensagem, nas redes sociais ou onde preferir. O código de convite também pode ser partilhado para que os seus amigos se registem.
+              {t('invite.share_howto')}
             </p>
           </section>
 
           <section id="recebendo-comissoes" className="space-y-3">
             <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
-              Recompensas e Comissões
+              {t('invite.commissions_heading')}
             </h2>
             <img
               src="/invite-rewards-levels.png"
-              alt="Recompensas dos convites: 10% no nível 1, 6% no nível 2, 2% no nível 3 e bônus de 500 AOA ao cadastrar 10 afiliados"
+              alt={t('invite.commissions_image_alt')}
               className="mx-auto block h-auto w-full max-w-[520px] rounded-xl"
               loading="lazy"
             />
@@ -239,24 +241,24 @@ export default function ContactsInvite() {
 
           <section id="perguntas-frequentes" className="space-y-4">
             <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
-              Perguntas Frequentes
+              {t('invite.faq_heading')}
             </h2>
             <details className="border-b border-gray-200 pb-4">
-              <summary className="cursor-pointer font-medium text-[#222222]">Como recebo comissões?</summary>
+              <summary className="cursor-pointer font-medium text-[#222222]">{t('invite.faq_commissions_question')}</summary>
               <p className="pt-3">
-                As comissões são geradas pelas recargas da sua equipa, conforme o nível: 10% no nível 1, 6% no nível 2 e 2% no nível 3.
+                {t('invite.faq_commissions_answer')}
               </p>
             </details>
             <details className="border-b border-gray-200 pb-4">
-              <summary className="cursor-pointer font-medium text-[#222222]">Qual é a recompensa por convidar 10 amigos?</summary>
+              <summary className="cursor-pointer font-medium text-[#222222]">{t('invite.faq_ten_question')}</summary>
               <p className="pt-3">
-                Ao atingir 10 amigos convidados, pode receber um bônus de 500 AOA.
+                {t('invite.faq_ten_answer')}
               </p>
             </details>
             <details className="border-b border-gray-200 pb-4">
-              <summary className="cursor-pointer font-medium text-[#222222]">Posso criar mais de uma conta para participar da promoção?</summary>
+              <summary className="cursor-pointer font-medium text-[#222222]">{t('invite.faq_multiple_question')}</summary>
               <p className="pt-3">
-                Não. Cada pessoa pode registar apenas uma conta para participar na promoção.
+                {t('invite.faq_multiple_answer')}
               </p>
             </details>
           </section>
@@ -276,7 +278,7 @@ export default function ContactsInvite() {
           >
             {/* Cabeçalho do modal */}
             <div className="flex items-center justify-between px-4 h-[52px] border-b border-[#e4e4e4] dark:border-[#1e2c3a]">
-              <span className="text-[16px] font-semibold text-black dark:text-white">Código QR</span>
+              <span className="text-[16px] font-semibold text-black dark:text-white">{t('invite.qr_code')}</span>
               <button
                 type="button"
                 onClick={() => setShowQrModal(false)}
@@ -291,12 +293,12 @@ export default function ContactsInvite() {
               <div className="bg-white p-3 rounded-[12px]">
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(rawInviteLink)}`}
-                  alt="QR Code"
+                  alt={t('invite.qr_alt')}
                   className="w-[200px] h-[200px]"
                 />
               </div>
               <p className="text-[13px] text-[#707579] dark:text-[#8e9aa5] text-center mt-3 max-w-[280px] leading-relaxed">
-                Aponte a câmara do telemóvel para aceder ao link de convite.
+                {t('invite.qr_instructions')}
               </p>
             </div>
 
@@ -308,14 +310,14 @@ export default function ContactsInvite() {
                 className="w-full h-[50px] flex items-center justify-center gap-2 text-[15px] text-[#2481cc] dark:text-[#5288c1] font-medium cursor-pointer hover:bg-[#f5f5f5] dark:hover:bg-[#1e2c3a] transition"
               >
                 <Copy className="w-4 h-4" />
-                Copiar Ligação
+                {t('invite.copy_link')}
               </button>
               <button
                 type="button"
                 onClick={() => setShowQrModal(false)}
                 className="w-full h-[50px] flex items-center justify-center text-[15px] text-[#707579] dark:text-[#8e9aa5] cursor-pointer hover:bg-[#f5f5f5] dark:hover:bg-[#1e2c3a] transition"
               >
-                Fechar
+                {t('common.close')}
               </button>
             </div>
           </div>

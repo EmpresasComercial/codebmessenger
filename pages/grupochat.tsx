@@ -455,6 +455,7 @@ interface MessageItemProps {
   dateLabel: string;
   timeFormatted: string;
   language: string;
+  editedLabel: string;
   isSelectedInContextMenu: boolean;
   onStartLongPress: (m: any, isMe: boolean, clientX: number, clientY: number, element: HTMLElement) => void;
   onCancelLongPress: () => void;
@@ -477,6 +478,7 @@ const MessageItem = React.memo(({
   dateLabel,
   timeFormatted,
   language,
+  editedLabel,
   isSelectedInContextMenu,
   onStartLongPress,
   onCancelLongPress,
@@ -593,7 +595,7 @@ const MessageItem = React.memo(({
             />
             <div className="absolute bottom-1.5 right-2 flex items-center gap-1 bg-black/40 rounded-full px-1.5 py-0.5 select-none">
               {isEdited && (
-                <span className="text-[9.5px] font-normal text-white/85 select-none">editada</span>
+                <span className="text-[9.5px] font-normal text-white/85 select-none">{editedLabel}</span>
               )}
               <span className="text-[10px] font-normal text-white">{timeFormatted}</span>
               {isMe && (
@@ -741,7 +743,7 @@ const MessageItem = React.memo(({
 
               <div className="absolute bottom-[-1px] right-0 flex items-center gap-[2px] select-none text-[12px]" style={{ color: isMe ? '#55864e' : '#8e8e93' }}>
                 {isEdited && (
-                  <span className="opacity-80 mr-[2px]">editada</span>
+                  <span className="opacity-80 mr-[2px]">{editedLabel}</span>
                 )}
                 <span className="font-normal leading-none mt-[1px]">
                   {timeFormatted}
@@ -789,7 +791,7 @@ export default function grupochat() {
   const { session } = useAuth();
   const user = session?.user;
   const { showToast } = useToast();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { statusText } = useNetworkStatus();
 
   const [publicMessages, setPublicMessages] = useState<any[]>(() => {
@@ -2050,6 +2052,7 @@ export default function grupochat() {
               dateLabel={currDate}
               timeFormatted={formatTime(m.data_registrada)}
               language={language}
+              editedLabel={t('group.edited')}
               isSelectedInContextMenu={contextMenu?.message?.id === m.id}
               onStartLongPress={startLongPress}
               onCancelLongPress={cancelLongPress}
@@ -2370,12 +2373,12 @@ export default function grupochat() {
                   <div className="w-[32px] h-[32px] rounded-[8px] flex items-center justify-center shrink-0" style={{ backgroundColor: '#ff3b30' }}>
                     <Bell className="w-[17px] h-[17px] text-white stroke-[2]" />
                   </div>
-                  <span className="flex-1 text-[14px] text-[#111]">Notifications</span>
+                  <span className="flex-1 text-[14px] text-[#111]">{t('group.notifications')}</span>
                   <button
                     type="button"
                     onClick={() => {
                       setIsGroupMuted(!isGroupMuted);
-                      showToast(isGroupMuted ? 'Notifications on' : 'Notifications off', 'info');
+                      showToast(isGroupMuted ? t('group.notifications_on') : t('group.notifications_off'), 'info');
                     }}
                     className="relative w-[34px] h-[14px] rounded-full cursor-pointer focus:outline-none shrink-0 transition-colors duration-200"
                     style={{ backgroundColor: isGroupMuted ? '#d1d1d6' : '#007aff' }}
@@ -2462,7 +2465,7 @@ export default function grupochat() {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center pt-16 pb-8">
-                      <span className="text-[14px]" style={{ color: '#8e8e93' }}>Ainda não há fotos partilhadas</span>
+                      <span className="text-[14px]" style={{ color: '#8e8e93' }}>{t('group.no_shared_photos')}</span>
                     </div>
                   )
                 )}
@@ -2506,7 +2509,7 @@ export default function grupochat() {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center pt-16 pb-8">
-                      <span className="text-[14px]" style={{ color: '#8e8e93' }}>Ainda não há ficheiros partilhados</span>
+                      <span className="text-[14px]" style={{ color: '#8e8e93' }}>{t('group.no_shared_files')}</span>
                     </div>
                   )
                 )}
@@ -2538,7 +2541,7 @@ export default function grupochat() {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center pt-16 pb-8">
-                      <span className="text-[14px]" style={{ color: '#8e8e93' }}>Ainda não há links partilhados</span>
+                      <span className="text-[14px]" style={{ color: '#8e8e93' }}>{t('group.no_shared_links')}</span>
                     </div>
                   )
                 )}

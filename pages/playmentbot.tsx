@@ -20,6 +20,7 @@ import { useToast } from '../components/Toast';
 import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const MIN_RECHARGE = 3000;
 const MAX_RECHARGE = 500000;
@@ -318,17 +319,20 @@ function formatStatus(statusStr?: string | null): { label: string; badgeClass: s
   return { label: 'Pendente', badgeClass: 'bg-yellow-100 text-yellow-800' };
 }
 
-function validateRechargeAmount(amount: number): { valid: boolean; errorText?: string } {
+function validateRechargeAmount(
+  amount: number,
+  t: (key: 'recharge.min_limit' | 'recharge.max_limit') => string
+): { valid: boolean; errorText?: string } {
   if (amount < MIN_RECHARGE) {
     return {
       valid: false,
-      errorText: `O valor mínimo para recarga é de ${formatCurrency(MIN_RECHARGE, 'KZ')}.`
+      errorText: `${t('recharge.min_limit')} ${formatCurrency(MIN_RECHARGE, 'KZ')}.`
     };
   }
   if (amount > MAX_RECHARGE) {
     return {
       valid: false,
-      errorText: `O limite máximo por recarga é de ${formatCurrency(MAX_RECHARGE, 'KZ')}.`
+      errorText: `${t('recharge.max_limit')} ${formatCurrency(MAX_RECHARGE, 'KZ')}.`
     };
   }
   return { valid: true };
@@ -385,6 +389,7 @@ const BotFormattedText = React.memo(function BotFormattedText({
 export default function playmentbot() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   const [userBalance, setUserBalance] = useState<number>(0);
   const [totalRecharges, setTotalRecharges] = useState<number>(0);
@@ -403,7 +408,7 @@ export default function playmentbot() {
     { shortcut: '/depositar', text: 'Iniciar recarga e depósito bancário' },
     { shortcut: '/saldo', text: 'Consultar saldo da conta e carteira' },
     { shortcut: '/bancos', text: 'Ver dados bancários e contas disponíveis' },
-    { shortcut: '/historico', text: 'Consultar histórico de depósitos' },
+    { shortcut: '/historico', text: t('recharge.history_title') },
     { shortcut: '/limites', text: 'Ver valores mínimo e máximo e as taxas' },
     { shortcut: '/horarios', text: 'Consultar horário de funcionamento' },
     { shortcut: '/total_deposito', text: 'Ver relatório e total de depósitos' },
@@ -600,10 +605,10 @@ export default function playmentbot() {
     try {
       await navigator.clipboard.writeText(text);
       if (isAmount) {
-        showToast('Valor copiado com sucesso!', 'success');
+        showToast(t('recharge.copy_toast'), 'success');
       } else {
         setCopiedIban(true);
-        showToast('IBAN copiado com sucesso!', 'success');
+        showToast(t('recharge.copy_toast'), 'success');
         setTimeout(() => setCopiedIban(false), 2000);
       }
     } catch {
@@ -1107,7 +1112,7 @@ export default function playmentbot() {
       }
 
       if (nlp?.intent === 'deposit' && nlp.amount) {
-        const amtValidation = validateRechargeAmount(nlp.amount);
+        const amtValidation = validateRechargeAmount(nlp.amount, t);
         if (!amtValidation.valid) {
           botReply(() => createBotMsg('text', amtValidation.errorText));
           return;
@@ -1134,7 +1139,7 @@ export default function playmentbot() {
 
       const numericVal = parseInt(cleanCmd.replace(/\D/g, ''), 10);
       if (isPureNumeric && !isNaN(numericVal) && numericVal > 0) {
-        const numValidation = validateRechargeAmount(numericVal);
+        const numValidation = validateRechargeAmount(numericVal, t);
         if (!numValidation.valid) {
           botReply(() => createBotMsg('text', numValidation.errorText));
           return;
@@ -1173,6 +1178,7 @@ export default function playmentbot() {
       restartConversation,
       awaitingProof,
       cancelActiveRecharge,
+      t,
     ]
   );
 
@@ -1204,7 +1210,7 @@ export default function playmentbot() {
         <button
           onClick={() => navigate(-1)}
           className="w-11 h-11 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto"
-          aria-label="Voltar"
+          aria-label={t('common.back')}
         >
           <svg
             width="24"
@@ -1234,7 +1240,7 @@ export default function playmentbot() {
             </div>
             <span className="mt-0.5 flex items-center gap-1 text-[12px] font-normal leading-[1.15] text-[#25ae60]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#25ae60]" />
-              Online
+              {t('chat.online_now')}
             </span>
           </div>
         </div>
@@ -1260,7 +1266,7 @@ export default function playmentbot() {
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
               >
                 <Wallet className="w-4 h-4 text-[#3390ec]" />
-                <span>Consultar Saldo</span>
+                <span>{t('recharge.check_balance')}</span>
               </button>
               <button
                 onClick={() => {
@@ -1270,7 +1276,7 @@ export default function playmentbot() {
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
               >
                 <Send className="w-4 h-4 text-[#25ae60]" />
-                <span>Iniciar Depósito</span>
+                <span>{t('recharge.start_deposit')}</span>
               </button>
               <button
                 onClick={() => {
@@ -1280,7 +1286,7 @@ export default function playmentbot() {
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
               >
                 <Building2 className="w-4 h-4 text-[#e67e22]" />
-                <span>Bancos Disponíveis</span>
+                <span>{t('recharge.available_banks')}</span>
               </button>
               <button
                 onClick={() => {
@@ -1290,7 +1296,7 @@ export default function playmentbot() {
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
               >
                 <Clock className="w-4 h-4 text-[#3498db]" />
-                <span>Horários de Recarga (24/24)</span>
+                <span>{t('recharge.schedule')}</span>
               </button>
               <button
                 onClick={() => {
@@ -1300,7 +1306,7 @@ export default function playmentbot() {
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
               >
                 <FileText className="w-4 h-4 text-[#8e44ad]" />
-                <span>Histórico de Depósitos</span>
+                <span>{t('recharge.history_title')}</span>
               </button>
               <button
                 onClick={() => {
@@ -1310,7 +1316,7 @@ export default function playmentbot() {
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
               >
                 <BarChart3 className="w-4 h-4 text-[#10b981]" />
-                <span>Total de Depósitos</span>
+                <span>{t('recharge.total_deposits')}</span>
               </button>
               <div className="h-px bg-gray-100 my-1" />
               <button
@@ -1321,7 +1327,7 @@ export default function playmentbot() {
                 className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2.5 cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4 text-red-500" />
-                <span>Limpar Conversa</span>
+                <span>{t('recharge.clear_conversation')}</span>
               </button>
             </div>
           )}
@@ -1497,11 +1503,11 @@ export default function playmentbot() {
                                 className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
                               >
                                 <span>{b.nome_banco}</span>
-                                <span className="text-[12px] text-[#3390ec]">Selecionar</span>
+                                <span className="text-[12px] text-[#3390ec]">{t('recharge.select_bank')}</span>
                               </button>
                             ))
                           ) : (
-                            <p className="py-1.5 text-[13px] text-gray-600">Não há bancos disponíveis neste momento.</p>
+                            <p className="py-1.5 text-[13px] text-gray-600">{t('recharge.no_banks_available')}</p>
                           )}
                           <button
                             type="button"
@@ -1511,8 +1517,8 @@ export default function playmentbot() {
                             ))}
                             className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
                           >
-                            <span>Multicaixa Express</span>
-                            <span className="text-[11px] font-medium text-gray-500 text-right">Em breve</span>
+                            <span>{t('recharge.multicaixa_express')}</span>
+                            <span className="text-[11px] font-medium text-gray-500 text-right">{t('common.coming_soon')}</span>
                           </button>
                           <button
                             type="button"
@@ -1522,8 +1528,8 @@ export default function playmentbot() {
                             ))}
                             className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
                           >
-                            <span>Carteira digital USDT</span>
-                            <span className="text-[11px] font-medium text-gray-500 text-right">Em breve</span>
+                            <span>{t('recharge.usdt_wallet')}</span>
+                            <span className="text-[11px] font-medium text-gray-500 text-right">{t('common.coming_soon')}</span>
                           </button>
                         </div>
                       </div>
@@ -1545,8 +1551,8 @@ export default function playmentbot() {
                                   type="button"
                                   onClick={() => copyToClipboard(String(msg.payload.amount), true)}
                                   className="text-[#2481cc] hover:text-[#1f72b5] cursor-pointer"
-                                  title="Copiar valor"
-                                  aria-label={`Copiar valor ${formatCurrency(msg.payload.amount, 'KZ')}`}
+                                  title={t('common.copy')}
+                                  aria-label={`${t('common.copy')} ${formatCurrency(msg.payload.amount, 'KZ')}`}
                                 >
                                   <Copy className="w-4 h-4" />
                                 </button>
@@ -1618,7 +1624,7 @@ export default function playmentbot() {
                     {msg.type === 'banks_list' && msg.payload && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                         <p className="font-bold text-[15px] text-[#2481cc] mb-2">
-                          🏦 Nossos Bancos Disponíveis para Recarga:
+                          🏦 {t('recharge.available_banks')}
                         </p>
                         <div className="space-y-2 my-2">
                           {msg.payload.banks && msg.payload.banks.length > 0 ? (
@@ -1637,7 +1643,7 @@ export default function playmentbot() {
                               </div>
                             ))
                           ) : (
-                            <p className="text-[13px] text-gray-600">Nenhum banco cadastrado no momento.</p>
+                            <p className="text-[13px] text-gray-600">{t('recharge.no_banks_registered')}</p>
                           )}
                         </div>
                         <p className="text-[13px] text-gray-700">
@@ -1739,7 +1745,7 @@ export default function playmentbot() {
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#707579]" style={{ animationDelay: '0ms' }} />
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#707579]" style={{ animationDelay: '150ms' }} />
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#707579]" style={{ animationDelay: '300ms' }} />
-              <span className="ml-1 text-[11.5px] text-[#707579]">Aguardando o envio do comprovativo...</span>
+              <span className="ml-1 text-[11.5px] text-[#707579]">{t('recharge.waiting_for_proof')}</span>
             </div>
           </div>
         )}
@@ -1761,7 +1767,7 @@ export default function playmentbot() {
                 className="w-1.5 h-1.5 rounded-full bg-[#707579] animate-bounce"
                 style={{ animationDelay: '300ms' }}
               />
-              <span className="text-[11.5px] text-[#707579] ml-1">Payments Bot está digitando...</span>
+              <span className="text-[11.5px] text-[#707579] ml-1">Payments Bot {t('chat.typing')}</span>
             </div>
           </div>
         )}
@@ -1858,7 +1864,7 @@ export default function playmentbot() {
                   ? 'Envia o comprovativo ou escreve “cancelar pedido”...'
                   : depositAmount !== null && !selectedBank
                   ? 'Nome do banco...'
-                  : 'Mensagem...'
+                  : t('chat.input_placeholder')
               }
               className="flex-1 min-w-0 w-0 px-1 py-1 text-[14.5px] sm:text-[15px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
             />
@@ -1868,7 +1874,7 @@ export default function playmentbot() {
               type="button"
               onClick={() => fileDocInputRef.current?.click()}
               className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-1"
-              title="Anexar documento ou ficheiro"
+              title={t('recharge.proof_label')}
             >
               <Paperclip className="w-5 h-5 -rotate-45" />
             </button>
@@ -1888,7 +1894,7 @@ export default function playmentbot() {
           <button
             onClick={() => handleSendMessage()}
             className="w-[46px] h-[46px] sm:w-[48px] sm:h-[48px] rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_8px_rgba(36,129,204,0.4)] cursor-pointer"
-            aria-label="Enviar"
+            aria-label={t('common.send')}
           >
             <Send className="w-5 h-5 ml-0.5" />
           </button>

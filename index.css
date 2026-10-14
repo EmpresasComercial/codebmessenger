@@ -156,7 +156,7 @@ div[class*="border"][class*="rounded-"]:not([class*="w-"]):not([class*="h-"]) {
 
 /* 4. Conteiners a nível global (Modais, Dialogs, Painéis, Drawers - sem arredondamento) */
 dialog,
-[role="dialog"],
+[role="dialog"]:not(.botfather-commands-dialog),
 .modal,
 header[class*="rounded"],
 footer[class*="rounded"],
@@ -170,6 +170,10 @@ div[class*="rounded-2xl"]:not([class*="w-"]):not([class*="h-"]):not(.tg-bubble),
 div[class*="rounded-[20px]"]:not(.tg-bubble),
 div[class*="rounded-[24px]"]:not(.tg-bubble) {
   border-radius: 0px !important;
+}
+
+.botfather-commands-overlay .botfather-commands-dialog {
+  border-radius: 16px !important;
 }
 
 /* BALÕES DE CHAT — cantos curvos sempre preservados + ponta de agulha afiada */

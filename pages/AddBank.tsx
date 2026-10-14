@@ -52,15 +52,15 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.cardNumber || formData.cardNumber.length < 5) {
-      showToast('Por favor, insira o número do cartão válido.', 'error');
+      showToast(t('bank.invalid_iban'), 'error');
       return;
     }
     if (!formData.holderName.trim() || formData.holderName.trim().length < 3) {
-      showToast('Por favor, preencha o nome do titular.', 'error');
+      showToast(t('bank.holder_required'), 'error');
       return;
     }
     if (!formData.cardName) {
-      showToast('Por favor, selecione o nome do cartão.', 'error');
+      showToast(t('bank.select_required'), 'error');
       return;
     }
     setIsSubmitting(true);
@@ -71,7 +71,7 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
         if (embedded) {
           onAlreadyExists?.();
         } else {
-          showToast('Já existe uma conta bancária cadastrada.', 'error');
+          showToast(t('bank.already_registered'), 'error');
         }
         return;
       }
@@ -92,7 +92,7 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
             iban: fullIban
           });
         } else {
-          showToast(data.message || 'Cartão salvo com sucesso!', 'success');
+          showToast(data.message || t('bank.saved'), 'success');
           navigate(redirectPath || '/informacao-bancaria');
         }
       } else {
@@ -104,7 +104,7 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
         }
       }
     } catch (err: any) {
-      showToast(err.message || 'Erro ao salvar cartão.', 'error');
+      showToast(err.message || t('bank.save_failed'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -117,10 +117,10 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
           type="button"
           onClick={() => navigate(redirectPath || '/settings')}
           className="flex w-fit items-center gap-1 text-[#2481cc] active:opacity-50"
-          aria-label="Voltar"
+          aria-label={t('common.back')}
         >
           <ArrowLeft className="h-6 w-6" strokeWidth={2.2} />
-          <span className="text-[16px]">Back</span>
+          <span className="text-[16px]">{t('common.back')}</span>
         </button>
         <div className="flex flex-col items-center leading-tight">
           <div className="flex items-center gap-1">
@@ -133,9 +133,9 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
         </div>
         <button
           type="button"
-          onClick={() => showToast('Gestão de informação bancária', 'info')}
+          onClick={() => showToast(t('bank.info_title'), 'info')}
           className="ml-auto flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#2481cc] text-[#2481cc] active:opacity-50"
-          aria-label="Mais opções"
+          aria-label={t('common.more_options')}
         >
           <MoreHorizontal className="h-5 w-5" />
         </button>
@@ -144,7 +144,7 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
       <form onSubmit={handleSubmit} id="add-card-form" className={`mx-auto flex w-full max-w-[520px] flex-col ${embedded ? 'h-full gap-3 overflow-y-auto px-4 pb-4 pt-3' : 'gap-5 px-5 pb-8 pt-7'}`}>
         <section>
           <label className={`${embedded ? 'mb-1.5' : 'mb-2'} block px-4 text-[12px] font-medium tracking-wide text-[#85858b]`}>
-            PAYMENT CARD
+            {t('bank.iban')}
           </label>
           <div className={`flex ${embedded ? 'h-[48px] gap-2.5 rounded-[10px] px-3.5' : 'h-[54px] gap-3 rounded-[13px] px-4'} items-center bg-white`}>
             <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-[#c7c7cc]" fill="none" stroke="currentColor" strokeWidth="1.7">
@@ -157,10 +157,10 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
               inputMode="numeric"
               autoComplete="off"
               className={`min-w-0 flex-1 bg-transparent ${embedded ? 'text-[15px]' : 'text-[17px]'} outline-none placeholder:text-[#c7c7cc]`}
-              placeholder="IBAN (sem AO06)"
+              placeholder={t('bank.iban_placeholder')}
               value={formData.cardNumber}
               onChange={handleChange}
-              aria-label="IBAN sem o prefixo AO06"
+              aria-label={t('bank.iban_accessible')}
             />
           </div>
         </section>
@@ -168,7 +168,7 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
         <section className="flex gap-4">
           <div className="w-fit max-w-[45%] shrink-0">
             <label className={`${embedded ? 'mb-1.5' : 'mb-2'} block px-4 text-[12px] font-medium tracking-wide text-[#85858b]`}>
-              BANK NAME
+              {t('bank.name')}
             </label>
             <button
               type="button"
@@ -178,15 +178,15 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
               }`}
               aria-haspopup="dialog"
               aria-expanded={showBankSelector}
-              aria-label="Selecionar banco"
+              aria-label={t('bank.select')}
             >
-              <span className="truncate">{formData.cardName ? getBankDisplayName(formData.cardName) : 'Select bank'}</span>
+              <span className="truncate">{formData.cardName ? getBankDisplayName(formData.cardName) : t('bank.select')}</span>
               <ChevronDown className="ml-2 h-5 w-5 shrink-0 text-[#a7a7ad]" />
             </button>
           </div>
           <div className="min-w-0 flex-1">
             <label className={`${embedded ? 'mb-1.5' : 'mb-2'} block px-4 text-[12px] font-medium tracking-wide text-[#85858b]`}>
-              CARDHOLDER NAME
+              {t('bank.holder')}
             </label>
             <input
               id="holderName"
@@ -194,16 +194,16 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
               type="text"
               autoComplete="name"
               className={`w-full min-w-0 bg-white outline-none placeholder:text-[#a7a7ad] ${embedded ? 'h-[46px] rounded-[10px] px-3.5 text-[14px]' : 'h-[54px] rounded-[13px] px-4 text-[15px]'}`}
-              placeholder="O seu nome"
+              placeholder={t('bank.holder_placeholder')}
               value={formData.holderName}
               onChange={handleChange}
-              aria-label="Nome do titular"
+              aria-label={t('bank.holder')}
             />
           </div>
         </section>
 
         <p className={`px-1 leading-relaxed text-[#8e8e93] ${embedded ? 'text-[12px]' : 'text-[13px]'}`}>
-          O IBAN deve ser inserido sem o prefixo AO06. O prefixo será adicionado automaticamente.
+          {t('bank.iban_prefix_note')}
         </p>
 
         <button
@@ -212,7 +212,7 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
           disabled={isSubmitting || !formData.cardNumber || !formData.holderName || !formData.cardName}
           className={`flex w-full items-center justify-center rounded-[10px] bg-[#2481cc] font-semibold text-white shadow-[0_4px_12px_rgba(36,129,204,0.25)] transition-transform active:scale-[0.99] disabled:opacity-40 ${embedded ? 'h-[44px] text-[14px]' : 'h-[52px] rounded-[13px] text-[16px]'}`}
         >
-          {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Save Payment Information'}
+          {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : t('bank.save_btn')}
         </button>
       </form>
 
@@ -229,12 +229,12 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[#e8e8ec] px-4 py-3">
-              <h2 id="bank-selector-title" className="text-[16px] font-semibold">Select banking</h2>
+              <h2 id="bank-selector-title" className="text-[16px] font-semibold">{t('bank.select')}</h2>
               <button
                 type="button"
                 onClick={() => setShowBankSelector(false)}
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f1f1f4] text-[#777] active:opacity-60"
-                aria-label="Fechar seleção de banco"
+                aria-label={t('common.close')}
               >
                 <X className="h-4 w-4" />
               </button>

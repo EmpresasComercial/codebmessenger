@@ -22,7 +22,7 @@ import {
   Download,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
-import { useLanguage } from "../../contexts/LanguageContext";
+import { type Language, supportedLanguages, useLanguage } from "../../contexts/LanguageContext";
 import { formatCurrency } from "../../lib/currency";
 import { useToast } from "../../components/Toast";
 import EditProfileModal from "./components/EditProfileModal";
@@ -31,7 +31,9 @@ export default function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast();
+  const { language, t } = useLanguage();
   const settingsSectionRef = useRef<HTMLDivElement>(null);
+  const selectedLanguage = supportedLanguages.find(({ code }) => code === language)!;
 
   const [showLanguage, setShowLanguage] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -122,7 +124,7 @@ export default function Profile() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      showToast("Sessão terminada com sucesso", "success");
+      showToast(t('chat.logout_success'), "success");
       navigate("/login");
     } catch {
       navigate("/login");
@@ -138,19 +140,19 @@ export default function Profile() {
           <button 
             onClick={() => navigate('/org')}
             className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#2481cc] transition-colors hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-[#202b36] dark:active:bg-[#293847]" 
-            aria-label="Voltar"
+            aria-label={t('common.back')}
           >
             <ChevronLeft className="h-6 w-6 stroke-[2.2]" />
           </button>
-          <h1 className="text-[17px] font-semibold tracking-tight">Definições</h1>
+          <h1 className="text-[17px] font-semibold tracking-tight">{t('profile.settings')}</h1>
         </div>
 
         <div className="flex items-center gap-1">
           <button 
             onClick={() => setShowEditProfile(true)}
             className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#2481cc] transition-colors hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-[#202b36] dark:active:bg-[#293847]"
-            aria-label="Editar perfil"
-            title="Editar perfil"
+            aria-label={t('profile.edit')}
+            title={t('profile.edit')}
           >
             <Edit3 className="h-5 w-5" />
           </button>
@@ -174,7 +176,7 @@ export default function Profile() {
           <button
             onClick={(e) => { e.stopPropagation(); setShowEditProfile(true); }}
             className="absolute bottom-0 right-0 w-[34px] h-[34px] bg-[#3390ec] rounded-full flex items-center justify-center border-[2.5px] border-white shadow-sm hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-            aria-label="Editar perfil"
+            aria-label={t('profile.edit')}
           >
             <Camera className="w-[16px] h-[16px] text-white" strokeWidth={2.5} />
           </button>
@@ -196,15 +198,15 @@ export default function Profile() {
           <SettingsItem
             icon={<Wallet className="w-5 h-5 text-white" />}
             iconBg="bg-[#0284c7]"
-            title="Carteira wallet"
-            subtitle="Solicite o levantamento dos seus fundos"
+            title={t('chat.wallet')}
+            subtitle={t('profile.wallet_subtitle')}
             onClick={() => navigate("/carteira")}
           />
           <SettingsItem
             icon={<PlusCircle className="w-5 h-5 text-white" />}
             iconBg="bg-[#10b981]"
-            title="Payment Wallet"
-            subtitle="Faça um depósito na sua conta"
+            title={t('chat.payment_wallet')}
+            subtitle={t('profile.payment_subtitle')}
             onClick={() => navigate("/sand-pay")}
           />
         </div>
@@ -215,34 +217,34 @@ export default function Profile() {
         {/* SEÇÃO 3: DEFINIÇÕES GERAIS */}
         <div ref={settingsSectionRef} className="w-full bg-white dark:bg-[#17212b]">
           <div className="px-2 pt-3 pb-1.5">
-            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">Definições</span>
+            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.settings')}</span>
           </div>
 
           <SettingsItem
             icon={<Lightbulb className="w-5 h-5 text-white fill-white" />}
             iconBg="bg-[#b375d6]"
-            title="Introdução ao Telegram"
-            subtitle="Descubra novas funcionalidades"
+            title={t('chat.introduction')}
+            subtitle={t('profile.intro_subtitle')}
             onClick={() => navigate("/sobre-telegram business")}
           />
 
           <SettingsItem
             icon={<MessageSquare className="w-5 h-5 text-white" />}
             iconBg="bg-[#f2a93b]"
-            title="Chat da comunidade"
-            subtitle="Converse com membros da comunidade"
+            title={t('chat.group_telegram')}
+            subtitle={t('profile.community_subtitle')}
             onClick={() => navigate("/org")}
           />
 
           <SettingsItem
             icon={<Volume2 className="w-5 h-5 text-white fill-white" />}
             iconBg="bg-[#fe384f]"
-            title="Notifications"
-            subtitle="Sounds, Calls, Badges"
+            title={t('chat.notifications')}
+            subtitle={t('profile.notifications_subtitle')}
             onClick={() => {
               if ("Notification" in window) {
                 Notification.requestPermission();
-                showToast("Configuração de notificações atualizada", "info");
+                showToast(t('profile.notifications_updated'), "info");
               }
             }}
           />
@@ -250,24 +252,24 @@ export default function Profile() {
           <SettingsItem
             icon={<Download className="w-5 h-5 text-white" />}
             iconBg="bg-[#e95171]"
-            title="Download APK"
-            subtitle="Baixe e instale o aplicativo"
+            title={t('chat.download_apk')}
+            subtitle={t('profile.download_subtitle')}
             onClick={() => navigate("/android?setln=pt")}
           />
 
           <SettingsItem
             icon={<MessagesSquare className="w-5 h-5 text-white" />}
             iconBg="bg-[#3390ec]"
-            title="Canal postes"
-            subtitle="Aceder aos anúncios do Telegram e às provas de retirada"
+            title={t('chat.channel_posts')}
+            subtitle={t('profile.channel_subtitle')}
             onClick={() => navigate("/canal-oficial")}
           />
 
           <SettingsItem
             icon={<CreditCard className="w-5 h-5 text-white" />}
             iconBg="bg-[#3390ec]"
-            title="Carteira bancária"
-            subtitle="Adicionar cartão bancário"
+            title={t('chat.bank_wallet')}
+            subtitle={t('profile.bank_subtitle')}
             onClick={() => navigate("/carteira?intent=add-bank")}
           />
 
@@ -279,38 +281,38 @@ export default function Profile() {
         {/* SEÇÃO 4: AJUDA & SUPORTE */}
         <div className="w-full bg-white dark:bg-[#17212b]">
           <div className="px-2 pt-3 pb-1.5">
-            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">Ajuda</span>
+            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.help_section')}</span>
           </div>
 
           <SettingsItem
             icon={<HelpCircle className="w-5 h-5 text-white" />}
             iconBg="bg-[#3390ec]"
-            title="Perguntas Frequentes"
-            subtitle="Tire as suas dúvidas"
+            title={t('chat.faq')}
+            subtitle={t('profile.faq_subtitle')}
             onClick={() => navigate("/help-faq")}
           />
 
           <SettingsItem
             icon={<Globe className="w-5 h-5 text-white" />}
             iconBg="bg-[#b375d6]"
-            title="Idioma"
-            subtitle="Português (Brasil)"
+            title={t('settings.language')}
+            subtitle={selectedLanguage.nativeName}
             onClick={() => setShowLanguage(true)}
           />
 
           <SettingsItem
             icon={<ShieldAlert className="w-5 h-5 text-white" />}
             iconBg="bg-[#2481cc]"
-            title="Redefinir Senha"
-            subtitle="Altere a sua senha de acesso"
+            title={t('chat.reset_password')}
+            subtitle={t('profile.password_subtitle')}
             onClick={() => navigate("/alterar-senha")}
           />
 
           <SettingsItem
             icon={<Smartphone className="w-5 h-5 text-white" />}
             iconBg="bg-[#46c2ca]"
-            title="Termo e privacidade"
-            subtitle="Ver versão e actualizar a aplicação"
+            title={t('chat.terms_privacy')}
+            subtitle={t('profile.privacy_subtitle')}
             isLast={true}
             onClick={() => navigate("/devices")}
           />
@@ -328,7 +330,7 @@ export default function Profile() {
             <div className="w-[34px] h-[34px] rounded-[10px] bg-red-500 flex items-center justify-center shrink-0 mr-3.5">
               <LogOut className="w-5 h-5 text-white" />
             </div>
-            <span className="text-[15px] font-semibold text-red-600 dark:text-red-400">Terminar sessão</span>
+            <span className="text-[15px] font-semibold text-red-600 dark:text-red-400">{t('chat.logout')}</span>
           </button>
         </div>
 
@@ -345,34 +347,39 @@ export default function Profile() {
                   <path d="M19 12H5M5 12l7-7M5 12l7 7" />
                 </svg>
               </button>
-              <span className="text-[18px] font-bold flex-1">Idioma</span>
+              <span className="text-[18px] font-bold flex-1">{t('settings.language')}</span>
             </div>
 
             <div className="px-3 flex flex-col gap-4 pb-12 pt-3">
               {/* Traduzir Mensagens Card */}
               <div className="bg-white rounded-[18px] overflow-hidden shadow-2xs border border-gray-100">
                 <div className="px-4 pt-3 pb-1">
-                  <span className="text-[13px] font-semibold text-[#2481cc]">Traduzir Mensagens</span>
+                  <span className="text-[13px] font-semibold text-[#2481cc]">{t('profile.translate_messages')}</span>
                 </div>
-                <TranslateRow label="Mostrar o Botão Traduzir" defaultOn={true} />
-                <TranslateRow label="Traduzir Chats Inteiros" locked={true} />
+                <TranslateRow label={t('profile.show_translate_button')} defaultOn={true} />
+                <TranslateRow label={t('profile.translate_full_chats')} locked={true} />
                 <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-[15px] text-black">Não Traduzir</span>
-                  <span className="text-[13px] font-medium text-[#2481cc]">3 Idiomas</span>
+                  <span className="text-[15px] text-black">{t('profile.do_not_translate')}</span>
+                  <span className="text-[13px] font-medium text-[#2481cc]">{t('settings.languages_count')}</span>
                 </div>
               </div>
 
               {/* Lista de Idiomas */}
               <div className="bg-white rounded-[18px] overflow-hidden shadow-2xs border border-gray-100">
                 <div className="px-4 pt-3 pb-1">
-                  <span className="text-[13px] font-semibold text-[#2481cc]">Idioma do Aplicativo</span>
+                  <span className="text-[13px] font-semibold text-[#2481cc]">{t('settings.language')}</span>
                 </div>
-                <LangRow label="Português (Brasil)" sub="Portuguese (Brazil)" code="pt" available />
-                <LangRow label="English" sub="English" code="en" available />
-                <LangRow label="Français" sub="French" code="fr" available />
-                <LangRow label="العربية" sub="Arabic" code="ar" />
-                <LangRow label="简体中文" sub="Chinese (Simplified)" code="zh-hans" />
-                <LangRow label="Español" sub="Spanish" code="es" isLast />
+                <div role="radiogroup" aria-label={t('settings.language')}>
+                  {supportedLanguages.map(({ code, name, nativeName }, index) => (
+                    <LangRow
+                      key={code}
+                      label={nativeName}
+                      sub={name}
+                      code={code}
+                      isLast={index === supportedLanguages.length - 1}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -482,26 +489,31 @@ function LangRow({
   label,
   sub,
   code,
-  available = false,
   isLast = false,
 }: {
   label: string;
   sub: string;
-  code: string;
-  available?: boolean;
+  code: Language;
   isLast?: boolean;
 }) {
   const { language, setLanguage } = useLanguage();
   const isSelected = language === code;
-  const handleClick = () => {
-    if (available) setLanguage(code as any);
-  };
+  const handleClick = () => setLanguage(code);
   return (
     <div
       className={`flex items-center px-4 py-3 ${
         !isLast ? "border-b border-[#e5e5e5]" : ""
-      } ${available ? "cursor-pointer hover:bg-gray-50 active:bg-gray-100" : "opacity-60 cursor-default"}`}
+      } cursor-pointer hover:bg-gray-50 active:bg-gray-100`}
       onClick={handleClick}
+      role="radio"
+      aria-checked={isSelected}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleClick();
+        }
+      }}
     >
       <div
         className={`w-[20px] h-[20px] rounded-full border-2 flex items-center justify-center mr-3.5 shrink-0 ${

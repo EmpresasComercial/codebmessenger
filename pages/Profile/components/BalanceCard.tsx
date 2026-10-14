@@ -27,19 +27,19 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
     <div className="space-y-3 px-4">
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-white rounded-none py-2.5 px-3 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-          <p className="text-[10.5px] text-[#888888] font-normal mb-0.5">Recarregar</p>
+          <p className="text-[10.5px] text-[#888888] font-normal mb-0.5">{t('profile.recharge')}</p>
           <p className="text-[13.5px] font-medium text-[#FE384F]">{formatCurrency(recharge, currency)}</p>
         </div>
         <div className="bg-white rounded-none py-2.5 px-3 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-          <p className="text-[10.5px] text-[#888888] font-normal mb-0.5">Lucro</p>
+          <p className="text-[10.5px] text-[#888888] font-normal mb-0.5">{t('profile.profit')}</p>
           <p className="text-[13.5px] font-medium text-[#202020]">{formatCurrency(profit, currency)}</p>
         </div>
         <div className="bg-white rounded-none py-2.5 px-3 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-          <p className="text-[10.5px] text-[#888888] font-normal mb-0.5">Total retirada</p>
+          <p className="text-[10.5px] text-[#888888] font-normal mb-0.5">{t('profile.total_withdrawn')}</p>
           <p className="text-[13.5px] font-medium text-[#202020]">{formatCurrency(withdrawn, currency)}</p>
         </div>
         <div className="bg-white rounded-none py-2.5 px-3 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-          <p className="text-[10.5px] text-[#888888] font-normal mb-0.5">Comissões equipe</p>
+          <p className="text-[10.5px] text-[#888888] font-normal mb-0.5">{t('profile.team_commissions')}</p>
           <p className="text-[13.5px] font-medium text-[#202020]">{formatCurrency(teamCommission, currency)}</p>
         </div>
       </div>

@@ -30,6 +30,7 @@ import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import ChatsList from './ChatsList';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
@@ -62,7 +63,8 @@ const QUICK_REACTIONS = ['👍', '❤️', '🔥', '🥰', '👏', '😂'];
 export default function PrivateChat() {
   const { contactId } = useParams();
   const [searchParams] = useSearchParams();
-  const rawContactPhone = searchParams.get('t') || 'Contacto';
+  const { t } = useLanguage();
+  const rawContactPhone = searchParams.get('t') || t('chat.contact');
   const contactLevel = searchParams.get('nv');
   
   const navigate = useNavigate();
@@ -116,8 +118,8 @@ export default function PrivateChat() {
   const [showAllReactions, setShowAllReactions] = useState(false);
   const [showContactProfile, setShowContactProfile] = useState(false);
   const [contactProfile, setContactProfile] = useState<any>({
-    name: contactDisplayName || rawContactPhone || 'Contato',
-    phone: rawContactPhone || 'Não informado',
+    name: contactDisplayName || rawContactPhone || t('chat.contact'),
+    phone: rawContactPhone || t('common.not_informed'),
     avatarUrl: '',
     hierarchy: contactLevel || 'L1',
     invitedAt: null,
@@ -146,23 +148,23 @@ export default function PrivateChat() {
     if (!file) return;
     e.target.value = '';
     if (!file.type.startsWith('image/')) {
-      showToast('Selecione uma imagem válida.', 'error');
+      showToast(t('chat.image_invalid'), 'error');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      showToast('Tamanho máximo: 5MB.', 'error');
+      showToast(t('chat.image_too_large'), 'error');
       return;
     }
     const reader = new FileReader();
     reader.onload = (ev) => {
       if (typeof ev.target?.result !== 'string') {
-        showToast('Não foi possível abrir a imagem selecionada.', 'error');
+        showToast(t('chat.image_open_failed'), 'error');
         return;
       }
       setImagePreview(ev.target.result);
       setPdfPreview(null);
     };
-    reader.onerror = () => showToast('Não foi possível abrir a imagem selecionada.', 'error');
+    reader.onerror = () => showToast(t('chat.image_open_failed'), 'error');
     reader.readAsDataURL(file);
   };
 
@@ -171,35 +173,35 @@ export default function PrivateChat() {
     if (!file) return;
     e.target.value = '';
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      showToast('Selecione um documento PDF.', 'error');
+      showToast(t('chat.pdf_invalid_type'), 'error');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      showToast('O PDF não pode exceder 10MB.', 'error');
+      showToast(t('chat.pdf_too_large'), 'error');
       return;
     }
 
     try {
       const signature = new Uint8Array(await file.slice(0, 5).arrayBuffer());
       if (new TextDecoder().decode(signature) !== '%PDF-') {
-        showToast('O ficheiro selecionado não é um PDF válido.', 'error');
+        showToast(t('chat.pdf_invalid'), 'error');
         return;
       }
     } catch {
-      showToast('Não foi possível validar o PDF selecionado.', 'error');
+      showToast(t('chat.pdf_validation_failed'), 'error');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result !== 'string') {
-        showToast('Não foi possível abrir o PDF selecionado.', 'error');
+        showToast(t('chat.pdf_open_failed'), 'error');
         return;
       }
       setPdfPreview({ name: file.name, url: reader.result, sizeBytes: file.size });
       setImagePreview(null);
     };
-    reader.onerror = () => showToast('Não foi possível abrir o PDF selecionado.', 'error');
+    reader.onerror = () => showToast(t('chat.pdf_open_failed'), 'error');
     reader.readAsDataURL(file);
   };
 
@@ -459,7 +461,7 @@ export default function PrivateChat() {
           : m
       )
     );
-    showToast(`Reação ${emoji} adicionada!`, 'success');
+    showToast(t('chat.reaction_added').replace('{emoji}', emoji), 'success');
     closeContextMenu();
   };
 
@@ -474,7 +476,7 @@ export default function PrivateChat() {
   const handleCopy = () => {
     if (contextMenu) {
       navigator.clipboard.writeText(contextMenu.message.mensagem).catch(() => {});
-      showToast('Mensagem copiada!', 'success');
+      showToast(t('chat.message_copied'), 'success');
       closeContextMenu();
     }
   };
@@ -482,7 +484,7 @@ export default function PrivateChat() {
   const handleDelete = () => {
     if (contextMenu) {
       setMessages(prev => prev.filter(m => m.id !== contextMenu.message.id));
-      showToast('Mensagem apagada', 'info');
+      showToast(t('chat.message_deleted'), 'info');
       closeContextMenu();
     }
   };
@@ -638,7 +640,7 @@ export default function PrivateChat() {
         }
         return updated;
       });
-      showToast('Mensagem não enviada', 'error');
+      showToast(t('chat.message_not_sent'), 'error');
     }
   };
 
@@ -704,10 +706,10 @@ export default function PrivateChat() {
 
   // ── Ações do menu de contexto ─────────────────────────────────────────
   const menuActions = contextMenu ? [
-    { icon: Reply, label: 'Responder', onClick: handleReply, color: '#2481cc' },
-    { icon: Copy, label: 'Copiar', onClick: handleCopy, color: '#555' },
-    ...(contextMenu.isMe ? [{ icon: Pencil, label: 'Editar', onClick: () => { showToast('Edição em breve', 'info'); closeContextMenu(); }, color: '#555' }] : []),
-    { icon: Trash2, label: 'Apagar', onClick: handleDelete, color: '#e53e3e', subLabel: 'Autoexcluirá em 31 dias' },
+    { icon: Reply, label: t('common.reply'), onClick: handleReply, color: '#2481cc' },
+    { icon: Copy, label: t('common.copy'), onClick: handleCopy, color: '#555' },
+    ...(contextMenu.isMe ? [{ icon: Pencil, label: t('common.edit'), onClick: () => { showToast(t('chat.edit_coming_soon'), 'info'); closeContextMenu(); }, color: '#555' }] : []),
+    { icon: Trash2, label: t('common.delete'), onClick: handleDelete, color: '#e53e3e', subLabel: t('chat.auto_delete_31_days') },
   ] : [];
 
   // ── Render ─────────────────────────────────────────────────────────────
@@ -732,7 +734,7 @@ export default function PrivateChat() {
         <button
           onClick={() => navigate('/org')}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto md:hidden"
-          aria-label="Voltar aos chats"
+          aria-label={t('chat.back')}
         >
           <ChevronLeft className="w-6 h-6 stroke-[2]" />
         </button>
@@ -775,7 +777,7 @@ export default function PrivateChat() {
               </span>
             ) : isContactTyping ? (
               <span className="text-[12.5px] text-[#2481cc] font-medium leading-[1.15] mt-0.5 truncate flex items-center gap-1">
-                digitando
+                {t('chat.typing')}
                 <span className="inline-flex items-center gap-[2px]">
                   <span className="w-1 h-1 bg-[#2481cc] rounded-full animate-bounce [animation-delay:0ms]" />
                   <span className="w-1 h-1 bg-[#2481cc] rounded-full animate-bounce [animation-delay:150ms]" />
@@ -785,13 +787,13 @@ export default function PrivateChat() {
             ) : (
               <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
                 {isPavel ? (
-                  'Fundador'
+                  t('chat.founder')
                 ) : contactIsOnline ? (
                   <span className="text-[#10b981] font-medium">
-                    online{contactLevel ? ` • Afiliado Nível ${contactLevel}` : ''}
+                    {t('chat.online_now')}{contactLevel ? ` • ${t('chat.affiliate_level').replace('{level}', contactLevel.replace(/^L/, ''))}` : ''}
                   </span>
                 ) : (
-                  'offline'
+                  t('chat.offline')
                 )}
               </span>
             )}
@@ -802,14 +804,14 @@ export default function PrivateChat() {
           <button
             onClick={() => setShowContactProfile(true)}
             className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0"
-            aria-label="Perfil do contato"
+            aria-label={t('chat.contact_profile')}
           >
             <Phone className="w-5 h-5" />
           </button>
           <button
             onClick={() => setShowContactProfile(true)}
             className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0"
-            aria-label="Mais opções"
+            aria-label={t('chat.more_options')}
           >
             <MoreVertical className="w-5 h-5" />
           </button>
@@ -831,12 +833,12 @@ export default function PrivateChat() {
               type="button"
               onClick={() => setShowContactProfile(false)}
               className="w-9 h-9 flex items-center justify-center text-[#8e8e93] active:opacity-50 transition-opacity cursor-pointer"
-              aria-label="Fechar"
+              aria-label={t('common.close')}
             >
               <X className="w-5 h-5 stroke-[2.5]" />
             </button>
             <span className="text-[17px] font-semibold text-[#111] tracking-tight">
-              Informações
+              {t('chat.information')}
             </span>
             <div className="w-9 h-9" />
           </div>
@@ -868,7 +870,7 @@ export default function PrivateChat() {
                 {contactProfile.name || formatPhoneClean(rawContactPhone)}
               </h1>
               <p className="mt-1 text-[13px]" style={{ color: '#8e8e93' }}>
-                {contactIsOnline ? 'online agora' : 'offline'}
+                {contactIsOnline ? t('chat.online_now') : t('chat.offline')}
               </p>
             </div>
 
@@ -881,7 +883,7 @@ export default function PrivateChat() {
                   <span className="truncate text-[14px]" style={{ color: '#007aff' }}>
                     {formatPhoneClean(contactProfile.phone || rawContactPhone)}
                   </span>
-                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>Telefone</span>
+                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>{t('chat.phone')}</span>
                 </div>
               </div>
 
@@ -893,9 +895,9 @@ export default function PrivateChat() {
                 </div>
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate text-[14px] text-[#111]">
-                    Afiliado {getHierarchyLabel(contactProfile.hierarchy || contactLevel || 'L1')}
+                    {t('chat.affiliate_level').replace('{level}', getHierarchyLabel(contactProfile.hierarchy || contactLevel || 'L1').replace(/^L/, ''))}
                   </span>
-                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>Hierarquia</span>
+                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>{t('chat.hierarchy')}</span>
                 </div>
               </div>
 
@@ -909,7 +911,7 @@ export default function PrivateChat() {
                   <span className="truncate text-[14px] text-[#111]">
                     {formatProfileDate(contactProfile.invitedAt)}
                   </span>
-                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>Convidado em</span>
+                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>{t('chat.invited_at')}</span>
                 </div>
               </div>
 
@@ -923,7 +925,7 @@ export default function PrivateChat() {
                   <span className="truncate text-[14px] text-[#111]">
                     {formatProfileDate(contactProfile.registeredAt)}
                   </span>
-                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>Cadastro</span>
+                  <span className="text-[12px]" style={{ color: '#8e8e93' }}>{t('chat.registered_at')}</span>
                 </div>
               </div>
             </div>
@@ -945,7 +947,7 @@ export default function PrivateChat() {
 
         <div className="flex justify-center my-4">
           <div className="bg-black/30 dark:bg-black/50 text-white text-[12px] px-4 py-1.5 rounded-full backdrop-blur-xs text-center shadow-xs">
-            🔒 Mensagens criptografadas de ponta a ponta
+            {t('chat.message_encrypted')}
           </div>
         </div>
 
@@ -1222,7 +1224,7 @@ export default function PrivateChat() {
               className="w-full bg-white dark:bg-[#2b2b2b] rounded-2xl shadow-lg py-3 text-[15.5px] font-medium text-[#2481cc] hover:bg-gray-50 dark:hover:bg-[#333] active:scale-[0.99] transition-all cursor-pointer border border-gray-100 dark:border-white/10 select-none text-center"
               style={{ touchAction: 'manipulation' }}
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -1234,7 +1236,7 @@ export default function PrivateChat() {
           <div className="w-full max-w-[1000px] bg-white dark:bg-[#17212b] border-t-2 border-[#2481cc] rounded-t-xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
             <div className="w-[3px] h-full bg-[#2481cc] rounded-full self-stretch" />
             <div className="flex-1 min-w-0">
-              <span className="text-[11.5px] font-bold text-[#2481cc] block">Respondendo a</span>
+              <span className="text-[11.5px] font-bold text-[#2481cc] block">{t('chat.replying_to')}</span>
               <p className="text-[13px] text-gray-500 dark:text-gray-400 truncate">{replyTo.mensagem}</p>
             </div>
             <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600 p-1">
@@ -1273,7 +1275,7 @@ export default function PrivateChat() {
                   type="button" 
                   onClick={() => setImagePreview(null)} 
                   className="absolute -top-1 -right-1 bg-black/70 text-white rounded-full p-0.5 hover:bg-black cursor-pointer"
-                  title="Remover imagem"
+                  title={t('chat.remove_image')}
                 >
                   <X className="w-2.5 h-2.5" />
                 </button>
@@ -1286,15 +1288,15 @@ export default function PrivateChat() {
                   PDF
                 </span>
                 <span className="flex min-w-0 flex-col">
-                  <span className="text-[9px] text-gray-500 dark:text-gray-300">Ficheiro: {formatAttachmentSize(pdfPreview.sizeBytes)}</span>
+                  <span className="text-[9px] text-gray-500 dark:text-gray-300">{t('chat.file_size').replace('{size}', formatFileSize(pdfPreview.sizeBytes))}</span>
                   <span className="truncate text-[11px] text-gray-600 dark:text-gray-300">{pdfPreview.name}</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => setPdfPreview(null)}
                   className="shrink-0 rounded-full bg-gray-100 p-0.5 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
-                  title="Remover PDF"
-                  aria-label="Remover PDF"
+                  title={t('chat.remove_pdf')}
+                  aria-label={t('chat.remove_pdf')}
                 >
                   <X className="h-2.5 w-2.5" />
                 </button>
@@ -1318,7 +1320,7 @@ export default function PrivateChat() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
-              placeholder={replyTo ? 'Escreva uma resposta...' : 'Mensagem...'}
+              placeholder={replyTo ? t('chat.reply_placeholder') : t('chat.input_placeholder')}
               className="w-full min-h-[24px] px-2 py-2 text-[15px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-gray-400 font-normal leading-snug"
               rows={1}
             />
@@ -1342,8 +1344,8 @@ export default function PrivateChat() {
               type="button"
               onClick={() => pdfInputRef.current?.click()}
               className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0 cursor-pointer"
-              title="Anexar PDF"
-              aria-label="Anexar PDF"
+              title={t('chat.attach_pdf')}
+              aria-label={t('chat.attach_pdf')}
             >
               <Paperclip className="w-5 h-5" />
             </button>
@@ -1351,8 +1353,8 @@ export default function PrivateChat() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0 cursor-pointer"
-              title="Escolher foto"
-              aria-label="Escolher foto"
+              title={t('chat.choose_photo')}
+              aria-label={t('chat.choose_photo')}
             >
               <Camera className="w-5 h-5" />
             </button>
@@ -1394,7 +1396,7 @@ export default function PrivateChat() {
               type="button"
               onClick={() => setZoomedImage(null)}
               className="absolute top-2 right-2 w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center cursor-pointer transition-colors"
-              title="Fechar"
+              title={t('common.close')}
             >
               <X className="w-5 h-5" />
             </button>

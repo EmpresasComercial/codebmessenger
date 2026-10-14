@@ -2,9 +2,11 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGlobalLoading } from '../contexts/LoadingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const GlobalLoadingIndicator: React.FC = () => {
   const { isLoading } = useGlobalLoading();
+  const { t } = useLanguage();
   const location = useLocation();
 
   // Don't show the top global loader on chat and community pages
@@ -53,7 +55,7 @@ export const GlobalLoadingIndicator: React.FC = () => {
 
             {/* Text "Conectando..." in green */}
             <span className="text-[14px] font-bold text-[#25ae60] tracking-[-0.2px]">
-              Conectando...
+              {t('common.connecting')}
             </span>
           </div>
         </motion.div>

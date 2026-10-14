@@ -111,45 +111,15 @@ export default function HelpFAQ() {
       )
     },
     {
-      question: "Quanto ganho se a minha equipa investir?",
+      question: t('faq.q6'),
       answer: (
-        <div className="space-y-3 text-[#555555] font-normal text-[13px] leading-relaxed">
-          <p>A plataforma recompensa você pelo desenvolvimento da sua equipa através do <strong>Bônus de Investimento</strong>, distribuído em 3 níveis.</p>
-          
-          <ul className="list-none space-y-2 mt-2 border-l-2 border-[#FE384F] pl-4 py-1 bg-[#FAFAFA]">
-            <li>
-              <span className="font-normal text-[#333333]">Nível 1 (Diretos):</span> <span className="text-[#FE384F] font-medium ml-2">10%</span>
-            </li>
-            <li>
-              <span className="font-normal text-[#333333]">Nível 2 (Indiretos):</span> <span className="text-[#FE384F] font-medium ml-2">6%</span>
-            </li>
-            <li>
-              <span className="font-normal text-[#333333]">Nível 3 (Subindiretos):</span> <span className="text-[#FE384F] font-medium ml-2">2%</span>
-            </li>
-          </ul>
-
-          <div className="text-[11.5px] text-[#888888]">
-            * Comissões pagas na primeira compra (mín. 10.000 Kz)
-          </div>
-        </div>
+        <p className="text-[13px] font-normal leading-relaxed text-[#555555]">{t('faq.a6')}</p>
       )
     },
     {
-      question: "O sistema é seguro?",
+      question: t('faq.q7'),
       answer: (
-        <div className="space-y-2.5 text-[#555555] font-normal text-[13px]">
-          <p>Sim. A segurança dos nossos utilizadores é a nossa prioridade:</p>
-          <div className="grid grid-cols-1 gap-2 mt-2">
-            <div className="flex items-center space-x-2 p-2.5 bg-[#FAFAFA] border border-gray-100">
-              <span className="w-1.5 h-1.5 bg-[#FE384F]" />
-              <span className="text-[#333333] text-[12.5px]">Encriptação de nível bancário</span>
-            </div>
-            <div className="flex items-center space-x-2 p-2.5 bg-[#FAFAFA] border border-gray-100">
-              <span className="w-1.5 h-1.5 bg-[#FE384F]" />
-              <span className="text-[#333333] text-[12.5px]">Verificação de identidade robusta</span>
-            </div>
-          </div>
-        </div>
+        <p className="text-[13px] font-normal leading-relaxed text-[#555555]">{t('faq.a7')}</p>
       )
     }
   ];
@@ -166,7 +136,7 @@ export default function HelpFAQ() {
             <ChevronLeft className="w-5 h-5 stroke-[1.8]" />
           </button>
           <h1 className="text-[14.5px] font-medium text-[#202020] tracking-normal">
-            Centro de Ajuda
+            {t('faq.help_center')}
           </h1>
         </div>
       </header>

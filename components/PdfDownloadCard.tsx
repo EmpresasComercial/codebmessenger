@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import { useToast } from './Toast';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface PdfDownloadCardProps {
   name: string;
@@ -41,6 +42,7 @@ export default function PdfDownloadCard({
   compact = false,
 }: PdfDownloadCardProps) {
   const { showToast } = useToast();
+  const { t } = useLanguage();
   const [progress, setProgress] = useState<number | null>(null);
   const [downloadedBytes, setDownloadedBytes] = useState(0);
   const [indeterminate, setIndeterminate] = useState(false);
@@ -48,7 +50,7 @@ export default function PdfDownloadCard({
   const downloadedObjectUrlRef = useRef<string | null>(null);
   const resolvedSize = sizeBytes || getDataUrlSize(url);
   const isDownloading = progress !== null && progress < 1;
-  const sizeLabel = formatFileSize(resolvedSize);
+  const sizeLabel = resolvedSize ? formatFileSize(resolvedSize) : t('pdf.size_unavailable');
   const circleLength = 2 * Math.PI * 26;
 
   useEffect(() => () => {
@@ -142,9 +144,9 @@ export default function PdfDownloadCard({
       anchor.remove();
       downloadReady = true;
       setDownloaded(true);
-      showToast('PDF baixado. Clique novamente no ícone para abrir.', 'success');
+      showToast(t('pdf.download_success'), 'success');
     } catch {
-      showToast('Não foi possível baixar o PDF. Tente novamente.', 'error');
+      showToast(t('pdf.download_failed'), 'error');
     } finally {
       setProgress(null);
       setIndeterminate(false);
@@ -162,9 +164,11 @@ export default function PdfDownloadCard({
       type="button"
       onClick={handleDownload}
       disabled={disabled || isDownloading || (!url && !resolveUrl)}
-      aria-label={isDownloading ? `Baixando ${name}` : `Baixar ${name} (${sizeLabel})`}
+      aria-label={isDownloading
+        ? t('pdf.downloading').replace('{name}', name)
+        : t('pdf.download_button').replace('{name}', name).replace('{size}', sizeLabel)}
       className={`relative flex shrink-0 items-center justify-center overflow-hidden ${roundedShape} text-white transition-transform active:scale-95 disabled:cursor-default ${iconSize}`}
-      title={disabled ? 'O PDF ainda está a ser enviado' : `Baixar ${name}`}
+      title={disabled ? t('pdf.upload_pending') : t('pdf.download_title').replace('{name}', name)}
     >
       {PdfLogo}
       {!downloaded && (
@@ -175,7 +179,7 @@ export default function PdfDownloadCard({
           {isDownloading && totalBytes ? (
             <span className="px-0.5 text-center text-[6px] font-semibold leading-tight">
               <span className="block">{megabytes(displayedBytes)} MB</span>
-              <span className="block">faltam {megabytes(Math.max(totalBytes - displayedBytes, 0))} MB</span>
+              <span className="block">{t('pdf.remaining_size').replace('{size}', megabytes(Math.max(totalBytes - displayedBytes, 0)))}</span>
             </span>
           ) : isDownloading ? (
             <span className="px-0.5 text-center text-[8px] font-semibold leading-tight">
