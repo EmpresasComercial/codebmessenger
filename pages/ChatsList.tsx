@@ -108,7 +108,7 @@ const getProfileAvatarUrl = (profile: any) => {
     || '';
 };
 
-// Selo de verificaÃ§Ã£o oficial da empresa (Telegram Blue)
+// Selo de verificação apresentado apenas quando a conta tem esse estado registado.
 const OfficialVerifiedBadge = ({ className = "w-[16px] h-[16px]" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={`shrink-0 inline-block align-middle ml-1 select-none ${className}`}>
     <path
@@ -332,8 +332,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   type ChatFolder = 'all' | 'groups' | 'channels' | 'bots' | 'unread';
   const [activeFilter, setActiveFilter] = useState<ChatFolder>('all');
 
-  const PAVEL_DUROV_ID = 'pavel-durov-ceo-00000000000000001';
-
   const formatSenderPhone = (phone?: string | null, countryCode?: string) => {
     const rawPhone = phone?.trim();
     if (!rawPhone) return 'Contacto';
@@ -511,8 +509,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
         await registration.showNotification(senderName, {
           body: body.slice(0, 240),
-          icon: '/logo-tb.jpg',
-          badge: '/logo-tb.jpg',
+          icon: '/logo_bussiness_messeger.png',
+          badge: '/logo_bussiness_messeger.png',
           tag: `community-message-${messageId}`,
           data: { url: '/web' }
         });
@@ -860,7 +858,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: communityLastMessage.time,
         timestamp: communityLastMessage.timestamp,
         isMe: communityLastMessage.isMe,
-        avatarUrl: '/logo-tb.jpg',
+        avatarUrl: '/logo_bussiness_messeger.png',
         avatarLabel: 'T',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -869,23 +867,23 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         nivel: null,
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs shrink-0">
-            <img src="/logo-tb.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
           </div>
         ),
         onClick: () => navigate('/web')
       },
       {
-        id: 'pavel-durov',
+        id: 'business-community',
         folder: 'channels' as ChatFolder,
-        name: 'Pavel Durov',
+        name: 'Andrew Nicolan',
         isVerified: true,
         lastMessage: 'Fundador',
         senderPrefix: null,
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 20),
         timestamp: Date.now() - 1000 * 60 * 60 * 20,
         isMe: false,
-        avatarUrl: '/pavel_durov.png',
-        avatarLabel: 'P',
+        avatarUrl: '/logo_bussiness_messeger.jpg',
+        avatarLabel: 'B',
         avatarColor: '#2481cc',
         actionBtn: null,
         tag: null,
@@ -893,14 +891,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         nivel: null,
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs bg-[#2481cc]/20 border border-white/40">
-            <img
-              src="/pavel_durov.png"
-              alt="Pavel Durov"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as any).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop';
-              }}
-            />
+            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
           </div>
         ),
         onClick: () => navigate('/canal-oficial')
@@ -916,7 +907,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 36),
         timestamp: Date.now() - 1000 * 60 * 60 * 36,
         isMe: false,
-        avatarUrl: '/logo-tb.jpg',
+        avatarUrl: '/logo_bussiness_messeger.png',
         avatarLabel: 'P',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -925,7 +916,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
             <img 
-              src="/logo-tb.jpg" 
+              src="/logo_bussiness_messeger.png"
               alt="Payments Bot" 
               className="w-full h-full object-cover"
             />
@@ -944,7 +935,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 48),
         timestamp: Date.now() - 1000 * 60 * 60 * 48,
         isMe: false,
-        avatarUrl: '/logo-tb.jpg',
+        avatarUrl: '/logo_bussiness_messeger.png',
         avatarLabel: 'W',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -953,7 +944,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
             <img 
-              src="/logo-tb.jpg" 
+              src="/logo_bussiness_messeger.png"
               alt="Wallet" 
               className="w-full h-full object-cover"
             />
@@ -963,17 +954,17 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       },
 
       {
-        id: 'botfather',
+        id: 'business-bot-manager',
         folder: 'bots' as ChatFolder,
-        name: 'BotFather',
+        name: 'BusinessFather',
         isVerified: true,
         tag: null,
-        lastMessage: 'You have currently no bots',
+        lastMessage: 'Gestão de bots do Business Messenger',
         senderPrefix: null,
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 72),
         timestamp: Date.now() - 1000 * 60 * 60 * 72,
         isMe: false,
-        avatarUrl: '/BotFather.jpg',
+        avatarUrl: '/logo_bussiness_messeger.jpg',
         avatarLabel: 'B',
         avatarColor: '#2481cc',
         isSubordinate: false,
@@ -988,14 +979,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         ),
         avatar: (
           <div className="w-[52px] h-[52px] rounded-full overflow-hidden border border-gray-200/80 bg-white flex-shrink-0">
-            <img 
-              src="/BotFather.jpg" 
-              alt="BotFather" 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/botfather.png";
-              }}
-            />
+            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
           </div>
         ),
         onClick: () => navigate('/botfather')
@@ -1288,7 +1272,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               {[
                 { label: t('chat.wallet'), path: "/carteira", icon: Wallet },
                 { label: t('chat.payment_wallet'), path: "/sand-pay", icon: PlusCircle },
-                { label: t('chat.introduction'), path: "/sobre-telegram business", icon: Lightbulb },
+                { label: t('chat.introduction'), path: "/sobre-business", icon: Lightbulb },
                 { label: t('chat.download_apk'), path: "/android?setln=pt", icon: Download },
                 { label: t('chat.bank_wallet'), path: "/carteira?intent=add-bank", icon: CreditCard },
                 { label: t('chat.notifications'), action: "notifications", icon: Bell },
@@ -1329,7 +1313,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               ))}
               <div className="my-2 shrink-0 border-t border-gray-100 dark:border-[#202b36]" />
               {[
-                { label: t('chat.about_telegram'), path: "/sobre-telegram business", icon: Info },
+                { label: t('chat.about_telegram'), path: "/sobre-business", icon: Info },
               ].map(({ label, path, icon: Icon }) => (
                 <button
                   key={label}

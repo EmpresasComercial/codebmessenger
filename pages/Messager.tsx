@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -21,6 +21,7 @@ export default function Messager() {
   const { t } = useLanguage();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [privacyNoticeAccepted, setPrivacyNoticeAccepted] = useState(false);
   const [formData, setFormData] = useState({ phone: '', inviteCode: '' });
 
   const [showPasskeyDialog, setShowPasskeyDialog] = useState(false);
@@ -117,6 +118,11 @@ export default function Messager() {
   const executeRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!privacyNoticeAccepted) {
+      showToast(t('auth.privacy_consent_required'), 'error');
+      return;
+    }
+
     // 1. Rigorous phone number validation based on selected country
     const phoneValidation = validatePhoneNumber(formData.phone, selectedCountry);
     if (!phoneValidation.isValid) {
@@ -178,6 +184,7 @@ export default function Messager() {
               country_name: selectedCountry.name,
               referred_by: formData.inviteCode.trim(),
               device_id: getDeviceId(),
+              privacy_notice_accepted_at: new Date().toISOString(),
             },
           },
         },
@@ -249,7 +256,7 @@ export default function Messager() {
       <main className="w-full max-w-[340px] sm:max-w-[360px] flex flex-col items-center">
         <div className="mb-3.5 flex items-center justify-center">
           <img
-            src="/logo-tb.jpg"
+            src="/logo_bussiness_messeger.jpg"
             alt="Business Messenger"
             className="w-[58px] h-[58px] rounded-full object-cover"
           />
@@ -370,6 +377,23 @@ export default function Messager() {
             </div>
           </div>
 
+          <label className="flex items-start gap-2 text-[12px] leading-5 text-[#555]">
+            <input
+              type="checkbox"
+              required
+              checked={privacyNoticeAccepted}
+              onChange={(event) => setPrivacyNoticeAccepted(event.target.checked)}
+              className="mt-1 shrink-0 accent-[#3390ec]"
+            />
+            <span>
+              {t('auth.privacy_consent_prefix')}{' '}
+              <Link to="/privacidade" className="text-[#2481cc] underline">
+                {t('devices.heading')}
+              </Link>
+              .
+            </span>
+          </label>
+
           <div className="w-full pt-1 space-y-2.5">
             <button
               type="submit"
@@ -456,4 +480,3 @@ export default function Messager() {
     </div>
   );
 }
-

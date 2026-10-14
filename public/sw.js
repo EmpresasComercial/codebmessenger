@@ -1,12 +1,12 @@
 // Service Worker para Business Messenger - Push Notifications & Offline Support
-const CACHE_NAME = 'business-messenger-shell-v3';
+const CACHE_NAME = 'business-messenger-shell-v4';
 
 // Assets fundamentais para o App abrir offline
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo-tb.jpg',
+  '/logo_bussiness_messeger.jpg',
   '/favicon.ico'
 ];
 
@@ -83,8 +83,8 @@ self.addEventListener('push', (event) => {
   let data = {
     title: 'Business Messenger',
     body: 'Você tem uma nova notificação na sua conta.',
-    icon: '/logo-tb.jpg',
-    badge: '/logo-tb.jpg',
+    icon: '/logo_bussiness_messeger.jpg',
+    badge: '/logo_bussiness_messeger.jpg',
     url: '/perfil',
   };
 
@@ -99,8 +99,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body,
-    icon: data.icon || '/logo-tb.jpg',
-    badge: data.badge || '/logo-tb.jpg',
+    icon: data.icon || '/logo_bussiness_messeger.jpg',
+    badge: data.badge || '/logo_bussiness_messeger.jpg',
     vibrate: [200, 100, 200, 100, 200],
     tag: data.tag || 'business-messenger-notification',
     renotify: true,

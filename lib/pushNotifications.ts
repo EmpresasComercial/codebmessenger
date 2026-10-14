@@ -113,15 +113,15 @@ export async function sendLocalTestNotification(title: string, body: string, url
     if (registration) {
       registration.showNotification(title, {
         body,
-        icon: '/business_messenger_logo_icon_167892.webp',
-        badge: '/business_messenger_logo_icon_167892.webp',
+      icon: '/logo_bussiness_messeger.jpg',
+      badge: '/logo_bussiness_messeger.jpg',
         vibrate: [200, 100, 200] as any,
         data: { url },
       } as any);
     } else {
       new Notification(title, {
         body,
-        icon: '/business_messenger_logo_icon_167892.webp',
+      icon: '/logo_bussiness_messeger.webp',
       });
     }
   } else if (Notification.permission !== 'denied') {

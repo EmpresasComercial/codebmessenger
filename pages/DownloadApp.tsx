@@ -60,11 +60,10 @@ export default function DownloadApp() {
 
       <main className="mx-auto max-w-[720px] px-5 pt-10">
         <section className="text-center">
-          <div
-            role="img"
-            aria-label={t("download.android_alt")}
-            className="mx-5 my-10 h-[360px] bg-[url('https://telegram.org/img/tdirect.jpg?1')] bg-[position:50%_0] bg-no-repeat"
-            style={{ backgroundSize: "300px 360px" }}
+          <img
+            src="/logo_bussiness_messeger.jpg"
+            alt={t("download.android_alt")}
+            className="mx-auto my-10 h-[300px] w-[300px] object-contain"
           />
           <h2 className="mb-3 text-[26px] font-semibold tracking-tight text-[#222]">
             {t("download.android_title")}
@@ -100,4 +99,3 @@ export default function DownloadApp() {
     </div>
   );
 }
-

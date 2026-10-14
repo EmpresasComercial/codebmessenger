@@ -200,7 +200,7 @@ function GrayButton({ children, onClick, disabled }: { children: React.ReactNode
 }
 
 /* â”€â”€â”€ Componente Principal: BotFather Oficial Telegram â”€â”€â”€â”€â”€ */
-export default function TelegramBotsChat() {
+export default function BusinessMessengerBotsChat() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { t } = useLanguage();
@@ -224,7 +224,7 @@ export default function TelegramBotsChat() {
     { shortcut: "/rendas", text: "Consultar rendimentos diÃ¡rios" },
     { shortcut: "/limites", text: "Ver limites de compra" },
     { shortcut: "/cupons", text: "Resgatar cÃ³digo promocional ou cupom" },
-    { shortcut: "/ajuda", text: "InstruÃ§Ãµes de ativaÃ§Ã£o e suporte do BotFather" },
+    { shortcut: "/ajuda", text: "InstruÃ§Ãµes de ativaÃ§Ã£o e suporte do gestor de bots" },
     { shortcut: "/limpar", text: "Limpar conversa" },
   ];
   const [awaitingCoupon, setAwaitingCoupon] = useState(false);
@@ -344,7 +344,7 @@ export default function TelegramBotsChat() {
 
       return { cleanProducts, cleanPurchased };
     } catch (err) {
-      console.error("Erro ao carregar dados do BotFather:", err);
+      console.error("Erro ao carregar dados do gestor de bots:", err);
       return { cleanProducts: [], cleanPurchased: [] };
     } finally {
       setLoading(false);
@@ -403,7 +403,7 @@ export default function TelegramBotsChat() {
     try {
       localStorage.removeItem(CHAT_STORAGE_KEY);
     } catch (error) {
-      console.error("NÃ£o foi possÃ­vel limpar o histÃ³rico do BotFather:", error);
+      console.error("NÃ£o foi possÃ­vel limpar o histÃ³rico do gestor de bots:", error);
       showToast("NÃ£o foi possÃ­vel limpar o histÃ³rico da conversa.", "error");
       return;
     }
@@ -778,14 +778,14 @@ export default function TelegramBotsChat() {
           onClick={() => handleSendMessage("/saldo")}
         >
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
-            <img src="/BotFather.jpg" alt="BotFather" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/botfather.png"; }} />
+            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col min-w-0">
             <h1 className="text-[15px] font-bold text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-              BotFather
+              BusinessFather
             </h1>
             <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
-              8,885,239 usuÃ¡rios mensais
+              Online
             </span>
           </div>
         </div>
@@ -821,7 +821,7 @@ export default function TelegramBotsChat() {
                 {msg.type === "welcome" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
                     <p className="text-[14px] text-[#1c1c1e]">
-                      OlÃ¡! Sou o BotFather. Posso ajudar-te com os teus Bots, o saldo e os rendimentos. Como posso ajudar?
+                      OlÃ¡! Sou o assistente de bots do Business Messenger. Posso ajudar-te com os teus bots, o saldo e os rendimentos. Como posso ajudar?
                     </p>
                   </div>
                 )}
@@ -1003,4 +1003,3 @@ export default function TelegramBotsChat() {
     </div>
   );
 }
-

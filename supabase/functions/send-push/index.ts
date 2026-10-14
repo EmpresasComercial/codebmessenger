@@ -47,8 +47,8 @@ serve(async (req) => {
     const payload = JSON.stringify({
       title: title || "Business Messenger",
       body: body,
-      icon: "/business_messenger_logo_icon_167892.webp",
-      badge: "/business_messenger_logo_icon_167892.webp",
+      icon: "/logo_bussiness_messeger.jpg",
+      badge: "/logo_bussiness_messeger.jpg",
       url: url || "/perfil",
     });
 

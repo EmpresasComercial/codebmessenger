@@ -2021,7 +2021,7 @@ export default function grupochat() {
           className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
         >
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
-            <img src="/logo-tb.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
           </div>
 
           <div className="flex flex-col min-w-0">
@@ -2340,7 +2340,7 @@ export default function grupochat() {
               />
             </div>
 
-            <button
+            {!voiceComposerActive && <button
               type="button"
               onClick={() => {
                 if (editingMessage || publicInput.trim() || imagePreview || pdfPreview) {
@@ -2362,7 +2362,7 @@ export default function grupochat() {
               ) : (
                 <Mic className="w-5 h-5 text-white stroke-[2]" />
               )}
-            </button>
+            </button>}
           </div>
         </div>
       </div>
@@ -2403,7 +2403,7 @@ export default function grupochat() {
               {/* Ã¢â€â‚¬Ã¢â€â‚¬ Avatar + Nome + Membros Ã¢â€â‚¬Ã¢â€â‚¬ */}
               <div className="flex flex-col items-center pt-6 pb-5 px-4">
                 <div className="w-[80px] h-[80px] rounded-full overflow-hidden mb-4">
-                  <img src="/logo-tb.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+                  <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
                 </div>
                 <h1 className="text-[18px] font-bold text-[#111] text-center leading-tight">
                   Business Messenger Empresa
@@ -2764,5 +2764,4 @@ export default function grupochat() {
     </div>
   );
 }
-
 

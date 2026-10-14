@@ -335,7 +335,7 @@ export default function Profile() {
             iconBg="bg-[#b375d6]"
             title={t('chat.introduction')}
             subtitle={t('profile.intro_subtitle')}
-            onClick={() => navigate("/sobre-telegram business")}
+            onClick={() => navigate("/sobre-business")}
           />
 
           <SettingsItem
@@ -640,4 +640,3 @@ function LangRow({
     </div>
   );
 }
-

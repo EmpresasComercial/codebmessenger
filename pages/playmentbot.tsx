@@ -1228,7 +1228,7 @@ export default function playmentbot() {
 
         <div className="flex w-0 flex-1 items-center gap-2.5 bg-white rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 pointer-events-auto">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
-            <img src="/logo-tb.jpg" alt="Payments Bot" className="w-full h-full object-cover" />
+            <img src="/logo_bussiness_messeger.jpg" alt="Payments Bot" className="w-full h-full object-cover" />
           </div>
 
           <div className="flex flex-col min-w-0">

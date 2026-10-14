@@ -104,7 +104,7 @@ export default function HelpFAQ() {
         <div className="space-y-3 text-[#555555] font-normal text-[13px] leading-relaxed">
           <p>{t('faq.a5_p1')}</p>
           <p>{t('faq.a5_p2')}</p>
-          <Link to="/sobre-telegram business" className="inline-flex items-center text-[#FE384F] font-normal hover:underline text-[12.5px]">
+          <Link to="/sobre-business" className="inline-flex items-center text-[#FE384F] font-normal hover:underline text-[12.5px]">
             {t('faq.a5_link')}
           </Link>
         </div>
@@ -200,4 +200,3 @@ export default function HelpFAQ() {
     </div>
   );
 }
-

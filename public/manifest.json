@@ -5,13 +5,13 @@
   "description": "Business messaging and chat platform",
   "icons": [
     {
-      "src": "/logo-tb.jpg",
+      "src": "/logo_bussiness_messeger.jpg",
       "type": "image/jpeg",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo-tb.jpg",
+      "src": "/logo_bussiness_messeger.jpg",
       "type": "image/jpeg",
       "sizes": "512x512",
       "purpose": "any maskable"

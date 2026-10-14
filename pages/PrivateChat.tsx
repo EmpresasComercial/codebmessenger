@@ -799,7 +799,7 @@ export default function PrivateChat() {
   };
 
   const contactColor = getUserColor(contactDisplayName);
-  const isPavel = contactId?.startsWith('pavel');
+  const isCommunityChat = contactId?.startsWith('pavel');
 
   // â”€â”€ AÃ§Ãµes do menu de contexto â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const menuActions = contextMenu ? [
@@ -838,12 +838,11 @@ export default function PrivateChat() {
 
         <div className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 pointer-events-auto">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
-            {isPavel ? (
+            {isCommunityChat ? (
               <img
-                src="/pavel_durov.jpg"
-                alt="Pavel Durov"
+                src="/logo_bussiness_messeger.jpg"
+                alt="Business Messenger"
                 className="w-full h-full object-cover"
-                onError={(e) => { (e.target as any).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop'; }}
               />
             ) : (
               <div
@@ -861,11 +860,8 @@ export default function PrivateChat() {
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1">
               <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-                {isPavel ? 'Pavel Durov' : formatPhoneClean(contactDisplayName)}
+                {isCommunityChat ? 'Comunidade Business Messenger' : formatPhoneClean(contactDisplayName)}
               </h1>
-              {isPavel && (
-                <span className="w-3.5 h-3.5 rounded-full bg-[#2481cc] text-white flex items-center justify-center text-[8px] font-black shrink-0 mt-0.5">âœ“</span>
-              )}
             </div>
             {statusText ? (
               <span className="text-[12.5px] text-[#2481cc] font-medium leading-[1.15] mt-0.5 truncate flex items-center gap-1">
@@ -883,8 +879,8 @@ export default function PrivateChat() {
               </span>
             ) : (
               <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
-                {isPavel ? (
-                  t('chat.founder')
+                {isCommunityChat ? (
+                  'Espaço de partilha da comunidade'
                 ) : contactIsOnline ? (
                   <span className="text-[#10b981] font-medium">
                     {t('chat.online_now')}{contactLevel ? ` â€¢ ${t('chat.affiliate_level').replace('{level}', contactLevel.replace(/^L/, ''))}` : ''}
@@ -1042,12 +1038,6 @@ export default function PrivateChat() {
           </div>
         )}
 
-        <div className="flex justify-center my-4">
-          <div className="bg-black/30 dark:bg-black/50 text-white text-[12px] px-4 py-1.5 rounded-full backdrop-blur-xs text-center shadow-xs">
-            {t('chat.message_encrypted')}
-          </div>
-        </div>
-
         {messages.map((m, i) => {
           // Primary: remetente_id matches session user
           // Fallback: destinatario_id matches the contact (means I sent it)
@@ -1166,9 +1156,9 @@ export default function PrivateChat() {
                         {!isMe && (
                           <p
                             className="mb-1 truncate text-[13px] font-medium"
-                            style={{ color: isPavel ? '#2481cc' : contactColor }}
+                            style={{ color: isCommunityChat ? '#2481cc' : contactColor }}
                           >
-                            {isPavel ? 'Pavel Durov' : formatPhoneClean(contactDisplayName)}
+                            {isCommunityChat ? 'Comunidade Business Messenger' : formatPhoneClean(contactDisplayName)}
                           </p>
                         )}
                         <VoiceMessagePlayer
@@ -1214,9 +1204,9 @@ export default function PrivateChat() {
                       {!isMe && (
                         <p
                           className="text-[13px] font-medium mb-[2px] cursor-pointer truncate"
-                          style={{ color: isPavel ? '#2481cc' : contactColor }}
+                          style={{ color: isCommunityChat ? '#2481cc' : contactColor }}
                         >
-                          {isPavel ? 'Pavel Durov' : formatPhoneClean(contactDisplayName)}
+                          {isCommunityChat ? 'Comunidade Business Messenger' : formatPhoneClean(contactDisplayName)}
                         </p>
                       )}
 
@@ -1586,4 +1576,3 @@ export default function PrivateChat() {
     </div>
   );
 }
-

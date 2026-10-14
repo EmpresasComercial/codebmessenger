@@ -7,7 +7,6 @@ import {
   Bell, 
   BellOff, 
   Share2, 
-  Eye, 
   Send,
   X,
   Loader2,
@@ -36,68 +35,9 @@ interface ChannelPost {
   content: string;
   image?: string;
   time: string;
-  views: string;
-  reactions: {
-    emoji: string;
-    count: number;
-    userReacted: boolean;
-  }[];
 }
 
-const STORAGE_KEY_POSTS = 'official_channel_posts_v1';
-
-// Metas para Provas de Retirada apÃ³s 1 hora (60 minutos)
-const TARGET_VIEWS = 5785;
-const TARGET_LIKES = 1000;
-const TARGET_LOVE = 700;
-const TARGET_FIRE = 275;
-const TARGET_DURATION_MS = 60 * 60 * 1000; // 60 minutos
-
-// Gera uma semente numÃ©rica determinÃ­stica a partir de um ID de post (hash simples)
-const seedFromId = (id: string): number => {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) {
-    h = (Math.imul(31, h) + id.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-};
-
-// Retorna um fator de variaÃ§Ã£o Ãºnico por post: entre 0.88 e 1.12
-const postVariance = (id: string, slot: number): number => {
-  const seed = seedFromId(id + slot);
-  // pseudo-random 0..1 from seed
-  const rand = ((seed * 1664525 + 1013904223) >>> 0) / 4294967296;
-  return 0.88 + rand * 0.24; // Â±12%
-};
-
-// FunÃ§Ã£o determinÃ­stica e persistente para calcular mÃ©tricas ao longo de 1 hora
-// Cada post tem variaÃ§Ã£o Ãºnica derivada do seu ID, logo os nÃºmeros nunca sÃ£o iguais
-export const calculateProofMetrics = (createdAtMs: number, postId: string = '') => {
-  const elapsed = Math.max(0, Date.now() - createdAtMs);
-  const progress = Math.min(1, elapsed / TARGET_DURATION_MS);
-
-  const vViews = postVariance(postId, 1);
-  const vLikes = postVariance(postId, 2);
-  const vLove  = postVariance(postId, 3);
-  const vFire  = postVariance(postId, 4);
-
-  if (progress >= 1) {
-    return {
-      views: Math.round(TARGET_VIEWS * vViews),
-      likes: Math.round(TARGET_LIKES * vLikes),
-      love:  Math.round(TARGET_LOVE  * vLove),
-      fire:  Math.round(TARGET_FIRE  * vFire)
-    };
-  }
-
-  // ProgressÃ£o gradual simulando utilizadores reais, com variaÃ§Ã£o Ãºnica por post
-  const views = Math.floor(1 + progress * (TARGET_VIEWS * vViews - 1));
-  const likes = Math.floor(progress * TARGET_LIKES * vLikes);
-  const love  = Math.floor(progress * TARGET_LOVE  * vLove);
-  const fire  = Math.floor(progress * TARGET_FIRE  * vFire);
-
-  return { views, likes, love, fire };
-};
+const STORAGE_KEY_POSTS = 'business_messenger_community_posts_v1';
 
 // UtilitÃ¡rio leve de compressÃ£o de imagem via Canvas nativo
 const compressImage = async (file: File): Promise<string> => {
@@ -158,21 +98,11 @@ export default function pavelDurov() {
   const [posts, setPosts] = useState<ChannelPost[]>([]);
   const [inputText, setInputText] = useState('');
   const [isMuted, setIsMuted] = useState(false);
-  const [subscribersCount] = useState('850.747 inscritos');
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fullscreen image viewer
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
-
-  // Ticker para atualizar dinamicamente visualizaÃ§Ãµes e reaÃ§Ãµes em tempo real
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTick(t => t + 1);
-    }, 10000); // 10 segundos
-    return () => clearInterval(timer);
-  }, []);
 
   // Fechar fullscreen com tecla ESC
   useEffect(() => {
@@ -251,17 +181,11 @@ export default function pavelDurov() {
                 name: row.userLabel || '***???',
                 avatar: '/botRetirada.jpg'
               },
-              title: row.valorStr ? `ðŸ’¸ Retirada ConcluÃ­da: ${row.valorStr}` : 'ðŸ’¸ Retirada ConcluÃ­da',
+              title: row.valorStr ? `Comprovativo enviado pelo utilizador: ${row.valorStr}` : 'Comprovativo enviado pelo utilizador',
               amount: row.valorStr || '',
               content: (row.comentario || '').trim(),
               image: row.imagem_url,
               time: date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
-              views: '1',
-              reactions: [
-                { emoji: 'ðŸ‘', count: 0, userReacted: false },
-                { emoji: 'â¤ï¸', count: 0, userReacted: false },
-                { emoji: 'ðŸ”¥', count: 0, userReacted: false }
-              ]
             };
           });
 
@@ -300,17 +224,11 @@ export default function pavelDurov() {
               name: `***${String(row.user_id || '').substring(0, 4)}`,
               avatar: '/botRetirada.jpg'
             },
-            title: valStr ? `ðŸ’¸ Retirada ConcluÃ­da: ${valStr}` : 'ðŸ’¸ Retirada ConcluÃ­da',
+            title: valStr ? `Comprovativo enviado pelo utilizador: ${valStr}` : 'Comprovativo enviado pelo utilizador',
             amount: valStr,
             content: comment.trim(),
             image: img,
             time: new Date(row.created_at || Date.now()).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
-            views: '1',
-            reactions: [
-              { emoji: 'ðŸ‘', count: 0, userReacted: false },
-              { emoji: 'â¤ï¸', count: 0, userReacted: false },
-              { emoji: 'ðŸ”¥', count: 0, userReacted: false }
-            ]
           };
 
           setPosts(prev => deduplicatePosts([...prev, newProofPost]));
@@ -331,34 +249,13 @@ export default function pavelDurov() {
     }
   };
 
-  const handleToggleReaction = (postId: string, emoji: string) => {
-    setPosts(prev => {
-      const next = prev.map(p => {
-        if (p.id !== postId) return p;
-        const isProof = p.isProof || !!p.amount || p.id.startsWith('sp-') || p.id.startsWith('proof-');
-        const updatedReactions = [...(p.reactions || [])];
-        const idx = updatedReactions.findIndex(r => r.emoji === emoji);
-        if (idx >= 0) {
-          const r = updatedReactions[idx];
-          const nextUserReacted = !r.userReacted;
-          updatedReactions[idx] = {
-            ...r,
-            count: isProof ? r.count : (nextUserReacted ? r.count + 1 : Math.max(0, r.count - 1)),
-            userReacted: nextUserReacted
-          };
-        } else {
-          updatedReactions.push({ emoji, count: 1, userReacted: true });
-        }
-        return { ...p, reactions: updatedReactions };
-      });
-      savePostsToLocalStorage(next);
-      return next;
-    });
-  };
-
   const handleForwardPost = (post: ChannelPost) => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(`${post.title ? post.title + '\n\n' : ''}${post.content}`);
+      const isProofPost = post.isProof || !!post.amount || post.id.startsWith('sp-') || post.id.startsWith('proof-');
+      const title = isProofPost
+        ? `${t('social.proof_title')}${post.amount ? `: ${post.amount}` : ''}`
+        : post.title;
+      navigator.clipboard.writeText(`${title ? title + '\n\n' : ''}${post.content}`);
     }
     showToast(t('social.post_copied'), 'success');
   };
@@ -373,10 +270,6 @@ export default function pavelDurov() {
       id: `post-${Date.now()}`,
       content: inputText.trim(),
       time: timeStr,
-      views: '1',
-      reactions: [
-        { emoji: 'â¤ï¸', count: 1, userReacted: true }
-      ]
     };
 
     setPosts(prev => {
@@ -386,7 +279,7 @@ export default function pavelDurov() {
     });
 
     setInputText('');
-    showToast('PublicaÃ§Ã£o transmitida no canal!', 'success');
+    showToast(t('social.local_draft_saved'), 'info');
 
     setTimeout(() => {
       if (scrollRef.current) {
@@ -510,17 +403,11 @@ export default function pavelDurov() {
           name: userPhoneMasked,
           avatar: '/botRetirada.jpg'
         },
-        title: `ðŸ’¸ Retirada ConcluÃ­da: ${Number(cleanAmount).toLocaleString('pt-AO')} Kz`,
+        title: `Comprovativo enviado pelo utilizador: ${Number(cleanAmount).toLocaleString('pt-AO')} Kz`,
         amount: `${Number(cleanAmount).toLocaleString('pt-AO')} Kz`,
         content: proofComment.trim(),
         image: finalImageUrl,
         time: timeStr,
-        views: '1',
-        reactions: [
-          { emoji: 'ðŸ‘', count: 0, userReacted: false },
-          { emoji: 'â¤ï¸', count: 0, userReacted: false },
-          { emoji: 'ðŸ”¥', count: 0, userReacted: false }
-        ]
       };
 
       setPosts(prev => {
@@ -529,7 +416,7 @@ export default function pavelDurov() {
         return next;
       });
 
-      showToast('Comprovativo de retirada publicado no canal com sucesso!', 'success');
+      showToast(t('social.proof_submitted_unverified'), 'info');
       
       // Fecha o modal e reseta os campos
       setIsProofModalOpen(false);
@@ -586,43 +473,24 @@ export default function pavelDurov() {
         <div className="flex items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] pointer-events-auto">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
             <img
-              src="/pavel_durov.png"
-              alt="Pavel Durov"
+              src="/logo_bussiness_messeger.jpg"
+              alt="Business Messenger"
               className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as any).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop';
-              }}
             />
           </div>
           <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1">
-              <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-                Pavel Durov
-              </h1>
-              <svg 
-                viewBox="0 0 24 24" 
-                style={{ width: '16px', height: '16px', minWidth: '16px', minHeight: '16px' }}
-                className="w-4 h-4 shrink-0 inline-block align-middle select-none"
-              >
-                <path
-                  fill="#2481cc"
-                  d="M10.26 2.45c.87-.6 2.05-.6 2.92 0l1.24.86c.4.28.88.42 1.37.4l1.51-.06c1.06-.04 1.98.63 2.23 1.66l.36 1.47c.12.48.38.9.76 1.21l1.17.97c.83.69 1.09 1.84.62 2.8l-.66 1.36c-.21.44-.27.94-.17 1.43l.31 1.48c.22 1.04-.37 2.07-1.41 2.47l-1.46.56c-.47.18-.86.51-1.12.94l-.79 1.3c-.56.92-1.68 1.32-2.7.98l-1.44-.48c-.46-.15-.96-.14-1.42.03l-1.43.52c-1.02.37-2.15-.01-2.73-.91l-.81-1.28c-.26-.42-.66-.74-1.13-.91l-1.47-.53c-1.05-.38-1.67-1.4-1.47-2.45l.28-1.49c.09-.48.05-.98-.14-1.43l-.63-1.38c-.45-.97-.16-2.11.69-2.78l1.19-.94c.39-.3.66-.72.79-1.19l.39-1.46c.27-1.02 1.21-1.67 2.26-1.6l1.51.09c.49.03.97-.1 1.38-.37l1.23-.88z"
-                />
-                <path
-                  fill="#ffffff"
-                  d="M9.5 12.5l-1.6-1.6a.8.8 0 0 0-1.13 1.13l2.17 2.17a.8.8 0 0 0 1.13 0l5.43-5.43a.8.8 0 0 0-1.13-1.13L9.5 12.5z"
-                />
-              </svg>
-            </div>
+            <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
+              Andrew Nicolan
+            </h1>
             <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
-              Fundador â€¢ {subscribersCount}
+              725.251 inscritos
             </span>
           </div>
         </div>
 
         <button
           type="button"
-          onClick={() => showToast('Canal Oficial Verificado por Business Messenger Corp.', 'info')}
+          onClick={() => showToast('Este espaço não é um canal oficial de terceiros.', 'info')}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
           aria-label="Mais opÃ§Ãµes"
         >
@@ -640,39 +508,9 @@ export default function pavelDurov() {
           const displayedContent = isProofPost
             ? post.content.replace(/visto\s+comprovativo\s+autenticado\s+na\s+plataforma[.!]?/gi, '').trim()
             : post.content;
-
-          let displayViews = post.views;
-          let displayReactions = post.reactions;
-
-          if (isProofPost) {
-            const createdAtMs = post.createdAt || (Date.now() - 65 * 60 * 1000);
-            const dynamic = calculateProofMetrics(createdAtMs, post.id);
-
-            displayViews = dynamic.views.toLocaleString('pt-AO');
-
-            const userReactionsMap: { [emoji: string]: boolean } = {};
-            (post.reactions || []).forEach(r => {
-              if (r.userReacted) userReactionsMap[r.emoji] = true;
-            });
-
-            displayReactions = [
-              {
-                emoji: 'ðŸ‘',
-                count: dynamic.likes + (userReactionsMap['ðŸ‘'] ? 1 : 0),
-                userReacted: !!userReactionsMap['ðŸ‘']
-              },
-              {
-                emoji: 'â¤ï¸',
-                count: dynamic.love + (userReactionsMap['â¤ï¸'] ? 1 : 0),
-                userReacted: !!userReactionsMap['â¤ï¸']
-              },
-              {
-                emoji: 'ðŸ”¥',
-                count: dynamic.fire + (userReactionsMap['ðŸ”¥'] ? 1 : 0),
-                userReacted: !!userReactionsMap['ðŸ”¥']
-              }
-            ];
-          }
+          const displayedTitle = isProofPost
+            ? `${t('social.proof_title')}${post.amount ? `: ${post.amount}` : ''}`
+            : post.title;
 
           return (
             <div key={post.id} className="flex items-end justify-start gap-2 relative min-w-0">
@@ -735,13 +573,13 @@ export default function pavelDurov() {
                   ? 'bg-white dark:bg-[#182533] rounded-[14px] px-3 py-2 border border-[#e4e4e4] dark:border-[#1e2c3a]'
                   : ''
                 }>
-                  {/* 3. TÃ­tulo de valor em baixo (ex: Retirada ConcluÃ­da: 20.000 Kz) */}
-                  {post.title && (
+                  {/* O título descreve o envio do utilizador, não valida a transação. */}
+                  {displayedTitle && (
                   <h2 className={`text-[15px] font-bold leading-snug ${
                     isProofPost ? 'mb-1' : 'mt-2 mb-1'
                   }`}>
                     <AutoTranslatedText
-                      text={post.title}
+                      text={displayedTitle}
                       language={language}
                       enabled={translateFullChats}
                       renderFormatted={(translatedTitle) => {
@@ -770,33 +608,13 @@ export default function pavelDurov() {
                   </p>
                 )}
 
-                {/* 5. RodapÃ© da Mensagem (ReaÃ§Ãµes + VisualizaÃ§Ãµes e Hora) */}
+                {/* O conteúdo de comprovativos é enviado por utilizadores e não é verificado. */}
                 <div className={`flex items-center justify-between ${
                   isProofPost ? 'mt-1' : 'mt-2 pt-1'
                 }`}>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {displayReactions.map((r) => (
-                      <button
-                        key={r.emoji}
-                        type="button"
-                        onClick={() => handleToggleReaction(post.id, r.emoji)}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold transition-all cursor-pointer select-none active:scale-95 ${
-                          r.userReacted
-                            ? 'bg-[#2481cc]/15 text-[#2481cc] dark:bg-[#2481cc]/30 dark:text-[#64b5f6]'
-                            : 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-300'
-                        }`}
-                      >
-                        <span className="text-[13px] leading-none">{r.emoji}</span>
-                        <span>{r.count >= 1000 ? r.count.toLocaleString('pt-AO') : r.count}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-1 text-[11px] text-[#8e8e93] dark:text-[#8e9aa5] select-none ml-auto shrink-0 pl-2">
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>{displayViews}</span>
-                    <span className="ml-1">{post.time}</span>
-                  </div>
+                  <span className="text-[11px] text-[#8e8e93] dark:text-[#8e9aa5] ml-auto">
+                    {isProofPost ? t('social.proof_unverified') : post.time}
+                  </span>
                 </div>
                 </div>
               </div>
@@ -829,7 +647,7 @@ export default function pavelDurov() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSendBroadcast();
               }}
-              placeholder="Partilhe provas de retirada"
+              placeholder={t('social.local_draft_placeholder')}
               className="flex-1 min-w-0 px-1 py-1 text-[14.5px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
             />
 
@@ -900,6 +718,9 @@ export default function pavelDurov() {
 
             {/* Corpo do FormulÃ¡rio */}
             <form onSubmit={handleSubmitProof} className="p-4 space-y-3.5 overflow-y-auto flex-1">
+              <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-[13px] leading-relaxed text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
+                {t('social.proof_disclaimer')}
+              </p>
               
               {/* PrÃ©-visualizaÃ§Ã£o da Imagem Anexada */}
               {previewImage && (
@@ -1031,5 +852,3 @@ export default function pavelDurov() {
     </div>
   );
 }
-
-

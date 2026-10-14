@@ -73,7 +73,7 @@ BEGIN
                     payload
                 ) VALUES (
                     v_rec.user_id,
-                    'Telegram Business 🤖💰',
+                    'Business Messenger 🤖💰',
                     'Rendimento creditado! +' || to_char(v_parcela, 'FM999,999,990.00') || ' Kz adicionados ao seu saldo disponível.',
                     '/perfil',
                     'pending',

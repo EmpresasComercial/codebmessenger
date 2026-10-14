@@ -168,7 +168,7 @@ export default function Login() {
       <main className="w-full max-w-[340px] sm:max-w-[360px] flex flex-col items-center">
         <div className="mb-3.5 flex items-center justify-center">
           <img
-            src="/logo-tb.jpg"
+            src="/logo_bussiness_messeger.jpg"
             alt="Business Messenger"
             className="w-[58px] h-[58px] rounded-full object-cover"
           />

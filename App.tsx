@@ -172,7 +172,7 @@ export default function App() {
       }
     });
 
-    const iconUrl = '/logo-tb.jpg?v=2';
+    const iconUrl = '/logo_bussiness_messeger.jpg?v=3';
     let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
     link.type = 'image/jpeg';
@@ -208,6 +208,7 @@ export default function App() {
                   <Route path="/Mensagens" element={<Navigate to="/create" replace />} />
                   <Route path="/android"  element={<DownloadApp />} />
                   <Route path="/download-apk" element={<Navigate to="/android?setln=pt" replace />} />
+                  <Route path="/privacidade" element={<DevicesPrivacy />} />
 
                   <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                     {/* Rotas Simplificadas Oficiais */}
@@ -257,7 +258,8 @@ export default function App() {
                     <Route path="resgate"                 element={<Navigate to="/botfather" replace />} />
                     <Route path="minhas-compras"          element={<Navigate to="/botfather" replace />} />
                     <Route path="operacoes"               element={<Navigate to="/conversas" replace />} />
-                    <Route path="sobre-telegram business" element={<AboutUs />} />
+                    <Route path="sobre-business" element={<AboutUs />} />
+                    <Route path="sobre-telegram business" element={<Navigate to="/sobre-business" replace />} />
                     <Route path="help-faq"                element={<HelpFAQ />} />
                     <Route path="suporte/feedback"        element={<Navigate to="/conversas" replace />} />
                     <Route path="provas-social"           element={<Navigate to="/conversas" replace />} />
