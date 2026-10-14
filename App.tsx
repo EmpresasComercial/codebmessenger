@@ -4,11 +4,11 @@
  */
 
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import Layout from './components/Layout';
 import { LanguageSelector } from './components/LanguageSelector';
 import { ToastProvider } from './components/Toast';
-import { LanguageProvider } from './contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PresenceProvider } from './contexts/PresenceContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -100,6 +100,52 @@ function RootRedirect() {
   return <Navigate to="/t" replace />;
 }
 
+function GlobalLanguageSelector() {
+  const { pathname } = useLocation();
+  const { showLanguageSelector } = useLanguage();
+
+  const normalizedPath = pathname.toLocaleLowerCase();
+  const firstSegment = normalizedPath.split('/').filter(Boolean)[0] ?? '';
+  const alwaysVisibleRoutes = new Set(['login', 'entrar', 't', 'mensagens', 'messager']);
+  const alwaysHiddenRoutes = new Set([
+    'chat',
+    'privado',
+    'grupo',
+    'web',
+    'webgrupo',
+    'chat-comunidade',
+    'comunidade-chat',
+    'grupochat',
+    'conversas',
+    'botfather',
+    'bot-pay',
+    'resgate',
+    'minhas-compras',
+    'wallet',
+    'carteira',
+    'retirada',
+    'registro-retirada',
+    'pagamento',
+    'sand-pay',
+    'recarregar',
+    'playmentbot',
+    'registro-recarga',
+    'confirmar-recarga',
+    'paymoney',
+    'paveldurov',
+    'canais',
+    'canal',
+    'perfil',
+  ]);
+
+  if (alwaysVisibleRoutes.has(firstSegment)) {
+    return <LanguageSelector className="fixed right-3 top-3 z-[9998] rounded-md bg-white/90 shadow-sm" variant="bordered" />;
+  }
+  if (alwaysHiddenRoutes.has(firstSegment) || !showLanguageSelector) return null;
+
+  return <LanguageSelector className="fixed right-3 top-3 z-[9998] rounded-md bg-white/90 shadow-sm" variant="bordered" />;
+}
+
 /* ── App ──────────────────────────────────────────────────────────────────── */
 export default function App() {
   React.useEffect(() => {
@@ -150,7 +196,7 @@ export default function App() {
               <PresenceProvider>
                 <ConnectivityOverlay />
                 <GlobalLoadingIndicator />
-                <LanguageSelector className="fixed right-3 top-3 z-[9998] rounded-md bg-white/90 shadow-sm" variant="bordered" />
+                <GlobalLanguageSelector />
                 <Suspense fallback={<PageSkeleton />}>
                 <Routes>
                   <Route path="/"         element={<RootRedirect />} />

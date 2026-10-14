@@ -4,12 +4,19 @@ import { type Language, supportedLanguages, useLanguage } from '../contexts/Lang
 import { 
   Search, MoreVertical, Camera, CreditCard, MessageSquare, ShieldAlert, 
   Volume2, Building2, MessagesSquare, Smartphone, Globe, ChevronRight,
-  Star, Store, Gift, HelpCircle, Lightbulb, Lock
+  Star, Store, Gift, HelpCircle, Lightbulb
 } from 'lucide-react';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { language, t } = useLanguage();
+  const {
+    language,
+    t,
+    showLanguageSelector,
+    setShowLanguageSelector,
+    translateFullChats,
+    setTranslateFullChats,
+  } = useLanguage();
   const [showLanguage, setShowLanguage] = useState(false);
   const selectedLanguage = supportedLanguages.find(({ code }) => code === language)!;
 
@@ -205,8 +212,16 @@ export default function Settings() {
               <div className="px-4 pt-3 pb-1">
                 <span className="text-[13px] font-semibold text-[#25D366]">{t('profile.translate_messages')}</span>
               </div>
-              <TranslateRow label={t('profile.show_translate_button')} defaultOn={true} />
-              <TranslateRow label={t('profile.translate_full_chats')} locked={true} />
+              <TranslateRow
+                label={t('profile.show_translate_button')}
+                checked={showLanguageSelector}
+                onChange={setShowLanguageSelector}
+              />
+              <TranslateRow
+                label={t('profile.translate_full_chats')}
+                checked={translateFullChats}
+                onChange={setTranslateFullChats}
+              />
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[16px] text-black">{t('profile.do_not_translate')}</span>
                 <span className="text-[14px] font-medium text-[#25D366]">{t('settings.languages_count')}</span>
@@ -241,25 +256,37 @@ export default function Settings() {
 }
 
 // Toggle row for translation settings
-function TranslateRow({ label, defaultOn = false, locked = false }: { label: string; defaultOn?: boolean; locked?: boolean }) {
+function TranslateRow({
+  label,
+  defaultOn = false,
+  checked,
+  onChange,
+}: {
+  label: string;
+  defaultOn?: boolean;
+  checked?: boolean;
+  onChange?: (enabled: boolean) => void;
+}) {
   const [on, setOn] = useState(defaultOn);
+  const isOn = checked ?? on;
+  const toggle = () => {
+    const next = !isOn;
+    if (onChange) onChange(next);
+    else setOn(next);
+  };
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5e5e5]">
       <span className="text-[16px] text-black">{label}</span>
-      {locked ? (
-        <div className="w-[48px] h-[28px] rounded-full bg-gray-300 flex items-center justify-center relative">
-          <div className="w-[24px] h-[24px] bg-white rounded-full shadow flex items-center justify-center absolute left-0.5">
-            <Lock className="w-3 h-3 text-gray-400" />
-          </div>
-        </div>
-      ) : (
-        <button
-          onClick={() => setOn(!on)}
-          className={`w-[48px] h-[28px] rounded-full transition-colors relative ${on ? 'bg-[#25D366]' : 'bg-gray-300'}`}
-        >
-          <div className={`w-[24px] h-[24px] bg-white rounded-full shadow absolute top-0.5 transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} />
-        </button>
-      )}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isOn}
+        aria-label={label}
+        onClick={toggle}
+        className={`w-[48px] h-[28px] rounded-full transition-colors relative ${isOn ? 'bg-[#25D366]' : 'bg-gray-300'}`}
+      >
+        <div className={`w-[24px] h-[24px] bg-white rounded-full shadow absolute top-0.5 transition-all ${isOn ? 'left-[22px]' : 'left-0.5'}`} />
+      </button>
     </div>
   );
 }

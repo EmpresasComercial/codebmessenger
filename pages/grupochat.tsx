@@ -38,6 +38,7 @@ import {
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import ChatsList from "./ChatsList";
 import PdfDownloadCard, { formatFileSize } from "../components/PdfDownloadCard";
+import AutoTranslatedText from "../components/AutoTranslatedText";
 import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { COUNTRIES } from "../lib/countries";
 
@@ -135,89 +136,6 @@ const isAllowedUrl = (rawUrl: string): boolean => {
     return false;
   }
 };
-
-const MAX_TRANSLATION_CACHE = 250;
-const translationCache = new Map<string, string>();
-const translationQueue: (() => Promise<void>)[] = [];
-let isTranslating = false;
-
-const processTranslationQueue = async () => {
-  if (isTranslating) return;
-  isTranslating = true;
-  while (translationQueue.length > 0) {
-    const task = translationQueue.shift();
-    if (task) {
-      await task();
-      await new Promise(r => setTimeout(r, 60));
-    }
-  }
-  isTranslating = false;
-};
-
-const getCachedTranslation = (key: string): string | undefined => {
-  if (!translationCache.has(key)) return undefined;
-  const val = translationCache.get(key)!;
-  translationCache.delete(key);
-  translationCache.set(key, val);
-  return val;
-};
-
-const setCachedTranslation = (key: string, val: string) => {
-  if (translationCache.size >= MAX_TRANSLATION_CACHE) {
-    const oldestKey = translationCache.keys().next().value;
-    if (oldestKey) translationCache.delete(oldestKey);
-  }
-  translationCache.set(key, val);
-};
-
-const translateTextAPI = (text: string, lang: string): Promise<string> => {
-  return new Promise((resolve) => {
-    if (!text || text.trim() === '' || lang === 'pt') return resolve(text);
-    const cacheKey = `${lang}:${text}`;
-    const cached = getCachedTranslation(cacheKey);
-    if (cached) return resolve(cached);
-    
-    translationQueue.push(async () => {
-      try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        if (json && json[0]) {
-          const result = json[0].map((item: any) => item[0]).join('');
-          setCachedTranslation(cacheKey, result);
-          resolve(result);
-        } else resolve(text);
-      } catch {
-        resolve(text);
-      }
-    });
-    processTranslationQueue();
-  });
-};
-
-const TranslatedMessage = React.memo(({ text, language, renderFormatted }: { text: string, language: string, renderFormatted: (t: string) => React.ReactNode }) => {
-  const [translated, setTranslated] = useState<string>(text);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (!text || language === 'pt') {
-      setTranslated(text);
-      return;
-    }
-    const cached = getCachedTranslation(`${language}:${text}`);
-    if (cached) {
-      setTranslated(cached);
-      return;
-    }
-    translateTextAPI(text, language).then(result => { 
-      if (isMounted) setTranslated(result); 
-    });
-    return () => { isMounted = false; };
-  }, [text, language]);
-
-  return <>{renderFormatted(translated)}</>;
-});
-TranslatedMessage.displayName = "TranslatedMessage";
 
 const USER_COLORS = [
   "#229ED9", "#E56555", "#8E44AD", "#27AE60", "#D35400", "#16A085", "#C0392B", "#2980B9"
@@ -455,6 +373,7 @@ interface MessageItemProps {
   dateLabel: string;
   timeFormatted: string;
   language: string;
+  translateFullChats: boolean;
   editedLabel: string;
   isSelectedInContextMenu: boolean;
   onStartLongPress: (m: any, isMe: boolean, clientX: number, clientY: number, element: HTMLElement) => void;
@@ -478,6 +397,7 @@ const MessageItem = React.memo(({
   dateLabel,
   timeFormatted,
   language,
+  translateFullChats,
   editedLabel,
   isSelectedInContextMenu,
   onStartLongPress,
@@ -736,7 +656,12 @@ const MessageItem = React.memo(({
 
             <div className="relative leading-[1.3]">
               <span className="text-[16px] whitespace-pre-wrap break-words font-normal">
-                <TranslatedMessage text={m.mensagem} language={language} renderFormatted={renderFormattedMessage} />
+                <AutoTranslatedText
+                  text={m.mensagem}
+                  language={language}
+                  enabled={translateFullChats && !isMe}
+                  renderFormatted={renderFormattedMessage}
+                />
               </span>
               
               <span className="inline-block h-[1px]" style={{ width: isEdited ? (isMe ? '75px' : '60px') : (isMe ? '56px' : '42px') }}></span>
@@ -791,7 +716,7 @@ export default function grupochat() {
   const { session } = useAuth();
   const user = session?.user;
   const { showToast } = useToast();
-  const { language, t } = useLanguage();
+  const { language, t, translateFullChats } = useLanguage();
   const { statusText } = useNetworkStatus();
 
   const [publicMessages, setPublicMessages] = useState<any[]>(() => {
@@ -2052,6 +1977,7 @@ export default function grupochat() {
               dateLabel={currDate}
               timeFormatted={formatTime(m.data_registrada)}
               language={language}
+              translateFullChats={translateFullChats}
               editedLabel={t('group.edited')}
               isSelectedInContextMenu={contextMenu?.message?.id === m.id}
               onStartLongPress={startLongPress}
@@ -2148,7 +2074,12 @@ export default function grupochat() {
                     A responder a {getSenderLabel(replyTo.perfil)}
                   </p>
                   <p className="text-[11px] text-[#777777] truncate italic">
-                    <TranslatedMessage text={replyTo.mensagem} language={language} renderFormatted={(t: string) => t || 'Foto'} />
+                    <AutoTranslatedText
+                      text={replyTo.mensagem}
+                      language={language}
+                      enabled={translateFullChats}
+                      renderFormatted={(text) => text || 'Foto'}
+                    />
                   </p>
                 </div>
                 <button 

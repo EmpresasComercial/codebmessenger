@@ -1924,6 +1924,10 @@ type TranslationKey = keyof typeof translations.pt | SupplementalTranslationKey;
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
+  showLanguageSelector: boolean;
+  setShowLanguageSelector: (show: boolean) => void;
+  translateFullChats: boolean;
+  setTranslateFullChats: (enabled: boolean) => void;
   t: (key: TranslationKey) => string;
 }
 
@@ -1938,10 +1942,26 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('app_language');
     return isLanguage(saved) ? saved : 'pt';
   });
+  const [showLanguageSelector, setShowLanguageSelectorState] = useState(
+    () => localStorage.getItem('show_language_selector') === 'true'
+  );
+  const [translateFullChats, setTranslateFullChatsState] = useState(
+    () => localStorage.getItem('translate_full_chats') === 'true'
+  );
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('app_language', lang);
+  };
+
+  const setShowLanguageSelector = (show: boolean) => {
+    setShowLanguageSelectorState(show);
+    localStorage.setItem('show_language_selector', String(show));
+  };
+
+  const setTranslateFullChats = (enabled: boolean) => {
+    setTranslateFullChatsState(enabled);
+    localStorage.setItem('translate_full_chats', String(enabled));
   };
 
   useEffect(() => {
@@ -1962,7 +1982,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, showLanguageSelector, setShowLanguageSelector, translateFullChats, setTranslateFullChats, t }}>
       {children}
     </LanguageContext.Provider>
   );

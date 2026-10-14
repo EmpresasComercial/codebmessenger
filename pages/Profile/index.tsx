@@ -14,7 +14,6 @@ import {
   Star,
   HelpCircle,
   Lightbulb,
-  Lock,
   LogOut,
   Camera,
   ChevronLeft,
@@ -31,7 +30,14 @@ export default function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast();
-  const { language, t } = useLanguage();
+  const {
+    language,
+    t,
+    showLanguageSelector,
+    setShowLanguageSelector,
+    translateFullChats,
+    setTranslateFullChats,
+  } = useLanguage();
   const settingsSectionRef = useRef<HTMLDivElement>(null);
   const selectedLanguage = supportedLanguages.find(({ code }) => code === language)!;
 
@@ -356,8 +362,16 @@ export default function Profile() {
                 <div className="px-4 pt-3 pb-1">
                   <span className="text-[13px] font-semibold text-[#2481cc]">{t('profile.translate_messages')}</span>
                 </div>
-                <TranslateRow label={t('profile.show_translate_button')} defaultOn={true} />
-                <TranslateRow label={t('profile.translate_full_chats')} locked={true} />
+                <TranslateRow
+                  label={t('profile.show_translate_button')}
+                  checked={showLanguageSelector}
+                  onChange={setShowLanguageSelector}
+                />
+                <TranslateRow
+                  label={t('profile.translate_full_chats')}
+                  checked={translateFullChats}
+                  onChange={setTranslateFullChats}
+                />
                 <div className="flex items-center justify-between px-4 py-3">
                   <span className="text-[15px] text-black">{t('profile.do_not_translate')}</span>
                   <span className="text-[13px] font-medium text-[#2481cc]">{t('settings.languages_count')}</span>
@@ -451,36 +465,41 @@ function SettingsItem({
 function TranslateRow({
   label,
   defaultOn = false,
-  locked = false,
+  checked,
+  onChange,
 }: {
   label: string;
   defaultOn?: boolean;
-  locked?: boolean;
+  checked?: boolean;
+  onChange?: (on: boolean) => void;
 }) {
   const [on, setOn] = useState(defaultOn);
+  const isOn = checked ?? on;
+  const toggle = () => {
+    const next = !isOn;
+    if (onChange) onChange(next);
+    else setOn(next);
+  };
+
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5e5e5]">
       <span className="text-[15px] text-black">{label}</span>
-      {locked ? (
-        <div className="w-[44px] h-[26px] rounded-full bg-gray-200 flex items-center justify-center relative">
-          <div className="w-[22px] h-[22px] bg-white rounded-full shadow flex items-center justify-center absolute left-0.5">
-            <Lock className="w-3 h-3 text-gray-400" />
-          </div>
-        </div>
-      ) : (
-        <button
-          onClick={() => setOn(!on)}
-          className={`w-[44px] h-[26px] rounded-full transition-colors relative cursor-pointer ${
-            on ? "bg-[#2481cc]" : "bg-gray-300"
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isOn}
+        aria-label={label}
+        onClick={toggle}
+        className={`w-[44px] h-[26px] rounded-full transition-colors relative cursor-pointer ${
+          isOn ? "bg-[#2481cc]" : "bg-gray-300"
+        }`}
+      >
+        <div
+          className={`w-[22px] h-[22px] bg-white rounded-full shadow absolute top-0.5 transition-all ${
+            isOn ? "left-[20px]" : "left-0.5"
           }`}
-        >
-          <div
-            className={`w-[22px] h-[22px] bg-white rounded-full shadow absolute top-0.5 transition-all ${
-              on ? "left-[20px]" : "left-0.5"
-            }`}
-          />
-        </button>
-      )}
+        />
+      </button>
     </div>
   );
 }

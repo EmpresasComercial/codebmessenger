@@ -15,6 +15,7 @@ import {
   ZoomIn
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import AutoTranslatedText from '../components/AutoTranslatedText';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -152,7 +153,7 @@ export default function pavelDurov() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { session } = useAuth();
-  const { t } = useLanguage();
+  const { language, t, translateFullChats } = useLanguage();
 
   const [posts, setPosts] = useState<ChannelPost[]>([]);
   const [inputText, setInputText] = useState('');
@@ -739,25 +740,33 @@ export default function pavelDurov() {
                   <h2 className={`text-[15px] font-bold leading-snug ${
                     isProofPost ? 'mb-1' : 'mt-2 mb-1'
                   }`}>
-                    {post.title.includes(':') ? (
-                      <>
-                        <span className="text-[#111827] dark:text-white">
-                          {post.title.split(':')[0]}:{' '}
-                        </span>
-                        <span className="text-[#16a34a] dark:text-[#22c55e] font-black">
-                          {post.title.split(':')[1]}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-[#111827] dark:text-white">{post.title}</span>
-                    )}
+                    <AutoTranslatedText
+                      text={post.title}
+                      language={language}
+                      enabled={translateFullChats}
+                      renderFormatted={(translatedTitle) => {
+                        const [titleLabel, ...titleValue] = translatedTitle.split(':');
+                        return titleValue.length > 0 ? (
+                          <>
+                            <span className="text-[#111827] dark:text-white">{titleLabel}:{' '}</span>
+                            <span className="text-[#16a34a] dark:text-[#22c55e] font-black">{titleValue.join(':')}</span>
+                          </>
+                        ) : (
+                          <span className="text-[#111827] dark:text-white">{translatedTitle}</span>
+                        );
+                      }}
+                    />
                   </h2>
                 )}
 
                   {/* 4. Descrição / Comentário em baixo */}
                   {displayedContent && (
                   <p className="text-[14px] text-[#111827] dark:text-[#f3f4f6] leading-relaxed break-words whitespace-pre-line font-normal mb-1 pr-2">
-                    {displayedContent}
+                    <AutoTranslatedText
+                      text={displayedContent}
+                      language={language}
+                      enabled={translateFullChats}
+                    />
                   </p>
                 )}
 

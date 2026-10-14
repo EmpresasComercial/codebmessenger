@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
+import AutoTranslatedText from '../components/AutoTranslatedText';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import ChatsList from './ChatsList';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
@@ -63,7 +64,7 @@ const QUICK_REACTIONS = ['👍', '❤️', '🔥', '🥰', '👏', '😂'];
 export default function PrivateChat() {
   const { contactId } = useParams();
   const [searchParams] = useSearchParams();
-  const { t } = useLanguage();
+  const { language, t, translateFullChats } = useLanguage();
   const rawContactPhone = searchParams.get('t') || t('chat.contact');
   const contactLevel = searchParams.get('nv');
   
@@ -1097,7 +1098,11 @@ export default function PrivateChat() {
 
                       {m.mensagem && (
                         <span className="text-[16px] whitespace-pre-wrap break-words font-normal" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                          {m.mensagem}
+                          <AutoTranslatedText
+                            text={m.mensagem}
+                            language={language}
+                            enabled={translateFullChats && !isMe}
+                          />
                         </span>
                       )}
                       
@@ -1237,7 +1242,13 @@ export default function PrivateChat() {
             <div className="w-[3px] h-full bg-[#2481cc] rounded-full self-stretch" />
             <div className="flex-1 min-w-0">
               <span className="text-[11.5px] font-bold text-[#2481cc] block">{t('chat.replying_to')}</span>
-              <p className="text-[13px] text-gray-500 dark:text-gray-400 truncate">{replyTo.mensagem}</p>
+              <p className="text-[13px] text-gray-500 dark:text-gray-400 truncate">
+                <AutoTranslatedText
+                  text={replyTo.mensagem}
+                  language={language}
+                  enabled={translateFullChats && replyTo.remetente_id !== user?.id}
+                />
+              </p>
             </div>
             <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600 p-1">
               <X className="w-4 h-4" />
