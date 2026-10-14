@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -25,14 +25,14 @@ function cleanToastMessage(msg: string): string {
   if (!msg) return '';
 
   return msg
-    .replace(/SEGURANÇA\s+Telegram Business\b[:\s]*/gi, '')
+    .replace(/SEGURANÃ‡A\s+Business Messenger\b[:\s]*/gi, '')
     .replace(/\bMICROSOFT\b[:\s]*/gi, '')
     .trim();
 }
 
 function isErrorMessage(msg: string): boolean {
   const lower = (msg || '').toLowerCase();
-  return /bloquead|falh|erro|insuficiente|recusad|negad|inv[aá]lid|incorret|proibid|n[aã]o autorizado|expirad/.test(lower);
+  return /bloquead|falh|erro|insuficiente|recusad|negad|inv[aÃ¡]lid|incorret|proibid|n[aÃ£]o autorizado|expirad/.test(lower);
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -131,3 +131,4 @@ export function useToast(): ToastContextType {
 
   return context;
 }
+

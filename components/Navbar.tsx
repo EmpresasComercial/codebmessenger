@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle, Users, Bot, Settings, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -22,7 +22,7 @@ export default function Navbar() {
 
     let active = true;
     const fetchUnreadMessagesCount = async () => {
-      const { count, error } = await supabase
+      const { count, error } = await (supabase as any)
         .from('sys_t110')
         .select('id', { count: 'exact', head: true })
         .eq('destinatario_id', userId)
@@ -30,7 +30,7 @@ export default function Navbar() {
         .eq('detalhes->>lida', 'false');
 
       if (error) {
-        console.error('Não foi possível carregar a contagem de mensagens não lidas:', error);
+        console.error('NÃ£o foi possÃ­vel carregar a contagem de mensagens nÃ£o lidas:', error);
         return;
       }
 
@@ -47,7 +47,7 @@ export default function Navbar() {
       )
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error(`Falha na sincronização de mensagens não lidas: ${status}`);
+          console.error(`Falha na sincronizaÃ§Ã£o de mensagens nÃ£o lidas: ${status}`);
         }
       });
 
@@ -68,8 +68,8 @@ export default function Navbar() {
   const navItems = [
     {
       name: t('nav.home'),
-      path: '/org',
-      aliasPaths: ['/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'],
+      path: '/conversas',
+      aliasPaths: ['/conversas', '/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'],
       icon: (isActive: boolean) => <MessageCircle className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />,
       badge: unreadMessagesCount
     },
@@ -93,15 +93,15 @@ export default function Navbar() {
     }
   ];
 
-  // Mostra o botão flutuante de lápis (FAB Telegram) na lista de chats ou tela inicial
-  const showFab = ['/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'].includes(location.pathname);
+  // Mostra o botÃ£o flutuante de lÃ¡pis (FAB Telegram) na lista de chats ou tela inicial
+  const showFab = ['/conversas', '/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'].includes(location.pathname);
 
   return (
     <>
-      {/* ── BOTÃO DE AÇÃO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÁPIS) ── */}
+      {/* â”€â”€ BOTÃƒO DE AÃ‡ÃƒO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÃPIS) â”€â”€ */}
       {showFab && (
         <button
-          onClick={() => navigate('/web')}
+          onClick={() => navigate('/grupo')}
           className="fixed bottom-[72px] right-4 sm:right-6 z-40 w-14 h-14 rounded-full bg-[#50a8eb] dark:bg-[#50a8eb] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(80,168,235,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
           title={t('nav.new_message')}
           aria-label={t('nav.new_message')}
@@ -113,7 +113,7 @@ export default function Navbar() {
         </button>
       )}
 
-      {/* ── BARRA DE NAVEGAÇÃO INFERIOR OFICIAL DO TELEGRAM (TRANSPARENTE FULL-WIDTH) ── */}
+      {/* â”€â”€ BARRA DE NAVEGAÃ‡ÃƒO INFERIOR OFICIAL DO TELEGRAM (TRANSPARENTE FULL-WIDTH) â”€â”€ */}
       <nav className="fixed bottom-0 left-0 right-0 w-full z-50 h-[56px] bg-white dark:bg-[#1c242f] border-t border-black/5 dark:border-[#000000]/30 flex items-center justify-around px-2 select-none shadow-[0_-1px_3px_rgba(0,0,0,0.02)]">
         {navItems.map((item) => {
           const isActive = item.aliasPaths.some(p => location.pathname === p || (p !== '/home' && location.pathname.startsWith(p)));
@@ -150,3 +150,4 @@ export default function Navbar() {
     </>
   );
 }
+

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+﻿import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, X, Check } from 'lucide-react';
 import { COUNTRIES, Country } from '../lib/countries';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -127,10 +127,11 @@ export default function CountryModal({
 
         {filteredCountries.length === 0 && (
           <div className="p-12 text-center text-[#8e8e93] text-[15px]">
-            Nenhum país encontrado
+            Nenhum paÃ­s encontrado
           </div>
         )}
       </div>
     </div>
   );
 }
+

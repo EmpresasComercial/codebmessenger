@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Check, ChevronDown, Loader2, MoreHorizontal, X } from 'lucide-react';
 import { useToast } from '../components/Toast';
@@ -10,7 +10,7 @@ const CARD_NAMES = [
   'Banco BFA',
   'Banco BIC',
   'Banco SOL',
-  'Banco Atlântico'
+  'Banco AtlÃ¢ntico'
 ];
 
 const getBankDisplayName = (bankName: string) => bankName.replace(/^Banco\s+/i, '');
@@ -96,8 +96,8 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
           navigate(redirectPath || '/informacao-bancaria');
         }
       } else {
-        const message = data?.message || 'Falha ao salvar cartão.';
-        if (embedded && /já existe|ja existe|conta.*cadastrad/i.test(message)) {
+        const message = data?.message || 'Falha ao salvar cartÃ£o.';
+        if (embedded && /jÃ¡ existe|ja existe|conta.*cadastrad/i.test(message)) {
           onAlreadyExists?.();
         } else {
           showToast(message, 'error');
@@ -263,3 +263,4 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
     </div>
   );
 }
+

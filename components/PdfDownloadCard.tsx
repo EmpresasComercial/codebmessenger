@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import { useToast } from './Toast';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -27,7 +27,7 @@ const getDataUrlSize = (url?: string) => {
 };
 
 export const formatFileSize = (bytes?: number) => {
-  if (!Number.isFinite(bytes) || !bytes || bytes < 0) return 'Tamanho indisponível';
+  if (!Number.isFinite(bytes) || !bytes || bytes < 0) return 'Tamanho indisponÃ­vel';
   return bytes >= 1024 * 1024
     ? `${(bytes / (1024 * 1024)).toFixed(2)} MB`
     : `${Math.max(1, Math.ceil(bytes / 1024))} KB`;
@@ -215,3 +215,4 @@ export default function PdfDownloadCard({
     </button>
   );
 }
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 
 const MAX_TRANSLATION_CACHE = 250;
 const translationCache = new Map<string, string>();
@@ -93,3 +93,4 @@ export default React.memo(function AutoTranslatedText({
 
   return <>{renderFormatted ? renderFormatted(translated) : translated}</>;
 });
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type Language, supportedLanguages, useLanguage } from '../contexts/LanguageContext';
 import { 
@@ -29,7 +29,7 @@ export default function Settings() {
           <div className="w-8 h-8 rounded-full bg-[#fff8ec] flex items-center justify-center">
             <Star className="w-5 h-5 text-[#f2a93b] fill-[#f2a93b]" />
           </div>
-          <span className="text-[18px] font-bold text-black tracking-tight">Telegram Premium</span>
+          <span className="text-[18px] font-bold text-black tracking-tight">Business Messenger Premium</span>
         </div>
         <div className="flex items-center gap-3 text-black">
           <button className="active:opacity-50" aria-label={t('chat.search')}><Search className="w-5 h-5" strokeWidth={2.5} /></button>
@@ -51,7 +51,7 @@ export default function Settings() {
         </div>
         <h1 className="text-[22px] font-semibold tracking-tight text-black mb-0.5">Thomas Hall</h1>
         <p className="text-[14px] text-[#8e8e93]">
-          +244 941465064 • @Asiaray_Thomas_Hall
+          +244 941465064 â€¢ @Asiaray_Thomas_Hall
         </p>
       </section>
 
@@ -135,19 +135,19 @@ export default function Settings() {
           <SettingsItem 
             icon={<Star className="w-5 h-5 text-white fill-white" />}
             iconBg="bg-[#8d54d9]"
-            title="Telegram Premium"
+            title="Business Messenger Premium"
           />
           
           <SettingsItem 
             icon={<Star className="w-5 h-5 text-white fill-white" />}
             iconBg="bg-[#f2a93b]"
-            title="Telegram Stars"
+            title="Business Messenger Stars"
           />
 
           <SettingsItem 
             icon={<Store className="w-5 h-5 text-white" />}
             iconBg="bg-[#e95171]"
-            title="Telegram Business"
+            title="Business Messenger"
           />
 
           <SettingsItem 
@@ -360,3 +360,5 @@ function SettingsItem({
     </div>
   );
 }
+
+

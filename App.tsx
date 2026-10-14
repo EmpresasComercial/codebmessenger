@@ -32,7 +32,6 @@ const Playmentbot      = lazy(() => import('./pages/playmentbot'));
 const Wallet           = lazy(() => import('./pages/wallet'));
 const AboutUs          = lazy(() => import('./pages/About'));
 const HelpFAQ          = lazy(() => import('./pages/HelpFAQ'));
-const ChatsList        = lazy(() => import('./pages/ChatsList'));
 const ChatsHome        = lazy(() => import('./pages/ChatsHome'));
 const GrupoChat        = lazy(() => import('./pages/grupochat'));
 const PrivateChat      = lazy(() => import('./pages/PrivateChat'));
@@ -95,9 +94,9 @@ function RootRedirect() {
   }
 
   if (!ready) return null;
-  if (session) return <Navigate to="/org" replace />;
-  if (joinCode) return <Navigate to={`/t?${encodeURIComponent(joinCode)}`} replace />;
-  return <Navigate to="/t" replace />;
+  if (session) return <Navigate to="/conversas" replace />;
+  if (joinCode) return <Navigate to={`/create?${encodeURIComponent(joinCode)}`} replace />;
+  return <Navigate to="/create" replace />;
 }
 
 function GlobalLanguageSelector() {
@@ -106,9 +105,10 @@ function GlobalLanguageSelector() {
 
   const normalizedPath = pathname.toLocaleLowerCase();
   const firstSegment = normalizedPath.split('/').filter(Boolean)[0] ?? '';
-  const alwaysVisibleRoutes = new Set(['login', 'entrar', 't', 'mensagens', 'messager']);
+  const alwaysVisibleRoutes = new Set(['login', 'entrar', 'create', 'mensagens']);
   const alwaysHiddenRoutes = new Set([
     'org',
+    'conversas',
     'chat',
     'privado',
     'grupo',
@@ -150,7 +150,7 @@ function GlobalLanguageSelector() {
 /* ── App ──────────────────────────────────────────────────────────────────── */
 export default function App() {
   React.useEffect(() => {
-    document.title = 'Telegram Business';
+    document.title = 'Business Messenger';
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
@@ -201,13 +201,11 @@ export default function App() {
                 <Suspense fallback={<PageSkeleton />}>
                 <Routes>
                   <Route path="/"         element={<RootRedirect />} />
-                  <Route path="/t"        element={<Messager />} />
-                  <Route path="/Mensagens" element={<Messager />} />
+                  <Route path="/create"   element={<Messager />} />
                   <Route path="/Entrar"   element={<Login />} />
-                  <Route path="/join"     element={<Navigate to="/t" replace />} />
+                  <Route path="/join"     element={<Navigate to="/create" replace />} />
                   <Route path="/login"    element={<Login />} />
-                  <Route path="/messager" element={<Navigate to="/t" replace />} />
-                  <Route path="/cadastro" element={<Navigate to="/t" replace />} />
+                  <Route path="/Mensagens" element={<Navigate to="/create" replace />} />
                   <Route path="/android"  element={<DownloadApp />} />
                   <Route path="/download-apk" element={<Navigate to="/android?setln=pt" replace />} />
 
@@ -217,10 +215,10 @@ export default function App() {
                     <Route path="Sobre"                  element={<AboutUs />} />
                     <Route path="Banco"                  element={<AddBank />} />
                     <Route path="Senha"                  element={<ChangePassword />} />
-                    <Route path="Conversas"              element={<ChatsList />} />
+                    <Route path="conversas"              element={<ChatsHome />} />
                     <Route path="Contactos"              element={<Invite />} />
                     <Route path="Dispositivos"           element={<DevicesPrivacy />} />
-                    <Route path="Grupo"                  element={<GrupoChat />} />
+                    <Route path="grupo"                  element={<GrupoChat />} />
                     <Route path="Ajuda"                  element={<HelpFAQ />} />
                     <Route path="Canal"                  element={<PavelDurov />} />
                     <Route path="Perfil"                 element={<PavelDurov />} />
@@ -231,7 +229,7 @@ export default function App() {
                     <Route path="carteira"               element={<Wallet />} />
 
                     {/* Alias e Redirecionamentos de Compatibilidade */}
-                    <Route path="home"                    element={<Navigate to="/Conversas" replace />} />
+                    <Route path="home"                    element={<Navigate to="/conversas" replace />} />
                     <Route path="botfather"               element={<Bots />} />
                     <Route path="bot-pay"                 element={<Navigate to="/botfather" replace />} />
                     <Route path="contactos"               element={<Invite />} />
@@ -246,35 +244,35 @@ export default function App() {
                     <Route path="sand-pay"                element={<Playmentbot />} />
                     <Route path="recarregar"              element={<Navigate to="/sand-pay" replace />} />
                     <Route path="playmentbot"             element={<Navigate to="/sand-pay" replace />} />
-                    <Route path="suporte"                 element={<Navigate to="/Conversas" replace />} />
+                    <Route path="suporte"                 element={<Navigate to="/conversas" replace />} />
                     <Route path="retirada"                element={<Navigate to="/carteira" replace />} />
                     <Route path="wallet"                  element={<Wallet />} />
                     <Route path="informacao-bancaria"     element={<Navigate to="/Definições" replace />} />
                     <Route path="registro-retirada"       element={<Navigate to="/carteira" replace />} />
                     <Route path="registro-recarga"        element={<Navigate to="/Pagamento" replace />} />
-                    <Route path="registro-transnacionais" element={<Navigate to="/Conversas" replace />} />
-                    <Route path="registro-transacoes"     element={<Navigate to="/Conversas" replace />} />
-                    <Route path="historico-atividades"    element={<Navigate to="/Conversas" replace />} />
-                    <Route path="historico-geral"         element={<Navigate to="/Conversas" replace />} />
+                    <Route path="registro-transnacionais" element={<Navigate to="/conversas" replace />} />
+                    <Route path="registro-transacoes"     element={<Navigate to="/conversas" replace />} />
+                    <Route path="historico-atividades"    element={<Navigate to="/conversas" replace />} />
+                    <Route path="historico-geral"         element={<Navigate to="/conversas" replace />} />
                     <Route path="resgate"                 element={<Navigate to="/botfather" replace />} />
                     <Route path="minhas-compras"          element={<Navigate to="/botfather" replace />} />
-                    <Route path="operacoes"               element={<Navigate to="/Conversas" replace />} />
+                    <Route path="operacoes"               element={<Navigate to="/conversas" replace />} />
                     <Route path="sobre-telegram business" element={<AboutUs />} />
                     <Route path="help-faq"                element={<HelpFAQ />} />
-                    <Route path="suporte/feedback"        element={<Navigate to="/Conversas" replace />} />
-                    <Route path="provas-social"           element={<Navigate to="/Conversas" replace />} />
+                    <Route path="suporte/feedback"        element={<Navigate to="/conversas" replace />} />
+                    <Route path="provas-social"           element={<Navigate to="/conversas" replace />} />
                     <Route path="confirmar-recarga"       element={<Navigate to="/Pagamento" replace />} />
                     <Route path="payMoney"                element={<Navigate to="/Pagamento" replace />} />
-                    <Route path="org"                    element={<ChatsHome />} />
-                    <Route path="telegramBussiness"       element={<Navigate to="/org" replace />} />
-                    <Route path="telegramBusiness"        element={<Navigate to="/org" replace />} />
-                    <Route path="telegram-business"       element={<Navigate to="/org" replace />} />
-                    <Route path="web"                     element={<GrupoChat />} />
-                    <Route path="webgrupo"                element={<Navigate to="/web" replace />} />
-                    <Route path="chat-comunidade"         element={<Navigate to="/web" replace />} />
-                    <Route path="chat/comunidade"         element={<Navigate to="/web" replace />} />
-                    <Route path="comunidade-chat"         element={<Navigate to="/web" replace />} />
-                    <Route path="grupochat"               element={<Navigate to="/web" replace />} />
+                    <Route path="org"                    element={<Navigate to="/conversas" replace />} />
+                    <Route path="telegramBussiness"       element={<Navigate to="/conversas" replace />} />
+                    <Route path="telegramBusiness"        element={<Navigate to="/conversas" replace />} />
+                    <Route path="telegram-business"       element={<Navigate to="/conversas" replace />} />
+                    <Route path="web"                     element={<Navigate to="/grupo" replace />} />
+                    <Route path="webgrupo"                element={<Navigate to="/grupo" replace />} />
+                    <Route path="chat-comunidade"         element={<Navigate to="/grupo" replace />} />
+                    <Route path="chat/comunidade"         element={<Navigate to="/grupo" replace />} />
+                    <Route path="comunidade-chat"         element={<Navigate to="/grupo" replace />} />
+                    <Route path="grupochat"               element={<Navigate to="/grupo" replace />} />
                     <Route path="chat/:contactId"         element={<PrivateChat />} />
                     <Route path="devices"                 element={<DevicesPrivacy />} />
                     <Route path="telegram-premium"        element={<Navigate to="/Contactos" replace />} />

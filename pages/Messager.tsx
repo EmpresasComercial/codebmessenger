@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -250,13 +250,13 @@ export default function Messager() {
         <div className="mb-3.5 flex items-center justify-center">
           <img
             src="/logo-tb.jpg"
-            alt="Telegram"
+            alt="Business Messenger"
             className="w-[58px] h-[58px] rounded-full object-cover"
           />
         </div>
 
         <h1 className="text-[26px] font-bold text-center mb-1.5 tracking-tight text-[#1c1c1e]">
-          Telegram
+          Business Messenger
         </h1>
 
         <p className="text-[13px] text-[#8e8e93] text-center mb-6 leading-snug max-w-[290px]">
@@ -456,3 +456,4 @@ export default function Messager() {
     </div>
   );
 }
+

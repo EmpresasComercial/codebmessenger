@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -108,7 +108,7 @@ const getProfileAvatarUrl = (profile: any) => {
     || '';
 };
 
-// Selo de verificação oficial da empresa (Telegram Blue)
+// Selo de verificaÃ§Ã£o oficial da empresa (Telegram Blue)
 const OfficialVerifiedBadge = ({ className = "w-[16px] h-[16px]" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={`shrink-0 inline-block align-middle ml-1 select-none ${className}`}>
     <path
@@ -131,7 +131,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   const { t, darkMode, setDarkMode } = useLanguage();
   const { statusText } = useNetworkStatus();
 
-  // typingUsers: Map<contactId, true> — contatos que estão digitando agora
+  // typingUsers: Map<contactId, true> â€” contatos que estÃ£o digitando agora
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const typingTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const [communityTypingUser, setCommunityTypingUser] = useState<string | null>(null);
@@ -167,7 +167,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           localStorage.removeItem(key);
         }
       } catch (error) {
-        console.error(`Não foi possível limpar o cache offline da conversa ${key}:`, error);
+        console.error(`NÃ£o foi possÃ­vel limpar o cache offline da conversa ${key}:`, error);
       }
     });
 
@@ -188,7 +188,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         localStorage.removeItem('community_chat_cache');
       }
     } catch (error) {
-      console.error('Não foi possível limpar o cache offline do grupo:', error);
+      console.error('NÃ£o foi possÃ­vel limpar o cache offline do grupo:', error);
     }
 
     localStorage.removeItem(CACHE_KEY_CONTACTS);
@@ -327,7 +327,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     };
   });
   
-  // Abas oficiais conforme especificação da Fase 1:
+  // Abas oficiais conforme especificaÃ§Ã£o da Fase 1:
   // Conversas | Grupos | Canais | Bots | Mensagens lidas
   type ChatFolder = 'all' | 'groups' | 'channels' | 'bots' | 'unread';
   const [activeFilter, setActiveFilter] = useState<ChatFolder>('all');
@@ -390,7 +390,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       return 'ontem';
     }
 
-    // Últimos 7 dias: dia da semana abreviado (seg., ter., qua., ...)
+    // Ãšltimos 7 dias: dia da semana abreviado (seg., ter., qua., ...)
     const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays >= 0 && diffDays < 7) {
       return d.toLocaleDateString('pt-PT', { weekday: 'short' });
@@ -454,7 +454,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           localStorage.removeItem(CACHE_KEY_COMM_LAST);
         }
       } catch (err) {
-        console.error('Erro ao carregar última mensagem da comunidade:', err);
+        console.error('Erro ao carregar Ãºltima mensagem da comunidade:', err);
       }
     };
 
@@ -517,7 +517,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           data: { url: '/web' }
         });
       } catch (error) {
-        console.error('Não foi possível mostrar a notificação da comunidade:', error);
+        console.error('NÃ£o foi possÃ­vel mostrar a notificaÃ§Ã£o da comunidade:', error);
       }
     };
 
@@ -619,7 +619,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             .limit(100);
 
           if (lastMsgs && lastMsgs.length > 0) {
-            // Se houver mensagens com usuários não listados na equipe, buscar dados em sys_t500
+            // Se houver mensagens com usuÃ¡rios nÃ£o listados na equipe, buscar dados em sys_t500
             const missingIds: string[] = [];
             lastMsgs.forEach((msg: any) => {
               const otherId = msg.remetente_id === user.id ? msg.destinatario_id : msg.remetente_id;
@@ -746,13 +746,13 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     };
   }, [user]);
 
-  // ── Escuta "digitando..." de todos os contatos via Supabase Broadcast ──
+  // â”€â”€ Escuta "digitando..." de todos os contatos via Supabase Broadcast â”€â”€
   useEffect(() => {
     if (!user) return;
 
     // Cada conversa privada usa canal "typing_{sorted_pair}".
-    // Aqui inscrevemos um canal wildcard por padrão do Supabase não existe,
-    // então usamos um canal global de presença de typing que cada contato escreve.
+    // Aqui inscrevemos um canal wildcard por padrÃ£o do Supabase nÃ£o existe,
+    // entÃ£o usamos um canal global de presenÃ§a de typing que cada contato escreve.
     const channel = supabase.channel('chatslist_typing_global', {
       config: { broadcast: { ack: false } }
     })
@@ -760,7 +760,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         const senderId: string = payload?.payload?.userId;
         const targetId: string = payload?.payload?.targetId;
         if (senderId && targetId === 'community') {
-          const senderName = payload?.payload?.name || 'Alguém';
+          const senderName = payload?.payload?.name || 'AlguÃ©m';
           setCommunityTypingUser(senderName);
           if (communityTypingTimer.current) clearTimeout(communityTypingTimer.current);
           communityTypingTimer.current = setTimeout(() => {
@@ -770,7 +770,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           return;
         }
 
-        // Só processa se o evento é direcionado ao utilizador atual
+        // SÃ³ processa se o evento Ã© direcionado ao utilizador atual
         if (!senderId || targetId !== user.id) return;
 
         setTypingUsers(prev => ({ ...prev, [senderId]: true }));
@@ -779,7 +779,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         if (typingTimers.current[senderId]) {
           clearTimeout(typingTimers.current[senderId]);
         }
-        // Auto-remove após 3s sem novo evento
+        // Auto-remove apÃ³s 3s sem novo evento
         typingTimers.current[senderId] = setTimeout(() => {
           setTypingUsers(prev => {
             const next = { ...prev };
@@ -805,7 +805,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     return colors[Math.abs(hash) % colors.length];
   };
 
-  // Pesquisa dinâmica
+  // Pesquisa dinÃ¢mica
   const queryClean = searchQuery.toLowerCase().trim();
   const queryDigits = queryClean.replace(/\D/g, '');
 
@@ -846,14 +846,14 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-  // Lista de conversas com ordenação estrita por data/hora da mensagem mais recente (sem fixação permanente)
+  // Lista de conversas com ordenaÃ§Ã£o estrita por data/hora da mensagem mais recente (sem fixaÃ§Ã£o permanente)
   const allConversations = useMemo(() => {
     // 1. Conversas do Sistema / Oficiais
     const systemChats = [
       {
         id: 'community-chat',
         folder: 'groups' as ChatFolder,
-        name: 'Telegram Empresa',
+        name: 'Business Messenger Empresa',
         isVerified: true,
         lastMessage: communityLastMessage.text,
         senderPrefix: communityLastMessage.sender ? `${communityLastMessage.sender}: ` : null,
@@ -869,7 +869,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         nivel: null,
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs shrink-0">
-            <img src="/logo-tb.jpg" alt="Telegram" className="w-full h-full object-cover" />
+            <img src="/logo-tb.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
           </div>
         ),
         onClick: () => navigate('/web')
@@ -911,7 +911,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         name: 'Payments Bot',
         isVerified: true,
         tag: 'BOT',
-        lastMessage: 'Recargas e depósitos automáticos via Multicaixa Express e IBAN.',
+        lastMessage: 'Recargas e depÃ³sitos automÃ¡ticos via Multicaixa Express e IBAN.',
         senderPrefix: null,
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 36),
         timestamp: Date.now() - 1000 * 60 * 60 * 36,
@@ -939,7 +939,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         name: 'Wallet',
         isVerified: true,
         tag: 'BOT',
-        lastMessage: 'Solicitações de saque e levantamentos rápidos para conta bancária.',
+        lastMessage: 'SolicitaÃ§Ãµes de saque e levantamentos rÃ¡pidos para conta bancÃ¡ria.',
         senderPrefix: null,
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 48),
         timestamp: Date.now() - 1000 * 60 * 60 * 48,
@@ -1051,7 +1051,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   className={`absolute bottom-0 right-0 w-[18px] h-[18px] rounded-full border-2 border-white dark:border-[#17212b] flex items-center justify-center text-[10px] font-bold text-white shadow-xs ${
                     nv === 1 ? 'bg-[#10b981]' : nv === 2 ? 'bg-[#3b82f6]' : 'bg-[#8b5cf6]'
                   }`}
-                  title={`Subordinado de ${nv}º nível`}
+                  title={`Subordinado de ${nv}Âº nÃ­vel`}
                 >
                   {nv}
                 </div>
@@ -1062,7 +1062,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         };
       });
 
-    // 3. Combina e ordena estritamente por timestamp decrescente (a conversa mais recente sempre em 1º lugar!)
+    // 3. Combina e ordena estritamente por timestamp decrescente (a conversa mais recente sempre em 1Âº lugar!)
     return [...systemChats, ...activeContactChats].sort((a, b) => b.timestamp - a.timestamp);
   }, [communityLastMessage, contacts, navigate]);
 
@@ -1108,11 +1108,11 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       }}
     >
       <div className={`flex min-h-0 flex-1 flex-col ${embedded ? "" : "md:w-[350px] md:shrink-0 md:border-r md:border-gray-200 dark:md:border-[#202b36]"}`}>
-      {/* ── TOP APP BAR OFICIAL DO TELEGRAM ── */}
+      {/* â”€â”€ TOP APP BAR OFICIAL DO TELEGRAM â”€â”€ */}
       <header className="sticky top-0 z-40 bg-white dark:bg-[#242f3d] shadow-[0_1px_0_rgba(0,0,0,0.08)] select-none transition-colors">
         <div className="h-[56px] px-2 flex items-center justify-between gap-1">
           
-          {/* Campo de Busca ativo com botão voltar ou Título Telegram */}
+          {/* Campo de Busca ativo com botÃ£o voltar ou TÃ­tulo Telegram */}
           {isSearching ? (
             <>
               <button
@@ -1147,7 +1147,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center pl-2">
+            <div className="flex min-w-0 flex-1 items-center pl-2">
               {statusText ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 text-[#2481cc] dark:text-[#6ab3f3] animate-spin shrink-0" />
@@ -1166,15 +1166,15 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   >
                     <Menu className="h-6 w-6" />
                   </button>
-                  <h1 className="text-[22px] font-bold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
-                    Telegram
+                  <h1 className="min-w-0 truncate whitespace-nowrap text-[clamp(14px,4.5vw,16px)] font-bold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
+                    Business Messenger
                   </h1>
                 </>
               )}
             </div>
           )}
 
-          {/* Ações da Direita */}
+          {/* AÃ§Ãµes da Direita */}
           <div className="flex items-center gap-0">
             {!isSearching && (
               <button
@@ -1366,7 +1366,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           </div>
         )}
 
-        {/* ── ABAS SUPERIORES ── */}
+        {/* â”€â”€ ABAS SUPERIORES â”€â”€ */}
         <div className="flex overflow-x-auto no-scrollbar px-2 bg-white dark:bg-[#242f3d] border-t border-[#e8e8e8] dark:border-white/10">
           {folders.map(folder => {
             const isActive = activeFilter === folder.id;
@@ -1400,7 +1400,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         </div>
       </header>
 
-      {/* ── CORPO PRINCIPAL DE CHATS (ORDENAÇÃO DINÂMICA SEM CONVERSAS FIXAS) ── */}
+      {/* â”€â”€ CORPO PRINCIPAL DE CHATS (ORDENAÃ‡ÃƒO DINÃ‚MICA SEM CONVERSAS FIXAS) â”€â”€ */}
       <main className={`w-full flex-1 overflow-y-auto ${embedded ? "pb-2" : "pb-20"}`}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-8 space-y-2">
@@ -1409,7 +1409,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           </div>
         ) : (
           <>
-            {/* 1. Lista de conversas ativas ordenadas por recência */}
+            {/* 1. Lista de conversas ativas ordenadas por recÃªncia */}
             {filteredChats.map((chat) => {
               const rawId = chat.id.startsWith('contact-') ? chat.id.replace('contact-', '') : null;
               const isOnline = rawId ? isUserOnline(rawId) : false;
@@ -1494,12 +1494,12 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               );
             })}
 
-            {/* 2. Seção de contatos (sem conversas recentes iniciadas) */}
+            {/* 2. SeÃ§Ã£o de contatos (sem conversas recentes iniciadas) */}
             {activeFilter === 'all' && idleContacts.length > 0 && (
               <>
                 <div className="px-4 py-2 bg-[#f4f4f5] dark:bg-[#1a2330] border-b border-gray-100/80 dark:border-[#202b36]">
                   <span className="text-[13px] font-medium text-[#2481cc] dark:text-[#6ab3f3]">
-                    Seus contatos no Telegram
+                    Seus contatos no Business Messenger
                   </span>
                 </div>
 
@@ -1550,7 +1550,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                             className={`absolute bottom-0 right-0 w-[18px] h-[18px] rounded-full border-2 border-white dark:border-[#17212b] flex items-center justify-center text-[10px] font-bold text-white shadow-xs ${
                               nv === 1 ? 'bg-[#10b981]' : nv === 2 ? 'bg-[#3b82f6]' : 'bg-[#8b5cf6]'
                             }`}
-                            title={`Subordinado de ${nv}º nível`}
+                            title={`Subordinado de ${nv}Âº nÃ­vel`}
                           >
                             {nv}
                           </div>
@@ -1574,7 +1574,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                             <span className="text-[#4dcd5e] font-medium italic">{t('chat.typing')}</span>
                           ) : (
                             <span className="text-[#707579] dark:text-[#9eaab6]">
-                              visto às {timeStr}
+                              visto Ã s {timeStr}
                             </span>
                           )}
                         </p>
@@ -1585,7 +1585,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               </>
             )}
 
-            {/* Feedback quando a busca não encontra nada */}
+            {/* Feedback quando a busca nÃ£o encontra nada */}
             {searchQuery && filteredChats.length === 0 && idleContacts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <p className="text-[#707579] dark:text-[#9eaab6] text-[15px] mb-2">
@@ -1605,7 +1605,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
       {!embedded && (
         <>
-          {/* ── BOTÃO DE AÇÃO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÁPIS) ── */}
+          {/* â”€â”€ BOTÃƒO DE AÃ‡ÃƒO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÃPIS) â”€â”€ */}
           <button
             onClick={() => {
               showToast(t('chat.new_conversation'), 'info');

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: telegram-business-app
+    name: business-messenger-app
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist

@@ -7,7 +7,7 @@ import webpush from "npm:web-push@3.6.7";
 
 const VAPID_PUBLIC_KEY = "BB7OI7jz-WDgr7twGzs8Yl5q4YnY_efjp2jCAt47VFDxQ3xiJNFaItqKYcTkRKoBxWEiwVutuEumUaxzQSrA7C4";
 const VAPID_PRIVATE_KEY = "D3spQ9rv9DYAUzg5k-hkK1WJaSUAQiWAhHybo8COczQ";
-const VAPID_SUBJECT = "mailto:suporte@telegram business.com";
+const VAPID_SUBJECT = "mailto:suporte@businessmessenger.com";
 
 webpush.setVapidDetails(
   VAPID_SUBJECT,
@@ -45,10 +45,10 @@ serve(async (req) => {
     }
 
     const payload = JSON.stringify({
-      title: title || "Telegram Business",
+      title: title || "Business Messenger",
       body: body,
-      icon: "/telegram business_logo_icon_167892.webp",
-      badge: "/telegram business_logo_icon_167892.webp",
+      icon: "/business_messenger_logo_icon_167892.webp",
+      badge: "/business_messenger_logo_icon_167892.webp",
       url: url || "/perfil",
     });
 

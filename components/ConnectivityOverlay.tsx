@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, Check } from 'lucide-react';
 
@@ -15,7 +15,7 @@ export const ConnectivityOverlay: React.FC = () => {
     const handleOnline = () => {
       setIsOnline(true);
       setShowSyncSuccess(true);
-      // Dispara evento global de sincronização para todos os ouvintes do app
+      // Dispara evento global de sincronizaÃ§Ã£o para todos os ouvintes do app
       window.dispatchEvent(new CustomEvent('app:sync-data'));
       const timer = setTimeout(() => {
         setShowSyncSuccess(false);
@@ -32,7 +32,8 @@ export const ConnectivityOverlay: React.FC = () => {
     };
   }, []);
 
-  // Mantém apenas o disparo do evento global, sem renderizar faixa flutuante
+  // MantÃ©m apenas o disparo do evento global, sem renderizar faixa flutuante
   return null;
 };
+
 

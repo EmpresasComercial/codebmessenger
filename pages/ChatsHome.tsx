@@ -1,4 +1,4 @@
-import { MessageCircle } from "lucide-react";
+﻿import { MessageCircle } from "lucide-react";
 import ChatsList from "./ChatsList";
 import { useLanguage } from "../contexts/LanguageContext";
 
@@ -19,3 +19,4 @@ export default function ChatsHome() {
     </div>
   );
 }
+

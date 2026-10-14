@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { formatCurrency, CurrencyType } from '../../../lib/currency';
 
@@ -61,3 +61,4 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
     </div>
   );
 };
+

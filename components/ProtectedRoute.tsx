@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,7 +13,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Enquanto o contexto inicializa o primeiro getSession em background
   if (!ready) return null; 
 
-  // Se não houver sessão válida, redireciona imediatamente
+  // Se nÃ£o houver sessÃ£o vÃ¡lida, redireciona imediatamente
   if (!session) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -21,3 +21,4 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Se estiver autenticado, exibe a rota privada sem loaders extras
   return <>{children}</>;
 }
+

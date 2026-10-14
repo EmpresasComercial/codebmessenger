@@ -1,5 +1,5 @@
-// Service Worker para Telegram Business - Push Notifications & Offline Support
-const CACHE_NAME = 'telegram-business-shell-v3';
+// Service Worker para Business Messenger - Push Notifications & Offline Support
+const CACHE_NAME = 'business-messenger-shell-v3';
 
 // Assets fundamentais para o App abrir offline
 const STATIC_ASSETS = [
@@ -81,7 +81,7 @@ self.addEventListener('fetch', (event) => {
 // Escuta eventos de Notificação Push
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Telegram Business',
+    title: 'Business Messenger',
     body: 'Você tem uma nova notificação na sua conta.',
     icon: '/logo-tb.jpg',
     badge: '/logo-tb.jpg',
@@ -102,7 +102,7 @@ self.addEventListener('push', (event) => {
     icon: data.icon || '/logo-tb.jpg',
     badge: data.badge || '/logo-tb.jpg',
     vibrate: [200, 100, 200, 100, 200],
-    tag: data.tag || 'telegram business-notification',
+    tag: data.tag || 'business-messenger-notification',
     renotify: true,
     data: {
       url: data.url || '/perfil',

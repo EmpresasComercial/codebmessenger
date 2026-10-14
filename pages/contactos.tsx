@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
@@ -59,7 +59,7 @@ export default function ContactsInvite() {
         if (appLink) {
           let raw = String(appLink).trim().replace(/\/$/, '');
           if (raw && !/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
-          // Se estiver configurado com o domínio antigo join-t.me, substitui pelo domínio oficial telegramas.cc
+          // Se estiver configurado com o domÃ­nio antigo join-t.me, substitui pelo domÃ­nio oficial telegramas.cc
           if (raw.includes('join-t.me')) {
             raw = 'https://www.telegramas.cc';
           }
@@ -90,7 +90,7 @@ export default function ContactsInvite() {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: 'Telegram', url: rawInviteLink }); } catch {}
+      try { await navigator.share({ title: 'Business Messenger', url: rawInviteLink }); } catch {}
     } else {
       copyToClipboard(rawInviteLink, false);
     }
@@ -112,7 +112,7 @@ export default function ContactsInvite() {
   return (
     <div className="w-full min-h-screen bg-white font-sans text-[#222222] antialiased pb-28 select-none">
 
-      {/* Cabeçalho simples seguindo o layout da página About */}
+      {/* CabeÃ§alho simples seguindo o layout da pÃ¡gina About */}
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-gray-100 bg-white px-4 py-3">
         <button
           type="button"
@@ -122,7 +122,7 @@ export default function ContactsInvite() {
         >
           <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
         </button>
-        <h1 className="text-[17px] font-bold tracking-tight text-[#222222]">Telegram</h1>
+        <h1 className="text-[17px] font-bold tracking-tight text-[#222222]">Business Messenger</h1>
       </header>
 
       <main className="mx-auto w-full max-w-[860px] space-y-8 px-4 pt-8">
@@ -153,7 +153,7 @@ export default function ContactsInvite() {
             <p className="text-[14px] text-[#333333]">{t('invite.rewards_title')}</p>
             <div className="inline-flex flex-wrap justify-center gap-2 rounded-full bg-[#f1f1f5] px-4 py-2 text-[13px] font-medium text-[#222222]">
               <span>{t('invite.signup_reward')}</span>
-              <span aria-hidden="true">·</span>
+              <span aria-hidden="true">Â·</span>
               <span>{t('invite.ten_invite_reward')}</span>
             </div>
           </div>
@@ -266,7 +266,7 @@ export default function ContactsInvite() {
         </section>
       </main>
 
-      {/* ── MODAL QR (FLAT E SIMPLES) ── */}
+      {/* â”€â”€ MODAL QR (FLAT E SIMPLES) â”€â”€ */}
       {showQrModal && (
         <div
           className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center"
@@ -276,7 +276,7 @@ export default function ContactsInvite() {
             className="w-full sm:max-w-sm bg-white dark:bg-[#17212b] sm:rounded-[16px] rounded-t-[16px] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Cabeçalho do modal */}
+            {/* CabeÃ§alho do modal */}
             <div className="flex items-center justify-between px-4 h-[52px] border-b border-[#e4e4e4] dark:border-[#1e2c3a]">
               <span className="text-[16px] font-semibold text-black dark:text-white">{t('invite.qr_code')}</span>
               <button
@@ -302,7 +302,7 @@ export default function ContactsInvite() {
               </p>
             </div>
 
-            {/* Acções flat */}
+            {/* AcÃ§Ãµes flat */}
             <div className="border-t border-[#e4e4e4] dark:border-[#1e2c3a] divide-y divide-[#e4e4e4] dark:divide-[#1e2c3a]">
               <button
                 type="button"
@@ -326,3 +326,4 @@ export default function ContactsInvite() {
     </div>
   );
 }
+

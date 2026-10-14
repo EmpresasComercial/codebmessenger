@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+﻿import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -127,11 +127,11 @@ export default function Login() {
       if (error) {
         if (
           error.message?.includes('COUNTRY_MISMATCH') ||
-          error.message?.includes('pertence a outro país')
+          error.message?.includes('pertence a outro paÃ­s')
         ) {
           showToast(t('auth.phone_error_invalid'), 'error');
         } else if (
-          error.message?.includes('Introduza um número de telefone válido') ||
+          error.message?.includes('Introduza um nÃºmero de telefone vÃ¡lido') ||
           error.message?.includes('Invalid phone number')
         ) {
           showToast(t('auth.phone_error_invalid'), 'error');
@@ -169,13 +169,13 @@ export default function Login() {
         <div className="mb-3.5 flex items-center justify-center">
           <img
             src="/logo-tb.jpg"
-            alt="Telegram"
+            alt="Business Messenger"
             className="w-[58px] h-[58px] rounded-full object-cover"
           />
         </div>
 
         <h1 className="text-[26px] font-bold text-center mb-1.5 tracking-tight text-[#1c1c1e]">
-          Telegram
+          Business Messenger
         </h1>
         <p className="text-[13px] text-[#8e8e93] text-center mb-6 leading-snug max-w-[280px]">
           {t('auth.login_description')}
@@ -301,3 +301,4 @@ export default function Login() {
     </div>
   );
 }
+

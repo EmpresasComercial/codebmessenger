@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,13 +27,15 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
+import { VoiceMessageComposer, VoiceMessagePlayer, type VoiceMessageComposerHandle } from '../components/VoiceMessage';
+import { deleteVoiceMessage, uploadVoiceMessage } from '../lib/voiceMessages';
 import AutoTranslatedText from '../components/AutoTranslatedText';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import ChatsList from './ChatsList';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// ── Tipos ──────────────────────────────────────────────────────────────
+// â”€â”€ Tipos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface Message {
   id: string;
   remetente_id: string;
@@ -50,6 +52,11 @@ interface Message {
   };
 }
 
+interface VoiceAttachment {
+  audioPath: string;
+  durationSeconds: number;
+}
+
 interface ContextMenu {
   message: Message;
   x: number;
@@ -57,8 +64,8 @@ interface ContextMenu {
   isMe: boolean;
 }
 
-// ── Constantes de Emojis Oficiais Telegram ────────────────────────────
-const QUICK_REACTIONS = ['👍', '❤️', '🔥', '🥰', '👏', '😂'];
+// â”€â”€ Constantes de Emojis Oficiais Telegram â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const QUICK_REACTIONS = ['ðŸ‘', 'â¤ï¸', 'ðŸ”¥', 'ðŸ¥°', 'ðŸ‘', 'ðŸ˜‚'];
 
 const getMessageDetails = (details: Message['detalhes'] | string | null | undefined) => {
   if (typeof details === 'string') {
@@ -75,7 +82,7 @@ const getMessageDetails = (details: Message['detalhes'] | string | null | undefi
   return details && typeof details === 'object' ? details : {};
 };
 
-// ── Componente Principal ───────────────────────────────────────────────
+// â”€â”€ Componente Principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function PrivateChat() {
   const { contactId } = useParams();
   const [searchParams] = useSearchParams();
@@ -116,6 +123,8 @@ export default function PrivateChat() {
     return [];
   });
   const [inputText, setInputText] = useState('');
+  const [voiceComposerActive, setVoiceComposerActive] = useState(false);
+  const voiceComposerRef = useRef<VoiceMessageComposerHandle>(null);
   const [isLoading, setIsLoading] = useState(() => {
     if (typeof navigator !== 'undefined' && navigator.onLine) return true;
     if (localKey) {
@@ -142,7 +151,7 @@ export default function PrivateChat() {
     registeredAt: null,
   });
 
-  // ── Indicador de Digitando em Tempo Real (Supabase Broadcast) ──
+  // â”€â”€ Indicador de Digitando em Tempo Real (Supabase Broadcast) â”€â”€
   const [isContactTyping, setIsContactTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
@@ -235,7 +244,7 @@ export default function PrivateChat() {
 
   const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-  // ── Fetch Messages ────────────────────────────────────────────────────
+  // â”€â”€ Fetch Messages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const isFetchingRef = useRef(false);
   const fetchMessages = async (isInitial = false) => {
     if (!user || !contactId) return;
@@ -278,7 +287,7 @@ export default function PrivateChat() {
           .eq('destinatario_id', user.id);
 
         if (readError) {
-          console.error(`Não foi possível marcar a mensagem ${message.id} como lida:`, readError);
+          console.error(`NÃ£o foi possÃ­vel marcar a mensagem ${message.id} como lida:`, readError);
           return;
         }
         readMessageIds.add(message.id);
@@ -321,7 +330,7 @@ export default function PrivateChat() {
       });
       if (isInitial) scrollToBottom('auto');
     } catch (error) {
-      console.error('Não foi possível sincronizar as mensagens privadas:', error);
+      console.error('NÃ£o foi possÃ­vel sincronizar as mensagens privadas:', error);
     } finally {
       isFetchingRef.current = false;
       setIsLoading(false);
@@ -391,7 +400,7 @@ export default function PrivateChat() {
     };
   }, [user, contactId]);
 
-  // ── Escuta e Envio do Status "Digitando..." via Supabase Realtime Broadcast ──
+  // â”€â”€ Escuta e Envio do Status "Digitando..." via Supabase Realtime Broadcast â”€â”€
   useEffect(() => {
     if (!user || !contactId) return;
     const pairId = [user.id, contactId].sort().join('_');
@@ -455,13 +464,14 @@ export default function PrivateChat() {
 
         if (!isMounted || error || !data) return;
 
+        const row = data as any;
         const nextProfile = {
-          name: data.nome_exibicao || data.nome || data.display_name || data.telefone || contactDisplayName || rawContactPhone || 'Contato',
-          phone: data.telefone || rawContactPhone || 'Não informado',
-          avatarUrl: data.avatar_url || data.foto_url || data.photo_url || data.avatar || data.imagem || '',
-          hierarchy: data.nivel || data.level || data.hierarquia || data.hierarchy || contactLevel || 'L1',
-          invitedAt: data.data_convite || data.invited_at || data.convidado_em || data.invite_date || null,
-          registeredAt: data.data_cadastro || data.registered_at || data.criado_em || data.created_at || data.createdAt || null,
+          name: row.nome_exibicao || row.nome || row.display_name || row.telefone || contactDisplayName || rawContactPhone || 'Contato',
+          phone: row.telefone || rawContactPhone || 'Não informado',
+          avatarUrl: row.avatar_url || row.foto_url || row.photo_url || row.avatar || row.imagem || '',
+          hierarchy: row.nivel || row.level || row.hierarquia || row.hierarchy || contactLevel || 'L1',
+          invitedAt: row.data_convite || row.invited_at || row.convidado_em || row.invite_date || null,
+          registeredAt: row.data_cadastro || row.registered_at || row.criado_em || row.created_at || row.createdAt || null,
         };
 
         setContactDisplayName(nextProfile.name);
@@ -489,7 +499,7 @@ export default function PrivateChat() {
     };
   }, [contextMenu]);
 
-  // ── Context Menu Helpers ──────────────────────────────────────────────
+  // â”€â”€ Context Menu Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const openContextMenu = useCallback((message: Message, isMe: boolean) => {
     setShowAllReactions(false);
     setContextMenu({ message, x: 0, y: 0, isMe });
@@ -536,7 +546,7 @@ export default function PrivateChat() {
     }
   };
 
-  // ── Long Press Gesture (Pressionar para abrir modal) ───────────────────
+  // â”€â”€ Long Press Gesture (Pressionar para abrir modal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressTriggeredRef = useRef(false);
   const pressStartPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -572,12 +582,12 @@ export default function PrivateChat() {
     }
   };
 
-  // ── Send Message ──────────────────────────────────────────────────────
-  const handleSend = async (overrideText?: string) => {
+  // â”€â”€ Send Message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const handleSend = async (overrideText?: string, voiceAttachment?: VoiceAttachment) => {
     const textToSend = overrideText !== undefined ? overrideText : inputText;
-    if ((!textToSend.trim() && !imagePreview && !pdfPreview) || !user || !contactId || isSending) return;
+    if ((!textToSend.trim() && !imagePreview && !pdfPreview && !voiceAttachment) || !user || !contactId || isSending) return;
 
-    const msg = textToSend.trim();
+    const msg = textToSend.trim() || (voiceAttachment ? t('chat.voice_message') : '');
     const imageToSend = imagePreview;
     const pdfToSend = pdfPreview;
     const attachmentDetails = imageToSend
@@ -590,7 +600,13 @@ export default function PrivateChat() {
             tipo_mime: 'application/pdf',
             tipo_midia: 'documento'
           }
-        : undefined;
+        : voiceAttachment
+          ? {
+              audio_path: voiceAttachment.audioPath,
+              audio_duration_seconds: voiceAttachment.durationSeconds,
+              tipo_midia: 'audio'
+            }
+          : undefined;
 
     setInputText('');
     setImagePreview(null);
@@ -625,7 +641,7 @@ export default function PrivateChat() {
           id: `auto_${Date.now()}`,
           remetente_id: contactId,
           destinatario_id: user.id,
-          mensagem: 'Obrigado pela sua mensagem! O Telegram Business está ativo para impulsionar suas operações e conexões em tempo real. Se precisar de assistência financeira com Stars, consulte a aba de Carteira.',
+          mensagem: 'Obrigado pela sua mensagem! O Business Messenger estÃ¡ ativo para impulsionar suas operaÃ§Ãµes e conexÃµes em tempo real. Se precisar de assistÃªncia financeira com Stars, consulte a aba de Carteira.',
           lida: true,
           created_at: new Date().toISOString()
         };
@@ -664,7 +680,7 @@ export default function PrivateChat() {
         throw error;
       }
       if (!inserted) {
-        throw new Error('A persistência não confirmou a mensagem.');
+        throw new Error('A persistÃªncia nÃ£o confirmou a mensagem.');
       }
       setMessages(prev => {
         const updated = prev.map(m => m.id === tempId ? { ...inserted, status: 'sent' } : m);
@@ -678,6 +694,23 @@ export default function PrivateChat() {
       console.log('[PrivateChat] Mensagem inserida com sucesso');
     } catch (err: unknown) {
       console.error('[PrivateChat] Falha ao persistir mensagem:', err);
+      if (voiceAttachment) {
+        setMessages(prev => {
+          const updated = prev.filter(message => message.id !== tempId);
+          if (localKey) {
+            try {
+              localStorage.setItem(localKey, JSON.stringify(updated));
+            } catch {}
+          }
+          return updated;
+        });
+        try {
+          await deleteVoiceMessage(voiceAttachment.audioPath);
+        } catch (cleanupError) {
+          console.error('[PrivateChat] Could not remove an unsent voice message:', cleanupError);
+        }
+        throw err;
+      }
       setMessages(prev => {
         const updated = prev.map(m => m.id === tempId ? { ...m, status: 'failed' as const } : m);
         if (localKey) {
@@ -691,7 +724,24 @@ export default function PrivateChat() {
     }
   };
 
-  // ── Helpers de Formatação ─────────────────────────────────────────────
+  const handleSendVoiceMessage = async (blob: Blob, durationSeconds: number) => {
+    if (!user || !contactId || !isUUID(contactId)) {
+      throw new Error('Voice messages require a registered private conversation.');
+    }
+
+    try {
+      const audioPath = await uploadVoiceMessage(blob, user.id, {
+        type: 'private',
+        recipientId: contactId
+      });
+      await handleSend(undefined, { audioPath, durationSeconds });
+    } catch (error) {
+      console.error('[PrivateChat] Could not upload voice message:', error);
+      throw error;
+    }
+  };
+
+  // â”€â”€ Helpers de FormataÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const formatTime = (ts: string) =>
     ts ? new Date(ts).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
 
@@ -721,9 +771,9 @@ export default function PrivateChat() {
   };
 
   const formatProfileDate = (value: string | null | undefined) => {
-    if (!value) return 'Não informado';
+    if (!value) return 'NÃ£o informado';
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'Não informado';
+    if (Number.isNaN(date.getTime())) return 'NÃ£o informado';
     return new Intl.DateTimeFormat('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -735,9 +785,9 @@ export default function PrivateChat() {
     const normalized = String(value ?? contactLevel ?? 'L1').trim().toUpperCase();
     if (/^L[123]$/.test(normalized)) return normalized;
     if (/^[123]$/.test(normalized)) return `L${normalized}`;
-    if (/NIVEL\s*1|NÍVEL\s*1/.test(normalized)) return 'L1';
-    if (/NIVEL\s*2|NÍVEL\s*2/.test(normalized)) return 'L2';
-    if (/NIVEL\s*3|NÍVEL\s*3/.test(normalized)) return 'L3';
+    if (/NIVEL\s*1|NÃVEL\s*1/.test(normalized)) return 'L1';
+    if (/NIVEL\s*2|NÃVEL\s*2/.test(normalized)) return 'L2';
+    if (/NIVEL\s*3|NÃVEL\s*3/.test(normalized)) return 'L3';
     return 'L1';
   };
 
@@ -751,7 +801,7 @@ export default function PrivateChat() {
   const contactColor = getUserColor(contactDisplayName);
   const isPavel = contactId?.startsWith('pavel');
 
-  // ── Ações do menu de contexto ─────────────────────────────────────────
+  // â”€â”€ AÃ§Ãµes do menu de contexto â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const menuActions = contextMenu ? [
     { icon: Reply, label: t('common.reply'), onClick: handleReply, color: '#2481cc' },
     { icon: Copy, label: t('common.copy'), onClick: handleCopy, color: '#555' },
@@ -759,7 +809,7 @@ export default function PrivateChat() {
     { icon: Trash2, label: t('common.delete'), onClick: handleDelete, color: '#e53e3e', subLabel: t('chat.auto_delete_31_days') },
   ] : [];
 
-  // ── Render ─────────────────────────────────────────────────────────────
+  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-[#f4f4f5] dark:bg-[#0e1621]">
       <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
@@ -775,7 +825,7 @@ export default function PrivateChat() {
       }}
     >
 
-      {/* ── HEADER ── */}
+      {/* â”€â”€ HEADER â”€â”€ */}
       <div className="h-[68px] shrink-0 md:hidden" aria-hidden="true" />
       <header className="fixed left-0 right-0 top-0 z-40 flex w-full shrink-0 select-none items-center justify-between bg-transparent px-3 py-3 pointer-events-none sm:px-4 md:sticky md:left-auto md:right-auto md:top-0">
         <button
@@ -814,7 +864,7 @@ export default function PrivateChat() {
                 {isPavel ? 'Pavel Durov' : formatPhoneClean(contactDisplayName)}
               </h1>
               {isPavel && (
-                <span className="w-3.5 h-3.5 rounded-full bg-[#2481cc] text-white flex items-center justify-center text-[8px] font-black shrink-0 mt-0.5">✓</span>
+                <span className="w-3.5 h-3.5 rounded-full bg-[#2481cc] text-white flex items-center justify-center text-[8px] font-black shrink-0 mt-0.5">âœ“</span>
               )}
             </div>
             {statusText ? (
@@ -837,7 +887,7 @@ export default function PrivateChat() {
                   t('chat.founder')
                 ) : contactIsOnline ? (
                   <span className="text-[#10b981] font-medium">
-                    {t('chat.online_now')}{contactLevel ? ` • ${t('chat.affiliate_level').replace('{level}', contactLevel.replace(/^L/, ''))}` : ''}
+                    {t('chat.online_now')}{contactLevel ? ` â€¢ ${t('chat.affiliate_level').replace('{level}', contactLevel.replace(/^L/, ''))}` : ''}
                   </span>
                 ) : (
                   t('chat.offline')
@@ -980,7 +1030,7 @@ export default function PrivateChat() {
         </div>
       )}
 
-      {/* ── ÁREA DE MENSAGENS TELEGRAM (LARGURA TOTAL FLUIDA) ── */}
+      {/* â”€â”€ ÃREA DE MENSAGENS TELEGRAM (LARGURA TOTAL FLUIDA) â”€â”€ */}
       <main
         ref={scrollRef}
         className="w-full min-h-0 flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
@@ -1019,7 +1069,7 @@ export default function PrivateChat() {
               <div
                 className={`flex items-end w-full gap-1.5 ${isMe ? 'justify-end' : 'justify-start'} relative group`}
               >
-                  {/* Reação existente */}
+                  {/* ReaÃ§Ã£o existente */}
                   {m.reaction && (
                     <div
                       className={`absolute -bottom-3 ${isMe ? 'right-0' : 'left-0'} z-10 text-[16px] leading-none select-none`}
@@ -1029,7 +1079,7 @@ export default function PrivateChat() {
                     </div>
                   )}
 
-                  {/* Balão da mensagem com Long Press (Pressionar) */}
+                  {/* BalÃ£o da mensagem com Long Press (Pressionar) */}
                   <div
                     onTouchStart={(e) => {
                       const t = e.touches[0];
@@ -1111,6 +1161,34 @@ export default function PrivateChat() {
                       </div>
                     )}
 
+                    {m.detalhes?.audio_path && (
+                      <>
+                        {!isMe && (
+                          <p
+                            className="mb-1 truncate text-[13px] font-medium"
+                            style={{ color: isPavel ? '#2481cc' : contactColor }}
+                          >
+                            {isPavel ? 'Pavel Durov' : formatPhoneClean(contactDisplayName)}
+                          </p>
+                        )}
+                        <VoiceMessagePlayer
+                          path={m.detalhes.audio_path}
+                          unavailableLabel={t('chat.voice_unavailable')}
+                          isOutgoing={isMe}
+                        />
+                        <div className="flex justify-end items-center gap-[2px] select-none text-[12px]" style={{ color: isMe ? '#55864e' : '#8e8e93' }}>
+                          <span className="font-normal leading-none">{formatTime(m.created_at)}</span>
+                          {isMe && (
+                            m.status === 'sending'
+                              ? <Clock className="w-[14px] h-[14px] text-[#8e8e93] stroke-[2] ml-[2px]" />
+                              : m.status === 'failed'
+                              ? <span className="text-[12px] text-[#e53e3e] font-bold ml-[2px] leading-none">!</span>
+                              : <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
+                          )}
+                        </div>
+                      </>
+                    )}
+
                     {m.detalhes?.arquivo_url && m.detalhes?.tipo_mime === 'application/pdf' && (
                       <div
                         className="pointer-events-auto mb-1 flex min-w-0 items-center gap-2 rounded-[10px] bg-black/5 px-2.5 py-2 dark:bg-white/10"
@@ -1132,7 +1210,7 @@ export default function PrivateChat() {
                       </div>
                     )}
 
-                    <div className="relative pointer-events-none leading-[1.3]">
+                    {!m.detalhes?.audio_path && <div className="relative pointer-events-none leading-[1.3]">
                       {!isMe && (
                         <p
                           className="text-[13px] font-medium mb-[2px] cursor-pointer truncate"
@@ -1152,7 +1230,7 @@ export default function PrivateChat() {
                         </span>
                       )}
                       
-                      {/* Spacer invisível inline — dá espaço ao timestamp sem forçar largura mínima */}
+                      {/* Spacer invisÃ­vel inline â€” dÃ¡ espaÃ§o ao timestamp sem forÃ§ar largura mÃ­nima */}
                       <span
                         aria-hidden="true"
                         className="inline-block h-[1px]"
@@ -1176,10 +1254,10 @@ export default function PrivateChat() {
                       </div>
                       {isMe && m.status === 'failed' && (
                         <p className="text-[10px] text-[#e53e3e] mt-0.5 text-right font-medium select-none leading-tight">
-                          Mensagem não enviada
+                          Mensagem nÃ£o enviada
                         </p>
                       )}
-                  </div>
+                    </div>}
                 </div>
               </div>
             </React.Fragment>
@@ -1197,11 +1275,11 @@ export default function PrivateChat() {
           </div>
         )}
 
-        {/* Espaço extra para reações no final */}
+        {/* EspaÃ§o extra para reaÃ§Ãµes no final */}
         <div className="h-2" />
       </main>
 
-      {/* ── CONTEXT MENU OVERLAY (TELEGRAM NATIVO) ── */}
+      {/* â”€â”€ CONTEXT MENU OVERLAY (TELEGRAM NATIVO) â”€â”€ */}
       {contextMenu && (
         <div
           className="fixed inset-0 z-[100] flex flex-col justify-end items-center px-4 pb-6 bg-black/50 backdrop-blur-xs transition-opacity"
@@ -1217,7 +1295,7 @@ export default function PrivateChat() {
               touchAction: 'manipulation'
             }}
           >
-            {/* ── Barra Flutuante de Reações Telegram ── */}
+            {/* â”€â”€ Barra Flutuante de ReaÃ§Ãµes Telegram â”€â”€ */}
             <div className="bg-white dark:bg-[#2b2b2b] rounded-2xl shadow-xl px-3 py-2 flex items-center justify-around border border-gray-100 dark:border-white/10">
               {QUICK_REACTIONS.map((emoji) => (
                 <button
@@ -1233,7 +1311,7 @@ export default function PrivateChat() {
               ))}
             </div>
 
-            {/* ── Lista de Ações Essenciais ── */}
+            {/* â”€â”€ Lista de AÃ§Ãµes Essenciais â”€â”€ */}
             <div className="bg-white dark:bg-[#2b2b2b] rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-white/10">
               {menuActions.map((action, idx) => (
                 <React.Fragment key={action.label}>
@@ -1268,7 +1346,7 @@ export default function PrivateChat() {
               ))}
             </div>
 
-            {/* Botão Cancelar */}
+            {/* BotÃ£o Cancelar */}
             <button
               type="button"
               onClick={closeContextMenu}
@@ -1281,7 +1359,7 @@ export default function PrivateChat() {
         </div>
       )}
 
-      {/* ── REPLY PREVIEW BAR ── */}
+      {/* â”€â”€ REPLY PREVIEW BAR â”€â”€ */}
       {replyTo && (
         <div className="absolute bottom-[65px] left-0 right-0 z-40 flex justify-center px-2 sm:px-6">
           <div className="w-full max-w-[1000px] bg-white dark:bg-[#17212b] border-t-2 border-[#2481cc] rounded-t-xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
@@ -1303,7 +1381,7 @@ export default function PrivateChat() {
         </div>
       )}
 
-      {/* ── BARRA DE MENSAGEM FLUTUANTE ── */}
+      {/* â”€â”€ BARRA DE MENSAGEM FLUTUANTE â”€â”€ */}
       <div
         className="absolute bottom-0 left-0 right-0 z-40 flex justify-center"
         style={{
@@ -1316,16 +1394,16 @@ export default function PrivateChat() {
         <div className="w-full max-w-[1000px] flex items-end gap-2">
           {/* Pill flutuante */}
           <div className={`flex-1 bg-white dark:bg-[#202b36] ${isComposerExpanded ? 'rounded-[24px] items-end' : 'rounded-full items-center'} shadow-[0_4px_20px_rgba(0,0,0,0.18)] flex px-3.5 py-1 min-h-[46px]`}>
-            <button
+            {!voiceComposerActive && <button
               type="button"
               onClick={() => inputRef.current?.focus()}
               className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0"
             >
               <Smile className="w-5 h-5" />
-            </button>
+            </button>}
 
             {/* Thumbnail da imagem selecionada */}
-            {imagePreview && (
+            {!voiceComposerActive && imagePreview && (
               <div className="relative mr-2 ml-1 shrink-0">
                 <img src={imagePreview} alt="preview" className="w-8 h-8 object-cover rounded-lg border border-gray-200 shadow-xs" />
                 <button 
@@ -1338,7 +1416,7 @@ export default function PrivateChat() {
                 </button>
               </div>
             )}
-            {pdfPreview && (
+            {!voiceComposerActive && pdfPreview && (
               <div className="relative mr-2 ml-1 flex max-w-[130px] shrink-0 items-center gap-1 rounded-lg border border-gray-200 px-1.5 py-1 dark:border-gray-600">
                 <span className="flex h-8 w-8 shrink-0 flex-col items-center justify-center rounded-[5px] bg-[#e5484d] text-[7px] font-bold leading-none text-white">
                   <FileText className="mb-0.5 h-3 w-3" />
@@ -1360,9 +1438,10 @@ export default function PrivateChat() {
               </div>
             )}
 
-            <textarea
+            {!voiceComposerActive && <textarea
               ref={inputRef}
               value={inputText}
+              disabled={voiceComposerActive}
               onChange={(e) => {
                 const val = e.target.value;
                 setInputText(val);
@@ -1380,7 +1459,7 @@ export default function PrivateChat() {
               placeholder={replyTo ? t('chat.reply_placeholder') : t('chat.input_placeholder')}
               className="w-full min-h-[24px] px-2 py-2 text-[15px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-gray-400 font-normal leading-snug"
               rows={1}
-            />
+            />}
 
             <input
               type="file"
@@ -1397,41 +1476,72 @@ export default function PrivateChat() {
               className="hidden"
             />
 
-            <button
+            {!voiceComposerActive && <button
               type="button"
               onClick={() => pdfInputRef.current?.click()}
+              disabled={voiceComposerActive}
               className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0 cursor-pointer"
               title={t('chat.attach_pdf')}
               aria-label={t('chat.attach_pdf')}
             >
               <Paperclip className="w-5 h-5" />
-            </button>
-            <button
+            </button>}
+            {!voiceComposerActive && <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
+              disabled={voiceComposerActive}
               className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0 cursor-pointer"
               title={t('chat.choose_photo')}
               aria-label={t('chat.choose_photo')}
             >
               <Camera className="w-5 h-5" />
-            </button>
+            </button>}
+            <VoiceMessageComposer
+              ref={voiceComposerRef}
+              onSend={handleSendVoiceMessage}
+              onActiveChange={setVoiceComposerActive}
+              className={voiceComposerActive ? 'flex-1' : ''}
+              visible={false}
+              labels={{
+                record: t('chat.voice_record'),
+                stop: t('chat.voice_stop'),
+                cancel: t('chat.voice_cancel'),
+                send: t('chat.voice_send'),
+                sending: t('chat.voice_sending'),
+                unsupported: t('chat.voice_unsupported'),
+                permissionDenied: t('chat.voice_permission_denied'),
+                tooLarge: t('chat.voice_too_large'),
+                unavailable: t('chat.voice_unavailable'),
+                sendFailed: t('chat.voice_send_failed'),
+                storageUnavailable: t('chat.voice_storage_unavailable'),
+                pause: t('chat.voice_pause'),
+                resume: t('chat.voice_resume'),
+              }}
+            />
           </div>
 
-          {/* Botão enviar flutuante */}
+          {/* BotÃ£o enviar flutuante */}
           <button
             type="button"
-            onClick={() => handleSend()}
-            disabled={!inputText.trim() && !imagePreview && !pdfPreview}
-            className={`w-[46px] h-[46px] rounded-full text-white flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_4px_16px_rgba(36,129,204,0.45)] ${
-              (inputText.trim() || imagePreview || pdfPreview) ? 'bg-[#2481cc] hover:bg-[#1f72b5] cursor-pointer' : 'bg-[#2481cc] cursor-pointer'
-            }`}
+            onClick={() => {
+              if (inputText.trim() || imagePreview || pdfPreview) {
+                void handleSend();
+              } else {
+                void voiceComposerRef.current?.mainAction();
+              }
+            }}
+            disabled={isSending}
+            className={`w-[46px] h-[46px] shrink-0 self-center rounded-full bg-[#2481cc] text-white shadow-[0_4px_16px_rgba(36,129,204,0.45)] transition-transform hover:bg-[#1f72b5] active:scale-90 disabled:opacity-50 ${isComposerExpanded || voiceComposerActive ? 'self-end' : ''}`}
+            aria-label={inputText.trim() || imagePreview || pdfPreview || voiceComposerActive ? t('common.send') : t('chat.voice_record')}
           >
-            {(inputText.trim() || imagePreview || pdfPreview) ? <Send className="w-5 h-5 text-white ml-0.5" /> : <Mic className="w-5 h-5 text-white" />}
+            {(inputText.trim() || imagePreview || pdfPreview || voiceComposerActive)
+              ? <Send className="ml-0.5 h-5 w-5" />
+              : <Mic className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
-      {/* ── Modal de Zoom da Imagem (Visualização Completa) ── */}
+      {/* â”€â”€ Modal de Zoom da Imagem (VisualizaÃ§Ã£o Completa) â”€â”€ */}
       {zoomedImage && (
         <div 
           className="fixed inset-0 z-[300] flex h-[100dvh] w-screen flex-col items-center justify-center overflow-hidden bg-black animate-in fade-in duration-150"
@@ -1461,7 +1571,7 @@ export default function PrivateChat() {
         </div>
       )}
 
-      {/* ── Animações CSS injetadas ── */}
+      {/* â”€â”€ AnimaÃ§Ãµes CSS injetadas â”€â”€ */}
       <style>{`
         @keyframes slideUpMenu {
           from { opacity: 0; transform: translateY(18px) scale(0.96); }
@@ -1476,3 +1586,4 @@ export default function PrivateChat() {
     </div>
   );
 }
+

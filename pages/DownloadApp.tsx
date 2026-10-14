@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { ChevronLeft, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/Toast";
@@ -100,3 +100,4 @@ export default function DownloadApp() {
     </div>
   );
 }
+

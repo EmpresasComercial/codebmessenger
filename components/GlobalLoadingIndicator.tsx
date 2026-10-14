@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGlobalLoading } from '../contexts/LoadingContext';
@@ -63,3 +63,4 @@ export const GlobalLoadingIndicator: React.FC = () => {
     </AnimatePresence>
   );
 };
+

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { supportedLanguages, useLanguage } from '../contexts/LanguageContext';
 import { cn } from '../lib/utils';
 
@@ -41,3 +41,4 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ className, v
     </div>
   );
 };
+

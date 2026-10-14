@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -18,7 +18,6 @@ import {
   ArrowDown,
   Download,
   Smile,
-  Mic,
   ArrowLeft,
   Pencil,
   MessageCircle,
@@ -33,52 +32,55 @@ import {
   ChevronRight,
   Loader2,
   FileText,
-  Link2
+  Link2,
+  Mic
 } from 'lucide-react';
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import ChatsList from "./ChatsList";
 import PdfDownloadCard, { formatFileSize } from "../components/PdfDownloadCard";
+import { VoiceMessageComposer, VoiceMessagePlayer, type VoiceMessageComposerHandle } from "../components/VoiceMessage";
+import { deleteVoiceMessage, uploadVoiceMessage } from "../lib/voiceMessages";
 import AutoTranslatedText from "../components/AutoTranslatedText";
 import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { COUNTRIES } from "../lib/countries";
 
 const FORBIDDEN_WORDS = Array.from(new Set([
   "burla", "burlas", "fraude", "fraudes", "scam", "scams", "golpe", "golpes", 
-  "ladrÃ£o", "ladrao", "ladrÃµes", "ladroes", "roubo", "roubos", "bosta", "bostas", 
+  "ladrÃƒÂ£o", "ladrao", "ladrÃƒÂµes", "ladroes", "roubo", "roubos", "bosta", "bostas", 
   "merda", "merdas", "caralho", "caralhos", "foda", "fodas", "fodase", "foda-se", 
   "porra", "porras", "puta", "putas", "puta que pariu", "filho da puta", "fdp", 
-  "cabrao", "cabrÃ£o", "cabroes", "cabrÃµes", "corno", "cornos", "vagabundo", "vagabundos", 
-  "desgraÃ§ado", "desgracado", "desgraÃ§ados", "animal", "animais", "idiota", "idiotas", 
-  "imbecil", "imbecis", "otario", "otÃ¡rio", "otarios", "otÃ¡rios", "retardado", "retardados", 
-  "estupido", "estÃºpido", "estupidos", "estÃºpidos", "palhaÃ§o", "palhaco", "palhaÃ§os", "palhacos", 
-  "lixo", "lixos", "nojento", "nojentos", "maldito", "malditos", "cÃ£o", "cao", "macaco", "macacos", 
+  "cabrao", "cabrÃƒÂ£o", "cabroes", "cabrÃƒÂµes", "corno", "cornos", "vagabundo", "vagabundos", 
+  "desgraÃƒÂ§ado", "desgracado", "desgraÃƒÂ§ados", "animal", "animais", "idiota", "idiotas", 
+  "imbecil", "imbecis", "otario", "otÃƒÂ¡rio", "otarios", "otÃƒÂ¡rios", "retardado", "retardados", 
+  "estupido", "estÃƒÂºpido", "estupidos", "estÃƒÂºpidos", "palhaÃƒÂ§o", "palhaco", "palhaÃƒÂ§os", "palhacos", 
+  "lixo", "lixos", "nojento", "nojentos", "maldito", "malditos", "cÃƒÂ£o", "cao", "macaco", "macacos", 
   "burro", "burros", "cala boca", "vai se ferrar", "vai te ferrar", "vai morrer", 
-  "sexo", "nude", "nudes", "porn", "porno", "pornografia", "pÃªnis", "penis", 
+  "sexo", "nude", "nudes", "porn", "porno", "pornografia", "pÃƒÂªnis", "penis", 
   "piroca", "pirocas", "cona", "conas", "vagina", "buceta", "bucetas", "cu", "cus", 
   "rabeta", "mamar", "chupar", "mata", "morrer", "suicida", "suicidio", "terrorista", "nazista", "racista", 
-  "vou denunciar", "vou processar", "processo", "crime", "polÃ­cia", "policia", 
-  "tribunal", "interpol", "cadeia", "prisÃ£o", "prisao", "fbi", "investigaÃ§Ã£o", "investigacao", 
-  "viado", "viados", "gayzinho", "bicha", "bichas", "boiola", "sapatÃ£o", "sapatao", 
+  "vou denunciar", "vou processar", "processo", "crime", "polÃƒÂ­cia", "policia", 
+  "tribunal", "interpol", "cadeia", "prisÃƒÂ£o", "prisao", "fbi", "investigaÃƒÂ§ÃƒÂ£o", "investigacao", 
+  "viado", "viados", "gayzinho", "bicha", "bichas", "boiola", "sapatÃƒÂ£o", "sapatao", 
   "golpista", "golpistas", "burlador", "burladores", "fraudador", "fraudadores", 
-  "scammer", "scammers", "pirÃ¢mide", "piramide", "esquema ponzi", "ponzi", 
+  "scammer", "scammers", "pirÃƒÂ¢mide", "piramide", "esquema ponzi", "ponzi", 
   "roubaram", "roubaste", "roubado", "roubando", "empresa falsa", "site falso", 
   "aplicativo falso", "app falso", "fake", "farsa", "enganador", "enganadora", 
-  "trapaceiro", "vigarista", "171", "mafioso", "mÃ¡fia", "mafia", 
-  "admin ladrÃ£o", "admin ladrao", "suporte lixo", "suporte inÃºtil", "suporte inutil", 
-  "admin inÃºtil", "admin inutil", "adm corrupto", "admin corrupto", "moderador corrupto", 
-  "staff lixo", "staff incompetente", "empresa corrupta", "empresa de ladrÃµes", "empresa de ladroes", 
-  "dono ladrÃ£o", "dono ladrao", "vocÃªs roubam", "voces roubam", "estÃ£o roubando", "estao roubando", 
-  "vocÃªs sÃ£o burlÃµes", "voces sao burloes", 
-  "nÃ£o paga", "nao paga", "nÃ£o pagam", "nao pagam", "perdi dinheiro", "perdi tudo", 
-  "nÃ£o recebi", "nao recebi", "sumiram com dinheiro", "bloquearam saque", "nÃ£o consigo sacar", 
+  "trapaceiro", "vigarista", "171", "mafioso", "mÃƒÂ¡fia", "mafia", 
+  "admin ladrÃƒÂ£o", "admin ladrao", "suporte lixo", "suporte inÃƒÂºtil", "suporte inutil", 
+  "admin inÃƒÂºtil", "admin inutil", "adm corrupto", "admin corrupto", "moderador corrupto", 
+  "staff lixo", "staff incompetente", "empresa corrupta", "empresa de ladrÃƒÂµes", "empresa de ladroes", 
+  "dono ladrÃƒÂ£o", "dono ladrao", "vocÃƒÂªs roubam", "voces roubam", "estÃƒÂ£o roubando", "estao roubando", 
+  "vocÃƒÂªs sÃƒÂ£o burlÃƒÂµes", "voces sao burloes", 
+  "nÃƒÂ£o paga", "nao paga", "nÃƒÂ£o pagam", "nao pagam", "perdi dinheiro", "perdi tudo", 
+  "nÃƒÂ£o recebi", "nao recebi", "sumiram com dinheiro", "bloquearam saque", "nÃƒÂ£o consigo sacar", 
   "nao consigo sacar", "site caiu", "empresa faliu", "empresa vai fechar", "vai fechar", 
-  "quebrou", "falida", "falido", "sistema roubando", "dinheiro preso", "nÃ£o vale nada", "nao vale nada", 
+  "quebrou", "falida", "falido", "sistema roubando", "dinheiro preso", "nÃƒÂ£o vale nada", "nao vale nada", 
   "ganha dinheiro rapido", "dinheiro facil", "hack", "hacker", "clonar", 
-  "cartÃ£o roubado", "cartao roubado", "bitcoin gratis", "investimento falso", 
+  "cartÃƒÂ£o roubado", "cartao roubado", "bitcoin gratis", "investimento falso", 
   "entra no meu link", "usa meu link", "me chama no privado", "grupo fake", "grupo falso", 
-  "tenho hack", "hack saque", "hack sistema", "bug de saque", "mÃ©todo secreto", "metodo secreto", 
-  "ganhar sem investir", "dinheiro fÃ¡cil", "lucro garantido", "100% garantido", 
-  "nÃ£o confiem", "nao confiem", "nÃ£o invistam", "nao invistam", "isso Ã© golpe", "isso e golpe", 
+  "tenho hack", "hack saque", "hack sistema", "bug de saque", "mÃƒÂ©todo secreto", "metodo secreto", 
+  "ganhar sem investir", "dinheiro fÃƒÂ¡cil", "lucro garantido", "100% garantido", 
+  "nÃƒÂ£o confiem", "nao confiem", "nÃƒÂ£o invistam", "nao invistam", "isso ÃƒÂ© golpe", "isso e golpe", 
   "empresa scam", "site scam", "app scam", "plataforma scam", "plataforma falsa", "empresa fake", 
   "saque falso", "pagamento falso"
 ]));
@@ -87,12 +89,12 @@ const ESCAPED_FORBIDDEN = FORBIDDEN_WORDS.map(w => w.replace(/[.*+?^${}()|[\]\\]
 const FORBIDDEN_REGEX = new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${ESCAPED_FORBIDDEN.join('|')})(?:[^\\p{L}\\p{N}]|$)`, 'iu');
 
 const CONTEXT_GROUPS: Record<string, { path: string, keywords: string[] }> = {
-  TelegramBusiness: { path: "/org", keywords: ["telegram business", "negÃ³cios", "conversas", "chats", "painel", "inÃ­cio", "inicio"] },
+  TelegramBusiness: { path: "/org", keywords: ["telegram business", "negÃƒÂ³cios", "conversas", "chats", "painel", "inÃƒÂ­cio", "inicio"] },
   Withdraw: { path: "/carteira", keywords: ["saque", "sacar", "retirada", "retirar", "levantamento", "levantar dinheiro", "withdraw", "withdrawal", "retrait", "retirer"] },
-  Recharge: { path: "/sand-pay", keywords: ["recarga", "recarregar", "depÃ³sito", "depositar", "recharge"] },
+  Recharge: { path: "/sand-pay", keywords: ["recarga", "recarregar", "depÃƒÂ³sito", "depositar", "recharge"] },
   Invite: { path: "/convite", keywords: ["convite", "convidar", "amigo", "afiliado", "indicar"] },
   Support: { path: "/org", keywords: ["suporte", "ajuda", "atendimento", "help"] },
-  Operations: { path: "/operacoes", keywords: ["operaÃ§Ãµes", "operacoes", "trabalho", "tarefa", "tarefas"] },
+  Operations: { path: "/operacoes", keywords: ["operaÃƒÂ§ÃƒÂµes", "operacoes", "trabalho", "tarefa", "tarefas"] },
   ProductDetails: { path: "/botfather", keywords: ["produto", "investimento", "plano", "lucro"] }
 };
 
@@ -216,7 +218,7 @@ const formatSenderPhone = (phone?: string | null, countryCode?: string) => {
 const getSenderLabel = (profile?: Partial<SenderProfile> | null) => {
   const phone = formatSenderPhone(profile?.telefone, profile?.countryCode);
   const name = profile?.nome_exibicao?.trim();
-  return name && name !== "Membro" ? `${name} · ${phone}` : phone;
+  return name && name !== "Membro" ? `${name} Â· ${phone}` : phone;
 };
 
 const formatTime = (ts: string) => ts ? new Date(ts).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }) : "";
@@ -292,14 +294,14 @@ const GROUP_MEMBERS = [
   },
   {
     id: 'm2',
-    name: 'Lauren Gabriella ðŸ¥°',
-    status: 'visto Ã s 20:31',
+    name: 'Lauren Gabriella Ã°Å¸Â¥Â°',
+    status: 'visto ÃƒÂ s 20:31',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop'
   },
   {
     id: 'm3',
-    name: 'Brilson EdlÃ©zio',
-    status: 'visto Ã s 20:13',
+    name: 'Brilson EdlÃƒÂ©zio',
+    status: 'visto ÃƒÂ s 20:13',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop'
   },
   {
@@ -307,53 +309,58 @@ const GROUP_MEMBERS = [
     name: 'ID 4700',
     badge: 'Dono',
     badgeType: 'owner',
-    status: 'visto Ã s 20:13',
+    status: 'visto ÃƒÂ s 20:13',
     avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop'
   },
   {
     id: 'm5',
     name: 'Chrina Manual',
-    status: 'visto Ã s 19:57',
+    status: 'visto ÃƒÂ s 19:57',
     avatar: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=100&h=100&fit=crop'
   },
   {
     id: 'm6',
     name: 'PATRICIA',
-    status: 'visto Ã s 19:42',
+    status: 'visto ÃƒÂ s 19:42',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop'
   },
   {
     id: 'm7',
     name: 'Carlos Manuel',
-    status: 'visto Ã s 19:15',
+    status: 'visto ÃƒÂ s 19:15',
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop'
   },
   {
     id: 'm8',
     name: 'Mariana Santos',
-    status: 'visto Ã s 18:50',
+    status: 'visto ÃƒÂ s 18:50',
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop'
   },
   {
     id: 'm9',
-    name: 'JoÃ£o Pedro',
-    status: 'visto Ã s 18:22',
+    name: 'JoÃƒÂ£o Pedro',
+    status: 'visto ÃƒÂ s 18:22',
     avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop'
   },
   {
     id: 'm10',
     name: 'Nelson Mandela Neto',
-    status: 'visto Ã s 17:40',
+    status: 'visto ÃƒÂ s 17:40',
     avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=100&h=100&fit=crop'
   }
 ];
 
-const COMMUNITY_QUICK_REACTIONS = ['👍', '❤️', '👏'];
+const COMMUNITY_QUICK_REACTIONS = ['ðŸ‘', 'â¤ï¸', 'ðŸ‘'];
 
 type GroupTab = 'members' | 'media' | 'files' | 'links';
+interface VoiceAttachment {
+  audioPath: string;
+  durationSeconds: number;
+}
+
 const GROUP_TABS: { id: GroupTab; label: string }[] = [
   { id: 'members', label: 'Membros' },
-  { id: 'media', label: 'Mídia' },
+  { id: 'media', label: 'MÃ­dia' },
   { id: 'files', label: 'Ficheiros' },
   { id: 'links', label: 'Links' },
 ];
@@ -397,6 +404,7 @@ interface MessageItemProps {
   dateLabel: string;
   timeFormatted: string;
   language: string;
+  voiceUnavailableLabel: string;
   translateFullChats: boolean;
   editedLabel: string;
   isSelectedInContextMenu: boolean;
@@ -421,6 +429,7 @@ const MessageItem = React.memo(({
   dateLabel,
   timeFormatted,
   language,
+  voiceUnavailableLabel,
   translateFullChats,
   editedLabel,
   isSelectedInContextMenu,
@@ -434,7 +443,7 @@ const MessageItem = React.memo(({
   onOpenZoomedImage,
   renderFormattedMessage
 }: MessageItemProps) => {
-  const parsedData: any = (m.detalhes && typeof m.detalhes === 'object') ? m.detalhes : {};
+  const parsedData = getMessageDetails(m);
   const reply = parsedData.reply;
   const reactions = parsedData.reacoes || {};
   const isEdited = Boolean(parsedData.editado);
@@ -514,7 +523,7 @@ const MessageItem = React.memo(({
           </div>
         )}
 
-        {/* ── Mensagem só com imagem (sem balão) ── */}
+        {/* â”€â”€ Mensagem sÃ³ com imagem (sem balÃ£o) â”€â”€ */}
         {parsedData.imagem_url && !m.mensagem?.trim() ? (
           <div
             className="relative cursor-pointer rounded-[18px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.18)] max-w-[80vw] sm:max-w-[360px]"
@@ -560,7 +569,7 @@ const MessageItem = React.memo(({
             </div>
             {isMe && m.status === 'failed' && (
               <p className="absolute -bottom-5 right-0 text-[10px] text-[#e53e3e] font-medium select-none leading-tight whitespace-nowrap">
-                Mensagem não enviada
+                Mensagem nÃ£o enviada
               </p>
             )}
             {Object.keys(reactions).length > 0 && (
@@ -580,7 +589,7 @@ const MessageItem = React.memo(({
             )}
           </div>
         ) : (
-          /* ── Mensagem normal (texto ± imagem) ── */
+          /* â”€â”€ Mensagem normal (texto Â± imagem) â”€â”€ */
           <div
             onTouchStart={handleMessageTouchStart}
             onTouchMove={handleMessageTouchMove}
@@ -647,7 +656,7 @@ const MessageItem = React.memo(({
                 isMe ? "border-[#4fae4e] text-[#444444]" : "border-[#2b82c9] text-[#555555]"
               )}>
                 <p className="font-medium text-[13px] text-[#2b82c9] truncate leading-tight">{reply.sender}</p>
-                <p className="truncate text-[13px] text-[#666666] leading-tight mt-0.5">{reply.text || "📷 Foto"}</p>
+                <p className="truncate text-[13px] text-[#666666] leading-tight mt-0.5">{reply.text || "ðŸ“· Foto"}</p>
               </div>
             )}
 
@@ -686,7 +695,15 @@ const MessageItem = React.memo(({
               </div>
             )}
 
-            <div className="relative leading-[1.3]">
+            {parsedData.audio_path && (
+              <VoiceMessagePlayer
+                path={parsedData.audio_path}
+                unavailableLabel={voiceUnavailableLabel}
+                isOutgoing={isMe}
+              />
+            )}
+
+            {!parsedData.audio_path && <div className="relative leading-[1.3]">
               <span className="text-[16px] whitespace-pre-wrap break-words font-normal">
                 <AutoTranslatedText
                   text={m.mensagem}
@@ -715,10 +732,22 @@ const MessageItem = React.memo(({
               </div>
               {isMe && m.status === 'failed' && (
                 <p className="text-[10px] text-[#e53e3e] mt-0.5 text-right font-medium select-none leading-tight">
-                  Mensagem não enviada
+                  Mensagem nÃ£o enviada
                 </p>
               )}
-            </div>
+            </div>}
+            {parsedData.audio_path && (
+              <div className="flex justify-end items-center gap-[2px] select-none text-[12px]" style={{ color: isMe ? '#55864e' : '#8e8e93' }}>
+                <span className="font-normal leading-none">{timeFormatted}</span>
+                {isMe && (
+                  m.status === 'sending'
+                    ? <Clock className="w-[14px] h-[14px] text-[#8e8e93] stroke-[2] ml-[2px]" />
+                    : m.status === 'failed'
+                    ? <span className="text-[12px] text-[#e53e3e] font-bold ml-[2px] leading-none">!</span>
+                    : <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
+                )}
+              </div>
+            )}
 
             {Object.keys(reactions).length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-black/5">
@@ -769,6 +798,8 @@ export default function grupochat() {
   });
   const [, setIsLoading] = useState(true);
   const [publicInput, setPublicInput] = useState("");
+  const [voiceComposerActive, setVoiceComposerActive] = useState(false);
+  const voiceComposerRef = useRef<VoiceMessageComposerHandle>(null);
   const [isSending, setIsSending] = useState(false);
   const [replyTo, setReplyTo] = useState<any>(null);
   const [editingMessage, setEditingMessage] = useState<any | null>(null);
@@ -886,7 +917,7 @@ export default function grupochat() {
     setContextMenu({
       message: m,
       isMe,
-      ...getContextMenuPosition(e.currentTarget),
+      ...getContextMenuPosition(e.currentTarget as HTMLElement),
     });
     setShowAllReactions(false);
   }, [cancelLongPress]);
@@ -906,7 +937,7 @@ export default function grupochat() {
   const handleDeleteMessage = async (msgId: number) => {
     closeContextMenu();
     if (!user?.id) {
-      showToast('Mensagem não apagada', 'error');
+      showToast('Mensagem nÃ£o apagada', 'error');
       return;
     }
 
@@ -920,7 +951,7 @@ export default function grupochat() {
         .maybeSingle();
 
       if (error || !data) {
-        showToast('Mensagem não apagada', 'error');
+        showToast('Mensagem nÃ£o apagada', 'error');
         return;
       }
 
@@ -942,7 +973,7 @@ export default function grupochat() {
       });
       showToast('Mensagem apagada', 'info');
     } catch {
-      showToast('Mensagem não apagada', 'error');
+      showToast('Mensagem nÃ£o apagada', 'error');
     }
   };
 
@@ -953,7 +984,7 @@ export default function grupochat() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
-  // IDs de mensagens com reaÃ§Ãµes em voo (impede o realtime de sobrescrever estado otimista)
+  // IDs de mensagens com reaÃƒÂ§ÃƒÂµes em voo (impede o realtime de sobrescrever estado otimista)
   const pendingReactionIds = useRef<Set<number>>(new Set());
 
   useEffect(() => {
@@ -1136,7 +1167,7 @@ export default function grupochat() {
 
         if (isInitial) scrollToBottom("auto");
 
-        // 2. Buscar perfis novos em background de forma não bloqueante
+        // 2. Buscar perfis novos em background de forma nÃ£o bloqueante
         const uncachedIds = Array.from(new Set(data.map((m: any) => m.uid_emissor).filter((id: string) => id && !phoneCache[id])));
         if (uncachedIds.length > 0) {
           (async () => {
@@ -1180,7 +1211,7 @@ export default function grupochat() {
         }
       }
     } catch (err) {
-      console.error("Não foi possível carregar mensagens:", err);
+      console.error("NÃ£o foi possÃ­vel carregar mensagens:", err);
     } finally {
       isFetchingRef.current = false;
       setIsLoading(false);
@@ -1218,7 +1249,7 @@ export default function grupochat() {
           }
         }
       } catch (error) {
-        console.error('Não foi possível carregar o cache offline do grupo:', error);
+        console.error('NÃ£o foi possÃ­vel carregar o cache offline do grupo:', error);
       }
     }
 
@@ -1262,8 +1293,8 @@ export default function grupochat() {
         .select('id', { count: 'exact', head: true });
 
       if (error) {
-        console.error("Não foi possível carregar o total de utilizadores:", error);
-        if (isActive) showToast("Não foi possível carregar o total de membros.", "error");
+        console.error("NÃ£o foi possÃ­vel carregar o total de utilizadores:", error);
+        if (isActive) showToast("NÃ£o foi possÃ­vel carregar o total de membros.", "error");
         return;
       }
 
@@ -1279,7 +1310,7 @@ export default function grupochat() {
       })
       .subscribe((status) => {
         if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && isActive) {
-          console.error("Não foi possível acompanhar alterações no total de utilizadores:", status);
+          console.error("NÃ£o foi possÃ­vel acompanhar alteraÃ§Ãµes no total de utilizadores:", status);
         }
       });
 
@@ -1330,7 +1361,7 @@ export default function grupochat() {
         if (status === "SUBSCRIBED") {
           typingChannel.track({ userId: user.id }).then((trackStatus) => {
             if (trackStatus !== "ok") {
-              console.error("Não foi possível atualizar a presença online:", trackStatus);
+              console.error("NÃ£o foi possÃ­vel atualizar a presenÃ§a online:", trackStatus);
             }
           });
         } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
@@ -1342,7 +1373,7 @@ export default function grupochat() {
       .channel('chatslist_typing_global', { config: { broadcast: { ack: false } } })
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error("Não foi possível transmitir a digitação do grupo para a lista:", status);
+          console.error("NÃ£o foi possÃ­vel transmitir a digitaÃ§Ã£o do grupo para a lista:", status);
         }
       });
 
@@ -1494,12 +1525,12 @@ export default function grupochat() {
   };
 
   const validateMessage = (text: string) => {
-    if (text.length > 2000) return "A mensagem é muito longa.";
+    if (text.length > 2000) return "A mensagem Ã© muito longa.";
     if (FORBIDDEN_REGEX.test(text)) return "Por favor, evite termos ofensivos.";
     const matches = text.match(URL_REGEX);
     if (matches) {
       if (matches.some(m => !isAllowedUrl(m))) {
-        return "Não são permitidos links externos.";
+        return "NÃ£o sÃ£o permitidos links externos.";
       }
     }
     return null;
@@ -1510,11 +1541,11 @@ export default function grupochat() {
     if (!file) return;
     e.target.value = "";
     if (!file.type.startsWith('image/')) {
-      showToast("Selecione uma imagem válida.", "error");
+      showToast("Selecione uma imagem vÃ¡lida.", "error");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      showToast("Máximo 10MB.", "error");
+      showToast("MÃ¡ximo 10MB.", "error");
       return;
     }
     try {
@@ -1528,10 +1559,10 @@ export default function grupochat() {
           setImagePreview(ev.target.result);
           setPdfPreview(null);
         } else {
-          showToast("Não foi possível abrir a imagem selecionada.", "error");
+          showToast("NÃ£o foi possÃ­vel abrir a imagem selecionada.", "error");
         }
       };
-      reader.onerror = () => showToast("Não foi possível abrir a imagem selecionada.", "error");
+      reader.onerror = () => showToast("NÃ£o foi possÃ­vel abrir a imagem selecionada.", "error");
       reader.readAsDataURL(file);
     }
   };
@@ -1545,45 +1576,45 @@ export default function grupochat() {
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      showToast("O PDF não pode exceder 10MB.", "error");
+      showToast("O PDF nÃ£o pode exceder 10MB.", "error");
       return;
     }
 
     try {
       const signature = new Uint8Array(await file.slice(0, 5).arrayBuffer());
       if (new TextDecoder().decode(signature) !== '%PDF-') {
-        showToast("O ficheiro selecionado não é um PDF válido.", "error");
+        showToast("O ficheiro selecionado nÃ£o Ã© um PDF vÃ¡lido.", "error");
         return;
       }
     } catch {
-      showToast("Não foi possível validar o PDF selecionado.", "error");
+      showToast("NÃ£o foi possÃ­vel validar o PDF selecionado.", "error");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result !== 'string') {
-        showToast("Não foi possível abrir o PDF selecionado.", "error");
+        showToast("NÃ£o foi possÃ­vel abrir o PDF selecionado.", "error");
         return;
       }
       setPdfPreview({ name: file.name, url: reader.result, sizeBytes: file.size });
       setImagePreview(null);
     };
     reader.onerror = () => {
-      showToast("Não foi possível abrir o PDF selecionado.", "error");
+      showToast("NÃ£o foi possÃ­vel abrir o PDF selecionado.", "error");
     };
     reader.readAsDataURL(file);
   };
 
-  const handleSend = async () => {
-    if (!user || (!publicInput.trim() && !imagePreview && !pdfPreview)) return;
+  const handleSend = async (voiceAttachment?: VoiceAttachment) => {
+    if (!user || (!publicInput.trim() && !imagePreview && !pdfPreview && !voiceAttachment)) return;
     if (publicInput.trim()) {
       const err = validateMessage(publicInput.trim());
       if (err) { showToast(err, "error"); return; }
     }
-    const tempMsg = publicInput.trim();
+    const tempMsg = publicInput.trim() || (voiceAttachment ? t('chat.voice_message') : '');
 
-    // â”€â”€ Fluxo de EdiÃ§Ã£o de Mensagem Existente â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Fluxo de EdiÃƒÂ§ÃƒÂ£o de Mensagem Existente Ã¢â€â‚¬Ã¢â€â‚¬
     if (editingMessage) {
       const msgIdToEdit = editingMessage.id;
       const prevDetalhes = (editingMessage.detalhes && typeof editingMessage.detalhes === 'object')
@@ -1604,7 +1635,7 @@ export default function grupochat() {
         inputRef.current.style.overflowY = "hidden";
       }
 
-      // AtualizaÃ§Ã£o otimista local imediata
+      // AtualizaÃƒÂ§ÃƒÂ£o otimista local imediata
       setPublicMessages(prev => prev.map(m => {
         if (m.id === msgIdToEdit) {
           return {
@@ -1633,7 +1664,7 @@ export default function grupochat() {
           showToast('Mensagem editada', 'success');
         }
       } catch (err) {
-        console.error('[CommunityChat] Falha na ediÃ§Ã£o:', err);
+        console.error('[CommunityChat] Falha na ediÃƒÂ§ÃƒÂ£o:', err);
         showToast('Erro ao atualizar a mensagem', 'error');
       } finally {
         setIsSending(false);
@@ -1655,6 +1686,11 @@ export default function grupochat() {
       detalhes.tamanho_bytes = tempPdf.sizeBytes;
       detalhes.tipo_mime = 'application/pdf';
       detalhes.tipo_midia = 'documento';
+    }
+    if (voiceAttachment) {
+      detalhes.audio_path = voiceAttachment.audioPath;
+      detalhes.audio_duration_seconds = voiceAttachment.durationSeconds;
+      detalhes.tipo_midia = 'audio';
     }
     if (tempReply) {
       detalhes.resposta_para_id = tempReply.id;
@@ -1723,7 +1759,22 @@ export default function grupochat() {
       console.log('[CommunityChat] Mensagem inserida com sucesso');
       scrollToBottom();
     } catch (err: any) { 
-      console.error("Ops! mensagem nÃ£o enviada", err);
+      console.error("Ops! mensagem nÃƒÂ£o enviada", err);
+      if (voiceAttachment) {
+        setPublicMessages(prev => {
+          const updated = prev.filter(message => message.id !== tempId);
+          try {
+            localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
+          } catch {}
+          return updated;
+        });
+        try {
+          await deleteVoiceMessage(voiceAttachment.audioPath);
+        } catch (cleanupError) {
+          console.error('[CommunityChat] Could not remove an unsent voice message:', cleanupError);
+        }
+        throw err;
+      }
       setPublicMessages(prev => {
         const updated = prev.map(m => m.id === tempId ? { ...m, status: 'failed' as const } : m);
         try {
@@ -1731,11 +1782,22 @@ export default function grupochat() {
         } catch {}
         return updated;
       });
-      showToast('Mensagem não enviada', 'error'); 
+      showToast('Mensagem nÃ£o enviada', 'error'); 
     } finally { 
       setIsSending(false); 
     }
 
+  };
+
+  const handleSendVoiceMessage = async (blob: Blob, durationSeconds: number) => {
+    if (!user) throw new Error('A signed-in user is required to send voice messages.');
+    try {
+      const audioPath = await uploadVoiceMessage(blob, user.id, { type: 'group' });
+      await handleSend({ audioPath, durationSeconds });
+    } catch (error) {
+      console.error('[CommunityChat] Could not upload voice message:', error);
+      throw error;
+    }
   };
 
 
@@ -1780,9 +1842,9 @@ export default function grupochat() {
             .from('chat_gruop')
             .update({ detalhes: updatedDetalhes })
             .eq('id', messageId);
-          if (error) console.error('[CommunityChat] Erro ao salvar reação:', error);
+          if (error) console.error('[CommunityChat] Erro ao salvar reaÃ§Ã£o:', error);
         } catch (err: any) {
-          console.error('[CommunityChat] Falha ao persistir reação:', err);
+          console.error('[CommunityChat] Falha ao persistir reaÃ§Ã£o:', err);
         } finally {
           setTimeout(() => pendingReactionIds.current.delete(messageId), 3000);
         }
@@ -1805,7 +1867,7 @@ export default function grupochat() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      showToast('Download concluÃ­do!', 'success');
+      showToast('Download concluÃƒÂ­do!', 'success');
     } catch {
       const link = document.createElement('a');
       link.href = imageUrl;
@@ -1817,8 +1879,14 @@ export default function grupochat() {
     }
   };
 
-  // â”€â”€ AÃ§Ãµes do Menu de Contexto Telegram â”€â”€
-  const menuActions = contextMenu ? [
+  // Ã¢â€â‚¬Ã¢â€â‚¬ AÃƒÂ§ÃƒÂµes do Menu de Contexto Telegram Ã¢â€â‚¬Ã¢â€â‚¬
+  const menuActions: Array<{
+    icon: any;
+    label: string;
+    onClick: () => void;
+    color: string;
+    subLabel?: string;
+  }> = contextMenu ? [
     { 
       icon: Reply, 
       label: 'Responder', 
@@ -1953,12 +2021,12 @@ export default function grupochat() {
           className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
         >
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
-            <img src="/logo-tb.jpg" alt="Telegram" className="w-full h-full object-cover" />
+            <img src="/logo-tb.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
           </div>
 
           <div className="flex flex-col min-w-0">
             <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-              Telegram Empresa
+              Business Messenger Empresa
             </h1>
             <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate flex items-center gap-1">
               {statusText ? (
@@ -1980,7 +2048,7 @@ export default function grupochat() {
         <button 
           onClick={() => setShowInfo(true)} 
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto"
-          aria-label="Mais informaÃ§Ãµes"
+          aria-label="Mais informaÃƒÂ§ÃƒÂµes"
         >
           <MoreVertical className="w-[22px] h-[22px]" />
         </button>
@@ -2015,6 +2083,7 @@ export default function grupochat() {
               dateLabel={currDate}
               timeFormatted={formatTime(m.data_registrada)}
               language={language}
+              voiceUnavailableLabel={t('chat.voice_unavailable')}
               translateFullChats={translateFullChats}
               editedLabel={t('group.edited')}
               isSelectedInContextMenu={contextMenu?.message?.id === m.id}
@@ -2093,7 +2162,7 @@ export default function grupochat() {
                     }
                   }} 
                   className="text-gray-400 hover:text-black p-1 cursor-pointer shrink-0"
-                  title="Cancelar ediÃ§Ã£o"
+                  title="Cancelar ediÃƒÂ§ÃƒÂ£o"
                 >
                   <X className="w-4 h-4 stroke-[2]" />
                 </button>
@@ -2147,7 +2216,8 @@ export default function grupochat() {
               onChange={handlePdfSelect}
             />
 
-            <div className={`flex-1 bg-white ${isComposerExpanded ? 'rounded-[24px] items-end' : 'rounded-full items-center'} shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex px-3.5 py-1.5 min-h-[46px] border border-gray-100/80`}>
+            <div className={`flex-1 bg-white ${isComposerExpanded && !voiceComposerActive ? 'rounded-[24px] items-end' : 'rounded-full items-center'} shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex px-3.5 py-1.5 min-h-[46px] border border-gray-100/80`}>
+              {!voiceComposerActive && <>
               <button 
                 type="button" 
                 className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0"
@@ -2175,7 +2245,7 @@ export default function grupochat() {
                     PDF
                   </span>
                   <span className="flex min-w-0 flex-col">
-                    <span className="text-[9px] text-gray-500">Ficheiro: {formatAttachmentSize(pdfPreview.sizeBytes)}</span>
+                    <span className="text-[9px] text-gray-500">Ficheiro: {formatFileSize(pdfPreview.sizeBytes)}</span>
                     <span className="truncate text-[11px] text-gray-600">{pdfPreview.name}</span>
                   </span>
                   <button
@@ -2192,6 +2262,7 @@ export default function grupochat() {
               <textarea
                 ref={inputRef}
                 value={publicInput}
+                disabled={voiceComposerActive}
                 onChange={(e) => {
                   setPublicInput(e.target.value);
                   e.target.style.height = "auto";
@@ -2226,6 +2297,7 @@ export default function grupochat() {
               <button 
                 type="button"
                 onClick={() => pdfInputRef.current?.click()}
+                disabled={voiceComposerActive}
                 className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0 rotate-[-45deg]"
                 title="Anexar PDF"
                 aria-label="Anexar PDF"
@@ -2235,25 +2307,57 @@ export default function grupochat() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={voiceComposerActive}
                 className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0"
                 title="Escolher foto"
                 aria-label="Escolher foto"
               >
                 <Camera className="w-5 h-5 stroke-[1.8]" />
               </button>
+              </>}
+              <VoiceMessageComposer
+                ref={voiceComposerRef}
+                onSend={handleSendVoiceMessage}
+                onActiveChange={setVoiceComposerActive}
+                className={voiceComposerActive ? 'flex-1' : ''}
+                visible={false}
+                disabled={isSending}
+                labels={{
+                  record: t('chat.voice_record'),
+                  stop: t('chat.voice_stop'),
+                  cancel: t('chat.voice_cancel'),
+                  send: t('chat.voice_send'),
+                  sending: t('chat.voice_sending'),
+                  unsupported: t('chat.voice_unsupported'),
+                  permissionDenied: t('chat.voice_permission_denied'),
+                  tooLarge: t('chat.voice_too_large'),
+                  unavailable: t('chat.voice_unavailable'),
+                  sendFailed: t('chat.voice_send_failed'),
+                  storageUnavailable: t('chat.voice_storage_unavailable'),
+                  pause: t('chat.voice_pause'),
+                  resume: t('chat.voice_resume'),
+                }}
+              />
             </div>
 
-            <button 
+            <button
               type="button"
-              onClick={handleSend}
-              disabled={isSending}
+              onClick={() => {
+                if (editingMessage || publicInput.trim() || imagePreview || pdfPreview) {
+                  void handleSend();
+                } else {
+                  void voiceComposerRef.current?.mainAction();
+                }
+              }}
+              disabled={isSending || (editingMessage ? !publicInput.trim() : false)}
               style={{ borderRadius: '9999px' }}
-              className="w-[46px] h-[46px] !rounded-full rounded-full bg-[#2481cc] hover:bg-[#1f72b5] text-white flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_10px_rgba(36,129,204,0.4)] cursor-pointer"
-              title={editingMessage ? "Salvar alteraÃ§Ãµes" : "Enviar"}
+              className="w-[46px] h-[46px] !rounded-full rounded-full bg-[#2481cc] hover:bg-[#1f72b5] text-white flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_10px_rgba(36,129,204,0.4)] cursor-pointer disabled:opacity-50"
+              title={editingMessage ? "Salvar alteraÃƒÂ§ÃƒÂµes" : (publicInput.trim() || imagePreview || pdfPreview || voiceComposerActive) ? t('common.send') : t('chat.voice_record')}
+              aria-label={editingMessage ? "Salvar alteraÃƒÂ§ÃƒÂµes" : (publicInput.trim() || imagePreview || pdfPreview || voiceComposerActive) ? t('common.send') : t('chat.voice_record')}
             >
               {editingMessage ? (
                 <Check className="w-5 h-5 text-white stroke-[2.5]" />
-              ) : (publicInput.trim() || imagePreview || pdfPreview) ? (
+              ) : (publicInput.trim() || imagePreview || pdfPreview || voiceComposerActive) ? (
                 <Send className="w-5 h-5 text-white ml-0.5 stroke-[2]" />
               ) : (
                 <Mic className="w-5 h-5 text-white stroke-[2]" />
@@ -2274,7 +2378,7 @@ export default function grupochat() {
             className="fixed inset-0 z-[250] flex flex-col select-none"
             style={{ backgroundColor: '#efeff4' }}
           >
-            {/* â”€â”€ Header: Ã— Group Info [icon] â”€â”€ */}
+            {/* Ã¢â€â‚¬Ã¢â€â‚¬ Header: Ãƒâ€” Group Info [icon] Ã¢â€â‚¬Ã¢â€â‚¬ */}
             <div
               className="w-full flex items-center justify-between px-4 pt-3 pb-3 sticky top-0 z-10"
               style={{ backgroundColor: '#efeff4' }}
@@ -2293,25 +2397,25 @@ export default function grupochat() {
               <div className="w-9 h-9"></div>
             </div>
 
-            {/* â”€â”€ Scrollable content â”€â”€ */}
+            {/* Ã¢â€â‚¬Ã¢â€â‚¬ Scrollable content Ã¢â€â‚¬Ã¢â€â‚¬ */}
             <div className="flex-1 overflow-y-auto">
 
-              {/* â”€â”€ Avatar + Nome + Membros â”€â”€ */}
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Avatar + Nome + Membros Ã¢â€â‚¬Ã¢â€â‚¬ */}
               <div className="flex flex-col items-center pt-6 pb-5 px-4">
                 <div className="w-[80px] h-[80px] rounded-full overflow-hidden mb-4">
-                  <img src="/logo-tb.jpg" alt="Telegram" className="w-full h-full object-cover" />
+                  <img src="/logo-tb.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
                 </div>
                 <h1 className="text-[18px] font-bold text-[#111] text-center leading-tight">
-                  Telegram Empresa
+                  Business Messenger Empresa
                 </h1>
                 <p className="text-[13px] mt-1" style={{ color: '#8e8e93' }}>
                   {registeredUserCount === null
-                    ? '— members'
+                    ? 'â€” members'
                     : `${registeredUserCount} ${registeredUserCount === 1 ? 'member' : 'members'}`}
                 </p>
               </div>
 
-              {/* â”€â”€ Card branco: Link + Notifications â”€â”€ */}
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Card branco: Link + Notifications Ã¢â€â‚¬Ã¢â€â‚¬ */}
               <div className="mx-4 mb-4 rounded-[12px] bg-white overflow-hidden shadow-xs">
                 {/* Link row */}
                 <div
@@ -2365,7 +2469,7 @@ export default function grupochat() {
                 </div>
               </div>
 
-              {/* â”€â”€ Abas: Members | Media | Files | Links â”€â”€ */}
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Abas: Members | Media | Files | Links Ã¢â€â‚¬Ã¢â€â‚¬ */}
               <div className="bg-white border-b border-gray-200 sticky top-[56px] z-[5]">
                 <div className="flex">
                   {GROUP_TABS.map((tab) => (
@@ -2385,7 +2489,7 @@ export default function grupochat() {
                 </div>
               </div>
 
-              {/* â”€â”€ ConteÃºdo das Abas â”€â”€ */}
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ ConteÃƒÂºdo das Abas Ã¢â€â‚¬Ã¢â€â‚¬ */}
               <div className="min-h-[200px]">
                 {activeGroupTab === 'members' && (
                   <div className="divide-y divide-gray-100">
@@ -2406,7 +2510,7 @@ export default function grupochat() {
                       </div>
                     )) : (
                       <p className="px-4 py-6 text-center text-[13px]" style={{ color: '#8e8e93' }}>
-                        Ainda não há membros com mensagens no grupo
+                        Ainda nÃ£o hÃ¡ membros com mensagens no grupo
                       </p>
                     )}
                   </div>
@@ -2518,7 +2622,7 @@ export default function grupochat() {
 
             </div>
 
-            {/* â”€â”€ FAB azul canto inferior direito â”€â”€ */}
+            {/* Ã¢â€â‚¬Ã¢â€â‚¬ FAB azul canto inferior direito Ã¢â€â‚¬Ã¢â€â‚¬ */}
             <button
               type="button"
               onClick={() => showToast('Apenas administradores podem adicionar membros', 'info')}
@@ -2575,7 +2679,7 @@ export default function grupochat() {
         )}
       </AnimatePresence>
 
-      {/* â”€â”€ CONTEXT MENU â€” TOPO DA TELA (slide-down) â”€â”€ */}
+      {/* Ã¢â€â‚¬Ã¢â€â‚¬ CONTEXT MENU Ã¢â‚¬â€ TOPO DA TELA (slide-down) Ã¢â€â‚¬Ã¢â€â‚¬ */}
       {contextMenu && (
         <div
           className="fixed inset-0 z-[200]"
@@ -2592,7 +2696,7 @@ export default function grupochat() {
               touchAction: 'manipulation',
             }}
           >
-            {/* ── Barra de Reações ── */}
+            {/* â”€â”€ Barra de ReaÃ§Ãµes â”€â”€ */}
             <div className="flex w-fit items-center gap-0.5 px-1.5 py-1 border-b border-gray-100 dark:border-white/10">
               {COMMUNITY_QUICK_REACTIONS.map((emoji) => (
                 <button
@@ -2600,7 +2704,7 @@ export default function grupochat() {
                   type="button"
                   onClick={() => {
                     handleToggleReaction(contextMenu.message.id, emoji);
-                    showToast(`Reação ${emoji} adicionada!`, 'success');
+                    showToast(`ReaÃ§Ã£o ${emoji} adicionada!`, 'success');
                     closeContextMenu();
                   }}
                   className="w-7 h-7 shrink-0 flex items-center justify-center text-[18px] leading-none active:scale-125 transition-transform rounded-full cursor-pointer hover:bg-black/5 dark:hover:bg-white/10"
@@ -2612,7 +2716,7 @@ export default function grupochat() {
               ))}
             </div>
 
-            {/* â”€â”€ Lista de AÃ§Ãµes Verticais â”€â”€ */}
+            {/* Ã¢â€â‚¬Ã¢â€â‚¬ Lista de AÃƒÂ§ÃƒÂµes Verticais Ã¢â€â‚¬Ã¢â€â‚¬ */}
             {menuActions.map((action, idx) => (
               <React.Fragment key={action.label}>
                 <button
@@ -2660,3 +2764,5 @@ export default function grupochat() {
     </div>
   );
 }
+
+

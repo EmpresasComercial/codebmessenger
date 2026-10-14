@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -20,7 +20,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
-// URL da Edge Function (não acessa banco diretamente)
+// URL da Edge Function (nÃ£o acessa banco diretamente)
 const EDGE_FN_URL = 'https://ptvmqurxtciyqxdpsuen.supabase.co/functions/v1/canal-proofs';
 
 interface ChannelPost {
@@ -46,14 +46,14 @@ interface ChannelPost {
 
 const STORAGE_KEY_POSTS = 'official_channel_posts_v1';
 
-// Metas para Provas de Retirada após 1 hora (60 minutos)
+// Metas para Provas de Retirada apÃ³s 1 hora (60 minutos)
 const TARGET_VIEWS = 5785;
 const TARGET_LIKES = 1000;
 const TARGET_LOVE = 700;
 const TARGET_FIRE = 275;
 const TARGET_DURATION_MS = 60 * 60 * 1000; // 60 minutos
 
-// Gera uma semente numérica determinística a partir de um ID de post (hash simples)
+// Gera uma semente numÃ©rica determinÃ­stica a partir de um ID de post (hash simples)
 const seedFromId = (id: string): number => {
   let h = 0;
   for (let i = 0; i < id.length; i++) {
@@ -62,16 +62,16 @@ const seedFromId = (id: string): number => {
   return Math.abs(h);
 };
 
-// Retorna um fator de variação único por post: entre 0.88 e 1.12
+// Retorna um fator de variaÃ§Ã£o Ãºnico por post: entre 0.88 e 1.12
 const postVariance = (id: string, slot: number): number => {
   const seed = seedFromId(id + slot);
   // pseudo-random 0..1 from seed
   const rand = ((seed * 1664525 + 1013904223) >>> 0) / 4294967296;
-  return 0.88 + rand * 0.24; // ±12%
+  return 0.88 + rand * 0.24; // Â±12%
 };
 
-// Função determinística e persistente para calcular métricas ao longo de 1 hora
-// Cada post tem variação única derivada do seu ID, logo os números nunca são iguais
+// FunÃ§Ã£o determinÃ­stica e persistente para calcular mÃ©tricas ao longo de 1 hora
+// Cada post tem variaÃ§Ã£o Ãºnica derivada do seu ID, logo os nÃºmeros nunca sÃ£o iguais
 export const calculateProofMetrics = (createdAtMs: number, postId: string = '') => {
   const elapsed = Math.max(0, Date.now() - createdAtMs);
   const progress = Math.min(1, elapsed / TARGET_DURATION_MS);
@@ -90,7 +90,7 @@ export const calculateProofMetrics = (createdAtMs: number, postId: string = '') 
     };
   }
 
-  // Progressão gradual simulando utilizadores reais, com variação única por post
+  // ProgressÃ£o gradual simulando utilizadores reais, com variaÃ§Ã£o Ãºnica por post
   const views = Math.floor(1 + progress * (TARGET_VIEWS * vViews - 1));
   const likes = Math.floor(progress * TARGET_LIKES * vLikes);
   const love  = Math.floor(progress * TARGET_LOVE  * vLove);
@@ -99,7 +99,7 @@ export const calculateProofMetrics = (createdAtMs: number, postId: string = '') 
   return { views, likes, love, fire };
 };
 
-// Utilitário leve de compressão de imagem via Canvas nativo
+// UtilitÃ¡rio leve de compressÃ£o de imagem via Canvas nativo
 const compressImage = async (file: File): Promise<string> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -132,7 +132,7 @@ const compressImage = async (file: File): Promise<string> => {
   });
 };
 
-// Função para eliminar estritamente qualquer post duplicado por ID ou por imagem
+// FunÃ§Ã£o para eliminar estritamente qualquer post duplicado por ID ou por imagem
 const deduplicatePosts = (postList: ChannelPost[]): ChannelPost[] => {
   const seenIds = new Set<string>();
   const seenImages = new Set<string>();
@@ -165,7 +165,7 @@ export default function pavelDurov() {
   // Fullscreen image viewer
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
-  // Ticker para atualizar dinamicamente visualizações e reações em tempo real
+  // Ticker para atualizar dinamicamente visualizaÃ§Ãµes e reaÃ§Ãµes em tempo real
   const [, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -216,7 +216,7 @@ export default function pavelDurov() {
       console.warn('Erro ao ler posts locais:', e);
     }
 
-    // Carrega provas via Edge Function (não acessa o banco diretamente)
+    // Carrega provas via Edge Function (nÃ£o acessa o banco diretamente)
     const fetchSupabaseProofs = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -251,16 +251,16 @@ export default function pavelDurov() {
                 name: row.userLabel || '***???',
                 avatar: '/botRetirada.jpg'
               },
-              title: row.valorStr ? `💸 Retirada Concluída: ${row.valorStr}` : '💸 Retirada Concluída',
+              title: row.valorStr ? `ðŸ’¸ Retirada ConcluÃ­da: ${row.valorStr}` : 'ðŸ’¸ Retirada ConcluÃ­da',
               amount: row.valorStr || '',
               content: (row.comentario || '').trim(),
               image: row.imagem_url,
               time: date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
               views: '1',
               reactions: [
-                { emoji: '👍', count: 0, userReacted: false },
-                { emoji: '❤️', count: 0, userReacted: false },
-                { emoji: '🔥', count: 0, userReacted: false }
+                { emoji: 'ðŸ‘', count: 0, userReacted: false },
+                { emoji: 'â¤ï¸', count: 0, userReacted: false },
+                { emoji: 'ðŸ”¥', count: 0, userReacted: false }
               ]
             };
           });
@@ -277,7 +277,7 @@ export default function pavelDurov() {
 
     fetchSupabaseProofs();
 
-    // Sincronização em tempo real de novas provas sociais aprovadas
+    // SincronizaÃ§Ã£o em tempo real de novas provas sociais aprovadas
     const channel = supabase
       .channel('official_channel_proofs_sync')
       .on(
@@ -300,16 +300,16 @@ export default function pavelDurov() {
               name: `***${String(row.user_id || '').substring(0, 4)}`,
               avatar: '/botRetirada.jpg'
             },
-            title: valStr ? `💸 Retirada Concluída: ${valStr}` : '💸 Retirada Concluída',
+            title: valStr ? `ðŸ’¸ Retirada ConcluÃ­da: ${valStr}` : 'ðŸ’¸ Retirada ConcluÃ­da',
             amount: valStr,
             content: comment.trim(),
             image: img,
             time: new Date(row.created_at || Date.now()).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
             views: '1',
             reactions: [
-              { emoji: '👍', count: 0, userReacted: false },
-              { emoji: '❤️', count: 0, userReacted: false },
-              { emoji: '🔥', count: 0, userReacted: false }
+              { emoji: 'ðŸ‘', count: 0, userReacted: false },
+              { emoji: 'â¤ï¸', count: 0, userReacted: false },
+              { emoji: 'ðŸ”¥', count: 0, userReacted: false }
             ]
           };
 
@@ -363,7 +363,7 @@ export default function pavelDurov() {
     showToast(t('social.post_copied'), 'success');
   };
 
-  // Envio de anúncio ou mensagem de texto comum
+  // Envio de anÃºncio ou mensagem de texto comum
   const handleSendBroadcast = () => {
     if (!inputText.trim()) return;
     const now = new Date();
@@ -375,7 +375,7 @@ export default function pavelDurov() {
       time: timeStr,
       views: '1',
       reactions: [
-        { emoji: '❤️', count: 1, userReacted: true }
+        { emoji: 'â¤ï¸', count: 1, userReacted: true }
       ]
     };
 
@@ -386,7 +386,7 @@ export default function pavelDurov() {
     });
 
     setInputText('');
-    showToast('Publicação transmitida no canal!', 'success');
+    showToast('PublicaÃ§Ã£o transmitida no canal!', 'success');
 
     setTimeout(() => {
       if (scrollRef.current) {
@@ -395,20 +395,20 @@ export default function pavelDurov() {
     }, 100);
   };
 
-  // Seleção de imagem via galeria / arquivo (clique no 📎)
+  // SeleÃ§Ã£o de imagem via galeria / arquivo (clique no ðŸ“Ž)
   const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showToast('Por favor, selecione um arquivo de imagem válido.', 'error');
+      showToast('Por favor, selecione um arquivo de imagem vÃ¡lido.', 'error');
       return;
     }
 
     try {
       const compressed = await compressImage(file);
       setPreviewImage(compressed);
-      // Se o utilizador já tiver digitado algo no input, preenche o comentário
+      // Se o utilizador jÃ¡ tiver digitado algo no input, preenche o comentÃ¡rio
       if (inputText.trim() && !proofComment) {
         setProofComment(inputText.trim());
       }
@@ -420,7 +420,7 @@ export default function pavelDurov() {
     }
   };
 
-  // Envio do comprovativo de retirada com valor e comentário
+  // Envio do comprovativo de retirada com valor e comentÃ¡rio
   const handleSubmitProof = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -456,7 +456,7 @@ export default function pavelDurov() {
         console.warn('Upload bucket fallback para base64:', uploadErr);
       }
 
-      // 2. Inserção via Edge Function (não acessa banco diretamente)
+      // 2. InserÃ§Ã£o via Edge Function (nÃ£o acessa banco diretamente)
       let realId: string | null = null;
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       if (currentSession?.access_token) {
@@ -493,7 +493,7 @@ export default function pavelDurov() {
         }
       }
 
-      // Adiciona a publicação no próprio canal imediatamente com ID único
+      // Adiciona a publicaÃ§Ã£o no prÃ³prio canal imediatamente com ID Ãºnico
       const now = new Date();
       const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
       const userPhoneMasked = session?.user?.phone
@@ -510,16 +510,16 @@ export default function pavelDurov() {
           name: userPhoneMasked,
           avatar: '/botRetirada.jpg'
         },
-        title: `💸 Retirada Concluída: ${Number(cleanAmount).toLocaleString('pt-AO')} Kz`,
+        title: `ðŸ’¸ Retirada ConcluÃ­da: ${Number(cleanAmount).toLocaleString('pt-AO')} Kz`,
         amount: `${Number(cleanAmount).toLocaleString('pt-AO')} Kz`,
         content: proofComment.trim(),
         image: finalImageUrl,
         time: timeStr,
         views: '1',
         reactions: [
-          { emoji: '👍', count: 0, userReacted: false },
-          { emoji: '❤️', count: 0, userReacted: false },
-          { emoji: '🔥', count: 0, userReacted: false }
+          { emoji: 'ðŸ‘', count: 0, userReacted: false },
+          { emoji: 'â¤ï¸', count: 0, userReacted: false },
+          { emoji: 'ðŸ”¥', count: 0, userReacted: false }
         ]
       };
 
@@ -563,7 +563,7 @@ export default function pavelDurov() {
       }}
     >
 
-      {/* Input de arquivo invisível para galeria/fotos */}
+      {/* Input de arquivo invisÃ­vel para galeria/fotos */}
       <input
         ref={fileInputRef}
         type="file"
@@ -572,7 +572,7 @@ export default function pavelDurov() {
         onChange={handleImageSelected}
       />
 
-      {/* ── HEADER FLOATING PILL (IDÊNTICO AO GRUPOCHAT / PRIVATECHAT) ── */}
+      {/* â”€â”€ HEADER FLOATING PILL (IDÃŠNTICO AO GRUPOCHAT / PRIVATECHAT) â”€â”€ */}
       <header className="w-full bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
         <button
           type="button"
@@ -615,22 +615,22 @@ export default function pavelDurov() {
               </svg>
             </div>
             <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
-              Fundador • {subscribersCount}
+              Fundador â€¢ {subscribersCount}
             </span>
           </div>
         </div>
 
         <button
           type="button"
-          onClick={() => showToast('Canal Oficial Verificado por Telegram Corp.', 'info')}
+          onClick={() => showToast('Canal Oficial Verificado por Business Messenger Corp.', 'info')}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
-          aria-label="Mais opções"
+          aria-label="Mais opÃ§Ãµes"
         >
           <MoreVertical className="w-5 h-5 stroke-[2]" />
         </button>
       </header>
 
-      {/* ── FEED DE POSTAGENS DO CANAL (BALÕES NATIVOS FLATS) ── */}
+      {/* â”€â”€ FEED DE POSTAGENS DO CANAL (BALÃ•ES NATIVOS FLATS) â”€â”€ */}
       <main
         ref={scrollRef}
         className="w-full max-w-[650px] flex-1 overflow-y-auto no-scrollbar px-3 pt-3 pb-24 space-y-3 relative"
@@ -657,19 +657,19 @@ export default function pavelDurov() {
 
             displayReactions = [
               {
-                emoji: '👍',
-                count: dynamic.likes + (userReactionsMap['👍'] ? 1 : 0),
-                userReacted: !!userReactionsMap['👍']
+                emoji: 'ðŸ‘',
+                count: dynamic.likes + (userReactionsMap['ðŸ‘'] ? 1 : 0),
+                userReacted: !!userReactionsMap['ðŸ‘']
               },
               {
-                emoji: '❤️',
-                count: dynamic.love + (userReactionsMap['❤️'] ? 1 : 0),
-                userReacted: !!userReactionsMap['❤️']
+                emoji: 'â¤ï¸',
+                count: dynamic.love + (userReactionsMap['â¤ï¸'] ? 1 : 0),
+                userReacted: !!userReactionsMap['â¤ï¸']
               },
               {
-                emoji: '🔥',
-                count: dynamic.fire + (userReactionsMap['🔥'] ? 1 : 0),
-                userReacted: !!userReactionsMap['🔥']
+                emoji: 'ðŸ”¥',
+                count: dynamic.fire + (userReactionsMap['ðŸ”¥'] ? 1 : 0),
+                userReacted: !!userReactionsMap['ðŸ”¥']
               }
             ];
           }
@@ -683,7 +683,7 @@ export default function pavelDurov() {
                   : 'bg-white dark:bg-[#182533] rounded-[16px] rounded-tl-[4px] px-3.5 pt-3 pb-2 border border-[#e4e4e4] dark:border-[#1e2c3a]'
               }`}>
                 
-                {/* 1. Nome/Número do Membro */}
+                {/* 1. Nome/NÃºmero do Membro */}
                 {post.forwardedFrom && (
                   <div className={isProofPost ? 'px-1' : 'mb-1.5'}>
                     <div className="flex items-center gap-1.5">
@@ -698,17 +698,17 @@ export default function pavelDurov() {
                         />
                       ) : (
                         <div className="w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
-                          👤
+                          ðŸ‘¤
                         </div>
                       )}
                       <span className="text-[13.5px] font-bold text-[#e67e22] dark:text-[#f39c12] truncate">
-                        {post.forwardedFrom.name.replace(/^Prova de Retirada •\s*/i, '').replace(/^Membro\s*/i, '').trim()}
+                        {post.forwardedFrom.name.replace(/^Prova de Retirada â€¢\s*/i, '').replace(/^Membro\s*/i, '').trim()}
                       </span>
                     </div>
                   </div>
                 )}
 
-                {/* 2. Imagem em cima — clique abre fullscreen */}
+                {/* 2. Imagem em cima â€” clique abre fullscreen */}
                 {post.image && (
                   <div
                     className={`relative group cursor-zoom-in ${isProofPost ? 'w-full' : ''}`}
@@ -735,7 +735,7 @@ export default function pavelDurov() {
                   ? 'bg-white dark:bg-[#182533] rounded-[14px] px-3 py-2 border border-[#e4e4e4] dark:border-[#1e2c3a]'
                   : ''
                 }>
-                  {/* 3. Título de valor em baixo (ex: Retirada Concluída: 20.000 Kz) */}
+                  {/* 3. TÃ­tulo de valor em baixo (ex: Retirada ConcluÃ­da: 20.000 Kz) */}
                   {post.title && (
                   <h2 className={`text-[15px] font-bold leading-snug ${
                     isProofPost ? 'mb-1' : 'mt-2 mb-1'
@@ -759,7 +759,7 @@ export default function pavelDurov() {
                   </h2>
                 )}
 
-                  {/* 4. Descrição / Comentário em baixo */}
+                  {/* 4. DescriÃ§Ã£o / ComentÃ¡rio em baixo */}
                   {displayedContent && (
                   <p className="text-[14px] text-[#111827] dark:text-[#f3f4f6] leading-relaxed break-words whitespace-pre-line font-normal mb-1 pr-2">
                     <AutoTranslatedText
@@ -770,7 +770,7 @@ export default function pavelDurov() {
                   </p>
                 )}
 
-                {/* 5. Rodapé da Mensagem (Reações + Visualizações e Hora) */}
+                {/* 5. RodapÃ© da Mensagem (ReaÃ§Ãµes + VisualizaÃ§Ãµes e Hora) */}
                 <div className={`flex items-center justify-between ${
                   isProofPost ? 'mt-1' : 'mt-2 pt-1'
                 }`}>
@@ -801,7 +801,7 @@ export default function pavelDurov() {
                 </div>
               </div>
 
-              {/* Botão de Encaminhar Rápido (FLAT) */}
+              {/* BotÃ£o de Encaminhar RÃ¡pido (FLAT) */}
               <button
                 type="button"
                 onClick={() => handleForwardPost(post)}
@@ -816,11 +816,11 @@ export default function pavelDurov() {
         })}
       </main>
 
-      {/* ── BARRA INFERIOR FLUTUANTE FLAT (A JUSTADA PARA TELAS MÓVEIS / SEM CORTAR) ── */}
+      {/* â”€â”€ BARRA INFERIOR FLUTUANTE FLAT (A JUSTADA PARA TELAS MÃ“VEIS / SEM CORTAR) â”€â”€ */}
       <footer className="fixed bottom-0 left-0 right-0 px-1.5 sm:p-2 pb-3 z-40 flex justify-center bg-transparent pointer-events-none">
         <div className="w-full max-w-[650px] flex items-center gap-1.5 sm:gap-2 pointer-events-auto px-1 sm:px-2 min-w-0">
           
-          {/* Pílula de Input: Texto à esquerda + Clipe de Anexo & Notificação à direita */}
+          {/* PÃ­lula de Input: Texto Ã  esquerda + Clipe de Anexo & NotificaÃ§Ã£o Ã  direita */}
           <div className="flex-1 bg-white dark:bg-[#182533] rounded-full flex items-center px-2.5 sm:px-3 py-1.5 min-h-[46px] border border-[#e4e4e4] dark:border-[#1e2c3a] transition-colors min-w-0">
             <input
               type="text"
@@ -833,12 +833,12 @@ export default function pavelDurov() {
               className="flex-1 min-w-0 px-1 py-1 text-[14.5px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
             />
 
-            {/* Sino de Notificação (🔔) */}
+            {/* Sino de NotificaÃ§Ã£o (ðŸ””) */}
             <button
               type="button"
               onClick={() => {
                 setIsMuted(!isMuted);
-                showToast(isMuted ? 'Notificações ativadas' : 'Canal silenciado', 'info');
+                showToast(isMuted ? 'NotificaÃ§Ãµes ativadas' : 'Canal silenciado', 'info');
               }}
               className={`p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-0.5 ${
                 isMuted ? 'text-[#e53e3e]' : 'text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc]'
@@ -848,7 +848,7 @@ export default function pavelDurov() {
               {isMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
             </button>
 
-            {/* Anexo junto ao controlo de notificações */}
+            {/* Anexo junto ao controlo de notificaÃ§Ãµes */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -860,7 +860,7 @@ export default function pavelDurov() {
             </button>
           </div>
 
-          {/* Botão circular para selecionar e enviar um ficheiro */}
+          {/* BotÃ£o circular para selecionar e enviar um ficheiro */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -873,7 +873,7 @@ export default function pavelDurov() {
         </div>
       </footer>
 
-      {/* ── MODAL TELEGRAM: PARTILHAR PROVA DE RETIRADA (QUANDO IMAGEM É SELECIONADA) ── */}
+      {/* â”€â”€ MODAL TELEGRAM: PARTILHAR PROVA DE RETIRADA (QUANDO IMAGEM Ã‰ SELECIONADA) â”€â”€ */}
       {isProofModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
           <div 
@@ -898,15 +898,15 @@ export default function pavelDurov() {
               </button>
             </div>
 
-            {/* Corpo do Formulário */}
+            {/* Corpo do FormulÃ¡rio */}
             <form onSubmit={handleSubmitProof} className="p-4 space-y-3.5 overflow-y-auto flex-1">
               
-              {/* Pré-visualização da Imagem Anexada */}
+              {/* PrÃ©-visualizaÃ§Ã£o da Imagem Anexada */}
               {previewImage && (
                 <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#182533] flex items-center justify-center max-h-[220px]">
                   <img
                     src={previewImage}
-                    alt="Pré-visualização do Comprovativo"
+                    alt="PrÃ©-visualizaÃ§Ã£o do Comprovativo"
                     className="w-full h-auto max-h-[220px] object-contain rounded-xl"
                   />
                   <button
@@ -943,7 +943,7 @@ export default function pavelDurov() {
                 </div>
               </div>
 
-              {/* Campo Comentário / Depoimento */}
+              {/* Campo ComentÃ¡rio / Depoimento */}
               <div>
                 <label className="block text-[13px] font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   {t('social.your_comment')} (opcional)
@@ -960,7 +960,7 @@ export default function pavelDurov() {
                 </div>
               </div>
 
-              {/* Botões de Ação */}
+              {/* BotÃµes de AÃ§Ã£o */}
               <div className="pt-2 flex items-center gap-2">
                 <button
                   type="button"
@@ -995,13 +995,13 @@ export default function pavelDurov() {
         </div>
       )}
 
-      {/* ── FULLSCREEN DE IMAGEM (clique fora ou toque para fechar) ── */}
+      {/* â”€â”€ FULLSCREEN DE IMAGEM (clique fora ou toque para fechar) â”€â”€ */}
       {fullscreenImage && (
         <div
           className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center cursor-zoom-out"
           onClick={() => setFullscreenImage(null)}
         >
-          {/* Botão de fechar */}
+          {/* BotÃ£o de fechar */}
           <button
             type="button"
             onClick={() => setFullscreenImage(null)}
@@ -1031,3 +1031,5 @@ export default function pavelDurov() {
     </div>
   );
 }
+
+

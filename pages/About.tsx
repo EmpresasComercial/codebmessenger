@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -29,7 +29,7 @@ export default function About() {
         .duck-float { animation: duckFloat 3.2s ease-in-out infinite; }
       `}</style>
 
-      {/* ── HEADER TELEGRAM ── */}
+      {/* â”€â”€ HEADER TELEGRAM â”€â”€ */}
       <header className="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -42,30 +42,30 @@ export default function About() {
           </button>
           <div className="flex items-center gap-2">
             <h1 className="text-[17px] font-bold text-[#222222] tracking-tight">
-              Telegram
+              Business Messenger
             </h1>
           </div>
         </div>
       </header>
 
-      {/* ── CONTEÚDO PRINCIPAL (SEM CARDS / SEM CONTAINERS ARTIFICIAIS) ── */}
+      {/* â”€â”€ CONTEÃšDO PRINCIPAL (SEM CARDS / SEM CONTAINERS ARTIFICIAIS) â”€â”€ */}
       <main className="max-w-[860px] mx-auto px-4 pt-8 space-y-16">
 
         <section>
           <h2 className="mb-4 text-[26px] font-semibold leading-tight text-[#222222]">
-            O que é Telegram? O que faço aqui?
+            O que é Business Messenger? O que faço aqui?
           </h2>
           <div className="space-y-4 text-[16px] leading-7 text-[#333333]">
             <p>
-              O Telegram é um aplicativo de mensagens com foco em velocidade e segurança, é super-rápido, simples e gratuito. Você pode usar o Telegram em todos os seus dispositivos ao mesmo tempo — suas mensagens são sincronizadas perfeitamente em qualquer quantidade de seus telefones, tablets ou computadores. O Telegram tem mais de 1 bilhão de usuários ativos mensais e é um dos 5 aplicativos mais baixados do mundo.
+              O Business Messenger Ã© um aplicativo de mensagens com foco em velocidade e seguranÃ§a, Ã© super-rÃ¡pido, simples e gratuito. VocÃª pode usar o Business Messenger em todos os seus dispositivos ao mesmo tempo â€” suas mensagens sÃ£o sincronizadas perfeitamente em qualquer quantidade de seus telefones, tablets ou computadores. O Business Messenger tem mais de 1 bilhÃ£o de usuÃ¡rios ativos mensais e Ã© um dos 5 aplicativos mais baixados do mundo.
             </p>
             <p>
-              Com o Telegram, você pode enviar mensagens, fotos, vídeos e arquivos de qualquer tipo (doc, zip, mp3, etc), além de criar grupos de até 200.000 pessoas ou canais para transmitir para públicos ilimitados. Você pode escrever para seus contatos da agenda e encontrar pessoas pelos nomes de usuário delas. Como resultado, o Telegram é como SMS e e-mail combinados – e pode cuidar de todas as suas necessidades de mensagens pessoais ou comerciais. Além disso, oferecemos suporte a chamadas de voz e videochamadas criptografadas de ponta a ponta, chamadas em grupo para até 200 participantes, e chats de voz em grupos que os membros podem entrar quando quiserem.
+              Com o Business Messenger, vocÃª pode enviar mensagens, fotos, vÃ­deos e arquivos de qualquer tipo (doc, zip, mp3, etc), alÃ©m de criar grupos de atÃ© 200.000 pessoas ou canais para transmitir para pÃºblicos ilimitados. VocÃª pode escrever para seus contatos da agenda e encontrar pessoas pelos nomes de usuÃ¡rio delas. Como resultado, o Business Messenger Ã© como SMS e e-mail combinados â€“ e pode cuidar de todas as suas necessidades de mensagens pessoais ou comerciais. AlÃ©m disso, oferecemos suporte a chamadas de voz e videochamadas criptografadas de ponta a ponta, chamadas em grupo para atÃ© 200 participantes, e chats de voz em grupos que os membros podem entrar quando quiserem.
             </p>
           </div>
         </section>
 
-        {/* NOVIDADES (DIRETO NA PÁGINA COM IMAGENS OFICIAIS) */}
+        {/* NOVIDADES (DIRETO NA PÃGINA COM IMAGENS OFICIAIS) */}
         <section className="pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
             {/* Card 1 com a imagem oficial 0e567958d5b96a2184.webp */}
@@ -79,11 +79,11 @@ export default function About() {
               </a>
               <h3 className="text-[17px] font-bold text-[#168acd] hover:underline mt-4 cursor-pointer leading-snug">
                 <a href="https://telegram.org/blog/welcome-messages-buttons-TG-13/pt-br" target="_blank" rel="noopener noreferrer">
-                  Mensagens de Boas-Vindas, Botões nas Mensagens e Presentes Assinados
+                  Mensagens de Boas-Vindas, BotÃµes nas Mensagens e Presentes Assinados
                 </a>
               </h3>
               <p className="text-[14px] text-[#444444] mt-2 leading-relaxed">
-                Apresentamos as Mensagens de Boas-Vindas para saudar novos membros dos grupos ou canais, os Botões nas Mensagens para links interativos e mais.
+                Apresentamos as Mensagens de Boas-Vindas para saudar novos membros dos grupos ou canais, os BotÃµes nas Mensagens para links interativos e mais.
               </p>
               <span className="text-[12px] text-gray-400 mt-2 block">
                 15 de ago de 2026
@@ -101,11 +101,11 @@ export default function About() {
               </a>
               <h3 className="text-[17px] font-bold text-[#168acd] hover:underline mt-4 cursor-pointer leading-snug">
                 <a href="https://telegram.org/blog/communities-editor-invisible-messages/pt-br" target="_blank" rel="noopener noreferrer">
-                  Editor de Texto Formatado, Comunidades, Mensagens Efêmeras em Grupos, 550 Milhões de GIFs
+                  Editor de Texto Formatado, Comunidades, Mensagens EfÃªmeras em Grupos, 550 MilhÃµes de GIFs
                 </a>
               </h3>
               <p className="text-[14px] text-[#444444] mt-2 leading-relaxed">
-                Apresentando o Editor de Texto Formatado para formatar mensagens com facilidade, as Comunidades do Telegram com tópicos organizados e suporte a 550 Milhões de GIFs.
+                Apresentando o Editor de Texto Formatado para formatar mensagens com facilidade, as Comunidades do Business Messenger com tÃ³picos organizados e suporte a 550 MilhÃµes de GIFs.
               </p>
               <span className="text-[12px] text-gray-400 mt-2 block">
                 14 de jul de 2026
@@ -114,7 +114,7 @@ export default function About() {
           </div>
         </section>
 
-        {/* 4. POR QUE O TELEGRAM? (9 PATOS OFICIAIS COM ANIMAÇÃO, SEM BORDAS/CARDS) */}
+        {/* 4. POR QUE O TELEGRAM? (9 PATOS OFICIAIS COM ANIMAÃ‡ÃƒO, SEM BORDAS/CARDS) */}
         <section className="pt-6">
           <div className="text-center mb-10">
             <h2 className="text-[28px] font-bold text-[#222222]">{t('about.why_telegram')}</h2>
@@ -173,7 +173,7 @@ export default function About() {
               </p>
             </div>
 
-            {/* 4. RÁPIDO */}
+            {/* 4. RÃPIDO */}
             <div className="flex flex-col items-center group">
               <div className="w-24 h-24 mb-3 flex items-center justify-center duck-bounce">
                 <img
@@ -284,3 +284,5 @@ export default function About() {
     </div>
   );
 }
+
+
