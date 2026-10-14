@@ -622,7 +622,7 @@ export const zhTranslations: Record<string, string> = {
   'profile.translate_messages': '翻译消息',
   'profile.show_translate_button': '显示“翻译”按钮',
   'profile.translate_full_chats': '翻译整个聊天',
-  'profile.do_not_translate': '不翻译',
+  'profile.do_not_translate': '已翻译语言',
   'auth.signup_description': '欢迎使用 Telegram Business，免费注册。',
   'auth.passkey_instructions': '这是您的登录密码。请妥善保存，以便登录账户。',
   'auth.copied_clipboard': '已复制到剪贴板！',

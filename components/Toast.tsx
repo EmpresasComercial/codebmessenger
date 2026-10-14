@@ -71,12 +71,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       <AnimatePresence>
         {toast && (
-          <motion.div
-            key={toast.id}
-            initial={{ opacity: 0, y: -8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.16, ease: 'easeOut' }}
+          <div
             style={{
               position: 'fixed',
               top: 18,
@@ -86,33 +81,41 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               pointerEvents: 'none',
             }}
           >
-            <div
-              style={{
-                maxWidth: 'min(85vw, 420px)',
-                padding: '10px 16px',
-                borderRadius: 999,
-                backgroundColor: '#ffffff',
-                color: '#111111',
-                border: '1px solid rgba(0, 0, 0, 0.05)',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-                userSelect: 'none',
-                textAlign: 'center',
-              }}
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
             >
-              <p
+              <div
                 style={{
-                  margin: 0,
+                  maxWidth: 'min(85vw, 420px)',
+                  padding: '10px 16px',
+                  borderRadius: 999,
+                  backgroundColor: '#ffffff',
                   color: '#111111',
-                  fontSize: 14,
-                  fontWeight: 500,
-                  lineHeight: 1.4,
-                  fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                  border: '1px solid rgba(0, 0, 0, 0.05)',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+                  userSelect: 'none',
+                  textAlign: 'center',
                 }}
               >
-                {toast.message}
-              </p>
-            </div>
-          </motion.div>
+                <p
+                  style={{
+                    margin: 0,
+                    color: '#111111',
+                    fontSize: 12,
+                    fontWeight: 400,
+                    lineHeight: 1.4,
+                    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                  }}
+                >
+                  {toast.message}
+                </p>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </ToastContext.Provider>

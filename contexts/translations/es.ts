@@ -405,7 +405,7 @@ export const esTranslations: Record<string, string> = {
   'profile.translate_messages': 'Traducir mensajes',
   'profile.show_translate_button': 'Mostrar el botón Traducir',
   'profile.translate_full_chats': 'Traducir conversaciones completas',
-  'profile.do_not_translate': 'No traducir',
+  'profile.do_not_translate': 'Idioma traducido',
   'recharge.amount_requested': 'Monto a transferir',
   'recharge.bank_dest': 'Banco destinatario',
   'recharge.beneficiary': 'Beneficiario oficial',

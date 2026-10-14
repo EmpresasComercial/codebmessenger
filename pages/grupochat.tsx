@@ -150,7 +150,31 @@ function getUserColor(str: string): string {
 type SenderProfile = {
   telefone: string | null;
   nome_exibicao: string | null;
+  avatarUrl?: string;
   countryCode?: string;
+};
+
+const getProfileAvatarUrl = (profile: any) => {
+  let metadata = profile?.metadados;
+  if (typeof metadata === "string") {
+    try {
+      metadata = JSON.parse(metadata);
+    } catch {
+      metadata = {};
+    }
+  }
+
+  return profile?.avatar_url
+    || profile?.avatarUrl
+    || profile?.foto_url
+    || profile?.photo_url
+    || profile?.avatar
+    || profile?.imagem
+    || metadata?.avatar_url
+    || metadata?.foto_url
+    || metadata?.photo_url
+    || metadata?.picture
+    || "";
 };
 
 const getProfileCountryCode = (metadata: unknown): string | undefined => {
@@ -475,10 +499,18 @@ const MessageItem = React.memo(({
       <div className={`flex ${isMe ? "items-end" : "items-start"} w-full gap-1.5 ${isMe ? "justify-end" : "justify-start"} relative group`}>
         {!isMe && (
           <div 
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-bold shrink-0 mt-[2px] shadow-xs overflow-hidden select-none"
+            className="relative w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-bold shrink-0 mt-[2px] shadow-xs overflow-hidden select-none"
             style={{ backgroundColor: authorColor }}
           >
             {displayName.slice(0, 2).toUpperCase()}
+            {m.perfil?.avatarUrl && (
+              <img
+                src={m.perfil.avatarUrl}
+                alt=""
+                className="absolute inset-0 h-full w-full rounded-full object-cover"
+                onError={(event) => { event.currentTarget.style.display = "none"; }}
+              />
+            )}
           </div>
         )}
 
@@ -716,7 +748,7 @@ export default function grupochat() {
   const { session } = useAuth();
   const user = session?.user;
   const { showToast } = useToast();
-  const { language, t, translateFullChats } = useLanguage();
+  const { language, t, translateFullChats, notificationsMuted: isGroupMuted, setNotificationsMuted: setIsGroupMuted } = useLanguage();
   const { statusText } = useNetworkStatus();
 
   const [publicMessages, setPublicMessages] = useState<any[]>(() => {
@@ -753,7 +785,6 @@ export default function grupochat() {
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
   const [activeGroupTab, setActiveGroupTab] = useState<GroupTab>('members');
-  const [isGroupMuted, setIsGroupMuted] = useState(false);
   const [isCopiedLink, setIsCopiedLink] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [reactionMenuId, setReactionMenuId] = useState<number | null>(null);
@@ -1070,6 +1101,8 @@ export default function grupochat() {
             ...phoneCache[m.uid_emissor],
             telefone: phoneCache[m.uid_emissor]?.telefone || "Telefone Desconhecido",
             nome_exibicao: phoneCache[m.uid_emissor]?.nome_exibicao || "Membro",
+            avatarUrl: phoneCache[m.uid_emissor]?.avatarUrl
+              || (m.uid_emissor === user?.id ? getProfileAvatarUrl(user?.user_metadata) : ''),
             countryCode: phoneCache[m.uid_emissor]?.countryCode
               || getProfileCountryCode({ country_code: m.detalhes?.sender_country_code }),
           }
@@ -1110,13 +1143,14 @@ export default function grupochat() {
             try {
               const { data: profiles } = await supabase
                 .from('sys_t500')
-                .select('id, telefone, nome_exibicao, metadados')
+                .select('*')
                 .in('id', uncachedIds);
               if (profiles && profiles.length > 0) {
                 profiles.forEach((p: any) => {
                   phoneCache[p.id] = {
                     telefone: p.telefone || null,
                     nome_exibicao: p.nome_exibicao || null,
+                    avatarUrl: getProfileAvatarUrl(p),
                     countryCode: getProfileCountryCode(p.metadados),
                   };
                 });
@@ -1130,6 +1164,7 @@ export default function grupochat() {
                   if (profile && (
                     m.perfil?.nome_exibicao !== profile.nome_exibicao
                     || m.perfil?.telefone !== profile.telefone
+                    || m.perfil?.avatarUrl !== profile.avatarUrl
                     || m.perfil?.countryCode !== enrichedProfile.countryCode
                   )) {
                     return {
@@ -1334,7 +1369,7 @@ export default function grupochat() {
             if (!senderProfile && data.uid_emissor) {
               supabase
                 .from('sys_t500')
-                .select('telefone, nome_exibicao, metadados')
+                .select('*')
                 .eq('id', data.uid_emissor)
                 .maybeSingle()
                 .then(({ data: prof }) => {
@@ -1342,6 +1377,7 @@ export default function grupochat() {
                     const resolvedProfile: SenderProfile = {
                       telefone: prof.telefone || null,
                       nome_exibicao: prof.nome_exibicao || null,
+                      avatarUrl: getProfileAvatarUrl(prof),
                       countryCode: getProfileCountryCode(prof.metadados),
                     };
                     phoneCache[data.uid_emissor] = resolvedProfile;
@@ -1357,6 +1393,8 @@ export default function grupochat() {
               perfil: {
                 telefone: senderProfile?.telefone || "Telefone Desconhecido",
                 nome_exibicao: senderProfile?.nome_exibicao || "Membro",
+                avatarUrl: senderProfile?.avatarUrl
+                  || (data.uid_emissor === user.id ? getProfileAvatarUrl(user.user_metadata) : ''),
                 countryCode: senderProfile?.countryCode
                   || getProfileCountryCode({ country_code: data.detalhes?.sender_country_code }),
               } 
@@ -2181,7 +2219,7 @@ export default function grupochat() {
                   }
                 }}
                 placeholder={editingMessage ? "Editar mensagem..." : "Mensagem"}
-                className="w-full min-h-[24px] px-2 py-1.5 text-[15px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black placeholder:text-gray-400 font-normal leading-snug"
+                className="w-full min-h-[24px] px-2 py-1.5 text-[14px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black placeholder:text-gray-400 font-normal leading-snug"
                 rows={1}
               />
 

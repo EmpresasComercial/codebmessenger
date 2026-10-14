@@ -108,6 +108,7 @@ function GlobalLanguageSelector() {
   const firstSegment = normalizedPath.split('/').filter(Boolean)[0] ?? '';
   const alwaysVisibleRoutes = new Set(['login', 'entrar', 't', 'mensagens', 'messager']);
   const alwaysHiddenRoutes = new Set([
+    'org',
     'chat',
     'privado',
     'grupo',

@@ -60,6 +60,21 @@ interface ContextMenu {
 // ── Constantes de Emojis Oficiais Telegram ────────────────────────────
 const QUICK_REACTIONS = ['👍', '❤️', '🔥', '🥰', '👏', '😂'];
 
+const getMessageDetails = (details: Message['detalhes'] | string | null | undefined) => {
+  if (typeof details === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(details);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? parsed as NonNullable<Message['detalhes']>
+        : {};
+    } catch {
+      return {};
+    }
+  }
+
+  return details && typeof details === 'object' ? details : {};
+};
+
 // ── Componente Principal ───────────────────────────────────────────────
 export default function PrivateChat() {
   const { contactId } = useParams();
@@ -247,17 +262,48 @@ export default function PrivateChat() {
       if (error) throw error;
 
       const serverMessages = data || [];
+      const unreadIncomingMessages = serverMessages.filter((message: Message) =>
+        message.remetente_id === contactId &&
+        message.destinatario_id === user.id &&
+        (message.lida === false || getMessageDetails(message.detalhes).lida === false)
+      );
+      const readMessageIds = new Set<string>();
+
+      await Promise.all(unreadIncomingMessages.map(async (message: Message) => {
+        const details = getMessageDetails(message.detalhes);
+        const { error: readError } = await (supabase as any)
+          .from('sys_t110')
+          .update({ detalhes: { ...details, lida: true } })
+          .eq('id', message.id)
+          .eq('destinatario_id', user.id);
+
+        if (readError) {
+          console.error(`Não foi possível marcar a mensagem ${message.id} como lida:`, readError);
+          return;
+        }
+        readMessageIds.add(message.id);
+      }));
+
+      const messagesWithReadState = serverMessages.map((message: Message) => {
+        if (!readMessageIds.has(message.id)) return message;
+        return {
+          ...message,
+          lida: true,
+          detalhes: { ...getMessageDetails(message.detalhes), lida: true },
+        };
+      });
+
       setMessages(prev => {
         const pendingLocal = prev.filter(m =>
           typeof m.id === 'string' &&
           m.id.startsWith('local_') &&
           (m.status === 'sending' || m.status === 'failed') &&
-          !serverMessages.some((serverMessage: any) =>
+          !messagesWithReadState.some((serverMessage: any) =>
             serverMessage.remetente_id === m.remetente_id &&
             serverMessage.mensagem === m.mensagem
           )
         );
-        const refreshed = [...serverMessages, ...pendingLocal].sort(
+        const refreshed = [...messagesWithReadState, ...pendingLocal].sort(
           (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
 

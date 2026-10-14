@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   Edit3,
   Download,
+  Moon,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { type Language, supportedLanguages, useLanguage } from "../../contexts/LanguageContext";
@@ -37,12 +38,19 @@ export default function Profile() {
     setShowLanguageSelector,
     translateFullChats,
     setTranslateFullChats,
+    notificationsMuted,
+    setNotificationsMuted,
+    darkMode,
+    setDarkMode,
   } = useLanguage();
   const settingsSectionRef = useRef<HTMLDivElement>(null);
+  const profileHeaderRef = useRef<HTMLElement>(null);
+  const profileSectionRef = useRef<HTMLElement>(null);
   const selectedLanguage = supportedLanguages.find(({ code }) => code === language)!;
 
   const [showLanguage, setShowLanguage] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [isProfileSectionHidden, setIsProfileSectionHidden] = useState(false);
   const [balance, setBalance] = useState<number>(0);
   const [totalDeposits, setTotalDeposits] = useState<number>(0);
   const [totalWithdrawals, setTotalWithdrawals] = useState<number>(0);
@@ -61,6 +69,23 @@ export default function Profile() {
       navigate(location.pathname, { replace: true, state: null });
     }
   }, [location.pathname, location.state, navigate]);
+
+  useEffect(() => {
+    const updateProfileHeader = () => {
+      const headerBottom = profileHeaderRef.current?.getBoundingClientRect().bottom;
+      const sectionBottom = profileSectionRef.current?.getBoundingClientRect().bottom;
+      if (headerBottom === undefined || sectionBottom === undefined) return;
+      setIsProfileSectionHidden(sectionBottom <= headerBottom);
+    };
+
+    updateProfileHeader();
+    window.addEventListener('scroll', updateProfileHeader, { passive: true });
+    window.addEventListener('resize', updateProfileHeader);
+    return () => {
+      window.removeEventListener('scroll', updateProfileHeader);
+      window.removeEventListener('resize', updateProfileHeader);
+    };
+  }, []);
 
   // Busca dados reais do banco via RPC segura (SECURITY DEFINER)
   const fetchData = useCallback(async () => {
@@ -137,11 +162,29 @@ export default function Profile() {
     }
   };
 
+  const toggleNotifications = () => {
+    const nextMuted = !notificationsMuted;
+    setNotificationsMuted(nextMuted);
+    showToast(t(nextMuted ? 'group.notifications_off' : 'group.notifications_on'), 'info');
+
+    if (nextMuted) return;
+    if (!('Notification' in window)) {
+      showToast(t('chat.notifications_unavailable'), 'info');
+      return;
+    }
+    if (Notification.permission === 'default') {
+      void Notification.requestPermission().catch((error: unknown) => {
+        console.error('[Profile] Failed to request notification permission.', error);
+        showToast(t('chat.notifications_error'), 'error');
+      });
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-white dark:bg-[#17212b] font-sans text-black dark:text-white flex flex-col pb-24">
 
       {/* ── CABEÇALHO NO ESTILO OFICIAL DO TELEGRAM ── */}
-      <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-3 text-[#222222] dark:border-[#202b36] dark:bg-[#17212b] dark:text-white">
+      <header ref={profileHeaderRef} className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-3 text-[#222222] dark:border-[#202b36] dark:bg-[#17212b] dark:text-white">
         <div className="flex items-center gap-2">
           <button 
             onClick={() => navigate('/org')}
@@ -160,13 +203,23 @@ export default function Profile() {
             aria-label={t('profile.edit')}
             title={t('profile.edit')}
           >
-            <Edit3 className="h-5 w-5" />
+            {isProfileSectionHidden ? (
+              avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover ring-2 ring-[#2481cc]/30" />
+              ) : (
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#3390ec] text-[14px] font-semibold text-white">
+                  {firstName.charAt(0).toUpperCase()}
+                </span>
+              )
+            ) : (
+              <Edit3 className="h-5 w-5" />
+            )}
           </button>
         </div>
       </header>
 
       {/* ── AVATAR & PERFIL TELEGRAM WEB ── */}
-      <section className="bg-white dark:bg-[#17212b] border-b border-gray-100 dark:border-[#202b36] pt-6 pb-5 px-2 flex flex-col items-center">
+      <section ref={profileSectionRef} className="bg-white dark:bg-[#17212b] border-b border-gray-100 dark:border-[#202b36] pt-6 pb-5 px-2 flex flex-col items-center">
         <div className="relative mb-3 cursor-pointer" onClick={() => setShowEditProfile(true)}>
           {avatarUrl ? (
             <img
@@ -215,15 +268,66 @@ export default function Profile() {
             subtitle={t('profile.payment_subtitle')}
             onClick={() => navigate("/sand-pay")}
           />
+          <SettingsItem
+            icon={<CreditCard className="w-5 h-5 text-white" />}
+            iconBg="bg-[#3390ec]"
+            title={t('chat.bank_wallet')}
+            subtitle={t('profile.bank_subtitle')}
+            onClick={() => navigate("/carteira?intent=add-bank")}
+          />
+          <SettingsItem
+            icon={<Moon className="w-5 h-5 text-white" />}
+            iconBg="bg-[#475569]"
+            title={t('settings.dark_mode')}
+            subtitle={darkMode ? t('theme.dark') : t('theme.light')}
+            onClick={() => setDarkMode(!darkMode)}
+            trailing={(
+              <button
+                type="button"
+                role="switch"
+                aria-checked={darkMode}
+                aria-label={t('settings.dark_mode')}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setDarkMode(!darkMode);
+                }}
+                className="relative h-[14px] w-[34px] shrink-0 rounded-full transition-colors duration-200 focus:outline-none"
+                style={{ backgroundColor: darkMode ? '#007aff' : '#d1d1d6' }}
+              >
+                <span
+                  className="absolute left-[-1px] top-[-3px] h-[20px] w-[20px] rounded-full border bg-white transition-transform duration-200"
+                  style={{
+                    transform: darkMode ? 'translateX(16px)' : 'translateX(0px)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                    borderColor: darkMode ? '#007aff' : '#d1d1d6',
+                  }}
+                />
+              </button>
+            )}
+          />
+          <SettingsItem
+            icon={<MessageSquare className="w-5 h-5 text-white" />}
+            iconBg="bg-[#f2a93b]"
+            title={t('chat.group_telegram')}
+            subtitle={t('profile.community_subtitle')}
+            onClick={() => navigate("/org")}
+          />
+          <SettingsItem
+            icon={<MessagesSquare className="w-5 h-5 text-white" />}
+            iconBg="bg-[#3390ec]"
+            title={t('chat.channel_posts')}
+            subtitle={t('profile.channel_subtitle')}
+            onClick={() => navigate("/canal-oficial")}
+          />
         </div>
 
         {/* DIVISOR DE SEÇÃO */}
         <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
 
-        {/* SEÇÃO 3: DEFINIÇÕES GERAIS */}
-        <div ref={settingsSectionRef} className="w-full bg-white dark:bg-[#17212b]">
+        {/* SEÇÃO 3: AJUDA & SUPORTE */}
+        <div className="w-full bg-white dark:bg-[#17212b]">
           <div className="px-2 pt-3 pb-1.5">
-            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.settings')}</span>
+            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.help_section')}</span>
           </div>
 
           <SettingsItem
@@ -235,24 +339,52 @@ export default function Profile() {
           />
 
           <SettingsItem
-            icon={<MessageSquare className="w-5 h-5 text-white" />}
-            iconBg="bg-[#f2a93b]"
-            title={t('chat.group_telegram')}
-            subtitle={t('profile.community_subtitle')}
-            onClick={() => navigate("/org")}
+            icon={<HelpCircle className="w-5 h-5 text-white" />}
+            iconBg="bg-[#3390ec]"
+            title={t('chat.faq')}
+            subtitle={t('profile.faq_subtitle')}
+            onClick={() => navigate("/help-faq")}
           />
+        </div>
+
+        {/* DIVISOR DE SEÇÃO */}
+        <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
+
+        {/* SEÇÃO 4: DEFINIÇÕES */}
+        <div ref={settingsSectionRef} className="w-full bg-white dark:bg-[#17212b]">
+          <div className="px-2 pt-3 pb-1.5">
+            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.settings')}</span>
+          </div>
 
           <SettingsItem
             icon={<Volume2 className="w-5 h-5 text-white fill-white" />}
             iconBg="bg-[#fe384f]"
             title={t('chat.notifications')}
             subtitle={t('profile.notifications_subtitle')}
-            onClick={() => {
-              if ("Notification" in window) {
-                Notification.requestPermission();
-                showToast(t('profile.notifications_updated'), "info");
-              }
-            }}
+            onClick={toggleNotifications}
+            trailing={(
+              <button
+                type="button"
+                role="switch"
+                aria-checked={!notificationsMuted}
+                aria-label={t('chat.notifications')}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleNotifications();
+                }}
+                className="relative h-[14px] w-[34px] shrink-0 rounded-full transition-colors duration-200 focus:outline-none"
+                style={{ backgroundColor: notificationsMuted ? '#d1d1d6' : '#007aff' }}
+              >
+                <span
+                  className="absolute left-[-1px] top-[-3px] h-[20px] w-[20px] rounded-full border bg-white transition-transform duration-200"
+                  style={{
+                    transform: notificationsMuted ? 'translateX(0px)' : 'translateX(16px)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                    borderColor: notificationsMuted ? '#d1d1d6' : '#007aff',
+                  }}
+                />
+              </button>
+            )}
           />
 
           <SettingsItem
@@ -261,41 +393,6 @@ export default function Profile() {
             title={t('chat.download_apk')}
             subtitle={t('profile.download_subtitle')}
             onClick={() => navigate("/android?setln=pt")}
-          />
-
-          <SettingsItem
-            icon={<MessagesSquare className="w-5 h-5 text-white" />}
-            iconBg="bg-[#3390ec]"
-            title={t('chat.channel_posts')}
-            subtitle={t('profile.channel_subtitle')}
-            onClick={() => navigate("/canal-oficial")}
-          />
-
-          <SettingsItem
-            icon={<CreditCard className="w-5 h-5 text-white" />}
-            iconBg="bg-[#3390ec]"
-            title={t('chat.bank_wallet')}
-            subtitle={t('profile.bank_subtitle')}
-            onClick={() => navigate("/carteira?intent=add-bank")}
-          />
-
-        </div>
-
-        {/* DIVISOR DE SEÇÃO */}
-        <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
-
-        {/* SEÇÃO 4: AJUDA & SUPORTE */}
-        <div className="w-full bg-white dark:bg-[#17212b]">
-          <div className="px-2 pt-3 pb-1.5">
-            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.help_section')}</span>
-          </div>
-
-          <SettingsItem
-            icon={<HelpCircle className="w-5 h-5 text-white" />}
-            iconBg="bg-[#3390ec]"
-            title={t('chat.faq')}
-            subtitle={t('profile.faq_subtitle')}
-            onClick={() => navigate("/help-faq")}
           />
 
           <SettingsItem
@@ -319,16 +416,9 @@ export default function Profile() {
             iconBg="bg-[#46c2ca]"
             title={t('chat.terms_privacy')}
             subtitle={t('profile.privacy_subtitle')}
-            isLast={true}
             onClick={() => navigate("/devices")}
           />
-        </div>
 
-        {/* DIVISOR DE SEÇÃO */}
-        <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
-
-        {/* SEÇÃO 5: SAIR DA CONTA */}
-        <div className="w-full bg-white dark:bg-[#17212b]">
           <button
             onClick={handleLogout}
             className="w-full flex items-center px-2 py-3.5 text-left hover:bg-red-50/50 dark:hover:bg-red-950/20 active:bg-red-50 transition-colors cursor-pointer"
@@ -431,6 +521,7 @@ function SettingsItem({
   subtitle,
   isLast = false,
   onClick,
+  trailing,
 }: {
   icon: React.ReactNode;
   iconBg: string;
@@ -438,6 +529,7 @@ function SettingsItem({
   subtitle?: string;
   isLast?: boolean;
   onClick?: () => void;
+  trailing?: React.ReactNode;
 }) {
   return (
     <div
@@ -457,7 +549,7 @@ function SettingsItem({
           </span>
         )}
       </div>
-      {onClick && <ChevronRight className="w-4 h-4 text-[#c7c7cc] dark:text-gray-600 shrink-0 ml-auto" />}
+      {trailing ?? (onClick && <ChevronRight className="w-4 h-4 text-[#c7c7cc] dark:text-gray-600 shrink-0 ml-auto" />)}
     </div>
   );
 }

@@ -1,13 +1,69 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle, Users, Bot, Settings, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { session } = useAuth();
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) {
+      setUnreadMessagesCount(0);
+      return;
+    }
+
+    let active = true;
+    const fetchUnreadMessagesCount = async () => {
+      const { count, error } = await supabase
+        .from('sys_t110')
+        .select('id', { count: 'exact', head: true })
+        .eq('destinatario_id', userId)
+        .neq('remetente_id', userId)
+        .eq('detalhes->>lida', 'false');
+
+      if (error) {
+        console.error('Não foi possível carregar a contagem de mensagens não lidas:', error);
+        return;
+      }
+
+      if (active) setUnreadMessagesCount(count ?? 0);
+    };
+
+    void fetchUnreadMessagesCount();
+    const unreadChannel = supabase
+      .channel(`navbar_unread_messages_${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sys_t110', filter: `destinatario_id=eq.${userId}` },
+        () => void fetchUnreadMessagesCount(),
+      )
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error(`Falha na sincronização de mensagens não lidas: ${status}`);
+        }
+      });
+
+    const refreshOnFocus = () => {
+      if (document.visibilityState === 'visible') void fetchUnreadMessagesCount();
+    };
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnFocus);
+
+    return () => {
+      active = false;
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshOnFocus);
+      void supabase.removeChannel(unreadChannel);
+    };
+  }, [session?.user?.id]);
 
   const navItems = [
     {
@@ -15,7 +71,7 @@ export default function Navbar() {
       path: '/org',
       aliasPaths: ['/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'],
       icon: (isActive: boolean) => <MessageCircle className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />,
-      badge: 3
+      badge: unreadMessagesCount
     },
     {
       name: t('nav.invite'),
@@ -75,9 +131,9 @@ export default function Navbar() {
             >
               <div className="relative flex items-center justify-center mt-1">
                 {typeof item.icon === 'function' ? item.icon(isActive) : item.icon}
-                {item.badge && (
+                {item.badge !== undefined && item.badge !== null && item.badge > 0 && (
                   <span className="absolute -top-1 -right-2 bg-[#3390ec] text-white text-[11px] font-bold px-[5px] py-[1px] rounded-full leading-none shadow-[0_0_0_2px_#ffffff] dark:shadow-[0_0_0_2px_#1c242f]">
-                    {item.badge}
+                    {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
               </div>

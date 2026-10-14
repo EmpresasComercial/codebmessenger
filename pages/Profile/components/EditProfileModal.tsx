@@ -1,9 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Phone, AtSign, ArrowDownCircle, ArrowUpCircle, Users } from "lucide-react";
+import { Phone, AtSign, ArrowDownCircle, ArrowUpCircle, Check, ImagePlus, Save, Users } from "lucide-react";
 import { formatCurrency } from "../../../lib/currency";
 import { supabase } from "../../../lib/supabase";
 import { useToast } from "../../../components/Toast";
 import { useLanguage } from "../../../contexts/LanguageContext";
+
+const presetAvatars = [
+  "/tg_duck_social.png",
+  "/tg_duck_seguro.png",
+  "/tg_duck_rapido.png",
+  "/tg_duck_privado.png",
+  "/tg_duck_expressivo.png",
+];
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -39,6 +47,7 @@ export default function EditProfileModal({
   const [avatarUrl, setAvatarUrl] = useState(initialData.avatarUrl);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -49,6 +58,7 @@ export default function EditProfileModal({
       setAvatarUrl(initialData.avatarUrl);
       setAvatarPreview(null);
       setAvatarFile(null);
+      setShowAvatarPicker(false);
     }
   }, [isOpen, initialData.firstName, initialData.lastName, initialData.bio, initialData.avatarUrl]);
 
@@ -62,6 +72,7 @@ export default function EditProfileModal({
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { showToast(t("profile.image_too_large"), "error"); return; }
     setAvatarFile(file);
+    setShowAvatarPicker(false);
     const reader = new FileReader();
     reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
@@ -93,21 +104,20 @@ export default function EditProfileModal({
 
       const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
 
-      await supabase.auth.updateUser({
+      const { error: authUpdateError } = await supabase.auth.updateUser({
         data: {
           name: fullName, full_name: fullName,
           first_name: firstName.trim(), last_name: lastName.trim(),
           bio: bio.trim(), avatar_url: finalAvatarUrl,
         },
       });
+      if (authUpdateError) throw authUpdateError;
 
-      // Persiste nome de exibição em sys_t500 para ser visível nos chats
-      try {
-        await (supabase as any)
-          .from("sys_t500")
-          .update({ nome_exibicao: fullName || null })
-          .eq("id", user.id);
-      } catch { /* silencia */ }
+      const { error: profileUpdateError } = await (supabase as any)
+        .from("sys_t500")
+        .update({ nome_exibicao: fullName || null, avatar_url: finalAvatarUrl || null })
+        .eq("id", user.id);
+      if (profileUpdateError) throw profileUpdateError;
 
       showToast(t("profile.updated"), "success");
       onSaved({ firstName: firstName.trim(), lastName: lastName.trim(), bio: bio.trim(), avatarUrl: finalAvatarUrl });
@@ -135,6 +145,65 @@ export default function EditProfileModal({
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+      {showAvatarPicker ? (
+        <div className="flex min-h-0 flex-1 flex-col bg-[#f1f1f2]">
+          <div className="flex h-14 shrink-0 items-center border-b border-black/5 px-4">
+            <button
+              type="button"
+              onClick={() => setShowAvatarPicker(false)}
+              className="mr-3 flex h-10 w-10 items-center justify-center rounded-full text-[#3390ec] hover:bg-black/5"
+              aria-label={t("common.back")}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M5 12l7-7M5 12l7 7" />
+              </svg>
+            </button>
+            <h2 className="flex-1 text-[17px] font-semibold text-black">{t("profile.choose_avatar")}</h2>
+          </div>
+          <div className="avatar-picker-grid mx-auto grid w-full max-w-2xl grid-cols-3 gap-3 overflow-y-auto rounded-[20px] bg-white p-4 shadow-sm">
+            {presetAvatars.map((src, index) => {
+              const isSelected = !avatarPreview && avatarUrl === src;
+              return (
+                <button
+                  key={src}
+                  type="button"
+                  onClick={() => {
+                    setAvatarUrl(src);
+                    setAvatarPreview(null);
+                    setAvatarFile(null);
+                    setShowAvatarPicker(false);
+                  }}
+                  className={`relative aspect-square overflow-hidden rounded-full border-2 bg-gradient-to-br from-[#e5f3ff] to-[#c8e5ff] p-2 transition-transform active:scale-95 ${
+                    isSelected ? "border-[#3390ec] ring-2 ring-[#3390ec]/25" : "border-transparent"
+                  }`}
+                  aria-label={`${t("profile.avatar_option")} ${index + 1}`}
+                  aria-pressed={isSelected}
+                >
+                  <img src={src} alt="" className="h-full w-full rounded-full object-contain" />
+                  {isSelected && (
+                    <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#3390ec] text-white">
+                      <Check className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="gallery-photo-button flex aspect-square flex-col items-center justify-center gap-3 rounded-2xl border border-[#d7e9fb] bg-[#f4f9ff] text-[#3390ec] transition-colors hover:bg-[#eaf5ff] active:scale-95"
+              aria-label={t("profile.open_gallery")}
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
+                <ImagePlus className="h-6 w-6" aria-hidden="true" />
+              </span>
+              <span className="text-[13px] font-medium">{t("profile.gallery")}</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* ──────── HEADER ──────── */}
       <div className="flex items-center px-4 pt-4 pb-3 bg-[#f1f1f2]">
         <button
@@ -147,15 +216,17 @@ export default function EditProfileModal({
             <path d="M19 12H5M5 12l7-7M5 12l7 7" />
           </svg>
         </button>
-        <span className="text-[20px] font-bold text-black flex-1">{t("profile.account")}</span>
+        <div className="flex-1" aria-hidden="true" />
         <button
           onClick={handleSave}
           disabled={isSaving || !firstName.trim()}
-          className="text-[16px] font-medium text-[#3390ec] disabled:opacity-40 active:opacity-60 transition-opacity"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-[#3390ec] transition-opacity hover:bg-black/5 active:opacity-60 disabled:opacity-40"
+          aria-label={t("common.save")}
+          title={t("common.save")}
         >
           {isSaving
             ? <span className="w-4 h-4 border-2 border-[#3390ec] border-t-transparent rounded-full animate-spin inline-block" />
-            : t("common.save")
+            : <Save className="h-5 w-5" aria-hidden="true" />
           }
         </button>
       </div>
@@ -164,31 +235,35 @@ export default function EditProfileModal({
       <div className="flex-1 overflow-y-auto px-2 max-w-2xl mx-auto w-full">
 
         {/* ── AVATAR SECTION (clicável para trocar foto) ── */}
-        <div
-          className="flex flex-col items-center py-5 cursor-pointer"
-          onClick={() => fileInputRef.current?.click()}
+        <button
+          type="button"
+          className="relative block h-[167px] w-full cursor-pointer overflow-hidden text-left"
+          onClick={() => setShowAvatarPicker(true)}
+          aria-label={t("profile.change_photo")}
         >
-          <div className="relative">
-            <div className="w-[100px] h-[100px] rounded-full overflow-hidden">
-              {displayAvatar ? (
-                <img src={displayAvatar} alt={t("profile.avatar_alt")} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#3390ec] to-[#1e6dc8] flex items-center justify-center">
-                  <span className="text-[42px] font-bold text-white">
-                    {firstName.charAt(0).toUpperCase() || "?"}
-                  </span>
-                </div>
-              )}
+          {displayAvatar ? (
+            <img
+              src={displayAvatar}
+              alt={t("profile.avatar_alt")}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#3390ec] to-[#1e6dc8]">
+              <span className="text-[64px] font-bold text-white">
+                {firstName.charAt(0).toUpperCase() || "?"}
+              </span>
             </div>
-            {/* Badge câmera */}
-            <div className="absolute bottom-0 right-0 w-[30px] h-[30px] bg-[#3390ec] rounded-full flex items-center justify-center border-[3px] border-[#f1f1f2]">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4" fill="white"/></svg>
-            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/65 to-transparent px-4 pb-3 pt-8 text-white">
+            <span className="text-[13px] font-medium">{t("profile.change_photo")}</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#3390ec] shadow-sm">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" fill="white" />
+              </svg>
+            </span>
           </div>
-          <p className="text-[13px] text-[#3390ec] mt-2 font-medium">{t("profile.change_photo")}</p>
-        </div>
-
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+        </button>
 
         {/* ── CARD: SEU NOME ── */}
         <div className="bg-white rounded-[14px] overflow-hidden shadow-2xs border border-gray-100 mb-2">
@@ -305,6 +380,8 @@ export default function EditProfileModal({
 
         <div className="h-16" />
       </div>
+        </>
+      )}
     </div>
   );
 }

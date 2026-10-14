@@ -1928,6 +1928,10 @@ interface LanguageContextType {
   setShowLanguageSelector: (show: boolean) => void;
   translateFullChats: boolean;
   setTranslateFullChats: (enabled: boolean) => void;
+  notificationsMuted: boolean;
+  setNotificationsMuted: (muted: boolean) => void;
+  darkMode: boolean;
+  setDarkMode: (enabled: boolean) => void;
   t: (key: TranslationKey) => string;
 }
 
@@ -1948,6 +1952,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [translateFullChats, setTranslateFullChatsState] = useState(
     () => localStorage.getItem('translate_full_chats') === 'true'
   );
+  const [notificationsMuted, setNotificationsMutedState] = useState(
+    () => localStorage.getItem('notifications_muted') === 'true'
+  );
+  const [darkMode, setDarkModeState] = useState(
+    () => localStorage.getItem('app_theme') === 'dark'
+  );
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
@@ -1964,10 +1974,26 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('translate_full_chats', String(enabled));
   };
 
+  const setNotificationsMuted = (muted: boolean) => {
+    setNotificationsMutedState(muted);
+    localStorage.setItem('notifications_muted', String(muted));
+  };
+
+  const setDarkMode = (enabled: boolean) => {
+    setDarkModeState(enabled);
+    localStorage.setItem('app_theme', enabled ? 'dark' : 'light');
+  };
+
   useEffect(() => {
     document.documentElement.lang = language;
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
   }, [language]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    document.documentElement.dataset.theme = darkMode ? 'dark' : 'light';
+    document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light';
+  }, [darkMode]);
 
   const t = (key: TranslationKey) => {
     const supplemental = supplementalTranslations[language] as Partial<Record<SupplementalTranslationKey, string>>;
@@ -1982,7 +2008,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, showLanguageSelector, setShowLanguageSelector, translateFullChats, setTranslateFullChats, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, showLanguageSelector, setShowLanguageSelector, translateFullChats, setTranslateFullChats, notificationsMuted, setNotificationsMuted, darkMode, setDarkMode, t }}>
       {children}
     </LanguageContext.Provider>
   );

@@ -31,7 +31,9 @@ import {
   HelpCircle,
   ShieldAlert,
   Smartphone,
-  LogOut
+  LogOut,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -83,6 +85,29 @@ const getMessagePreview = (message: any) => {
   return text || 'Enviou uma mensagem';
 };
 
+const getProfileAvatarUrl = (profile: any) => {
+  let metadata = profile?.metadados;
+  if (typeof metadata === 'string') {
+    try {
+      metadata = JSON.parse(metadata);
+    } catch {
+      metadata = {};
+    }
+  }
+
+  return profile?.avatar_url
+    || profile?.avatarUrl
+    || profile?.foto_url
+    || profile?.photo_url
+    || profile?.avatar
+    || profile?.imagem
+    || metadata?.avatar_url
+    || metadata?.foto_url
+    || metadata?.photo_url
+    || metadata?.picture
+    || '';
+};
+
 // Selo de verificação oficial da empresa (Telegram Blue)
 const OfficialVerifiedBadge = ({ className = "w-[16px] h-[16px]" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={`shrink-0 inline-block align-middle ml-1 select-none ${className}`}>
@@ -103,7 +128,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   const user = session?.user;
   const { isUserOnline } = usePresence();
   const { showToast } = useToast();
-  const { t } = useLanguage();
+  const { t, darkMode, setDarkMode } = useLanguage();
   const { statusText } = useNetworkStatus();
 
   // typingUsers: Map<contactId, true> — contatos que estão digitando agora
@@ -191,6 +216,12 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [isNavigationDrawerOpen, setIsNavigationDrawerOpen] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<{
+    src: string | null;
+    name: string;
+    label: string;
+    color: string;
+  } | null>(null);
   const [drawerPhone, setDrawerPhone] = useState(
     user?.phone || user?.user_metadata?.telefone || user?.user_metadata?.phone || "",
   );
@@ -204,6 +235,22 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     || user?.user_metadata?.photo_url
     || user?.user_metadata?.picture
     || "";
+  useEffect(() => {
+    if (!avatarPreview) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAvatarPreview(null);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [avatarPreview]);
+
   const getProfileCountryCode = (metadata: unknown): string | undefined => {
     if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return undefined;
     const values = metadata as Record<string, unknown>;
@@ -371,7 +418,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           } else {
             const { data: prof } = await supabase
               .from('sys_t500')
-              .select('nome_exibicao, telefone, metadados')
+              .select('*')
               .eq('id', latestMsg.uid_emissor)
               .maybeSingle();
             if (prof?.nome_exibicao) {
@@ -438,7 +485,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       try {
         const { data: profile, error } = await supabase
           .from('sys_t500')
-          .select('nome_exibicao, telefone, metadados')
+          .select('*')
           .eq('id', message.uid_emissor)
           .maybeSingle();
 
@@ -519,6 +566,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             uniqueContacts.set(sub.membro_id, {
               id: sub.membro_id,
               telefone: sub.telefone,
+              avatarUrl: getProfileAvatarUrl(sub),
               countryCode: getProfileCountryCode(sub.metadados) || getProfileCountryCode(sub),
               nome_exibicao: sub.nome_exibicao,
               nivel: sub.nivel,
@@ -543,7 +591,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             if (item.patrocinador_id && !uniqueContacts.has(item.patrocinador_id)) {
               const { data: pData } = await supabase
                 .from('sys_t500')
-                .select('telefone, nome_exibicao, metadados')
+                .select('*')
                 .eq('id', item.patrocinador_id)
                 .maybeSingle();
 
@@ -551,6 +599,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 uniqueContacts.set(item.patrocinador_id, {
                   id: item.patrocinador_id,
                   telefone: pData.telefone,
+                  avatarUrl: getProfileAvatarUrl(pData),
                   countryCode: getProfileCountryCode(pData.metadados),
                   nome_exibicao: pData.nome_exibicao,
                   isSponsor: true
@@ -582,7 +631,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             if (missingIds.length > 0) {
               const { data: missingUsers } = await supabase
                 .from('sys_t500')
-                .select('id, telefone, nome_exibicao, metadados')
+                .select('*')
                 .in('id', missingIds);
 
               if (missingUsers) {
@@ -590,6 +639,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   uniqueContacts.set(u.id, {
                     id: u.id,
                     telefone: u.telefone,
+                    avatarUrl: getProfileAvatarUrl(u),
                     countryCode: getProfileCountryCode(u.metadados),
                     nome_exibicao: u.nome_exibicao,
                     isSubordinate: false
@@ -617,23 +667,28 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           }
         } catch {}
 
-        const contactsMissingCountry = Array.from(uniqueContacts.values())
-          .filter((contact: any) => !contact.countryCode)
+        const contactsMissingProfileData = Array.from(uniqueContacts.values())
+          .filter((contact: any) => !contact.countryCode || !contact.avatarUrl)
           .map((contact: any) => contact.id);
-        if (contactsMissingCountry.length > 0) {
+        if (contactsMissingProfileData.length > 0) {
           const { data: profiles, error: profilesError } = await supabase
             .from('sys_t500')
-            .select('id, metadados')
-            .in('id', contactsMissingCountry);
+            .select('*')
+            .in('id', contactsMissingProfileData);
 
           if (profilesError) {
-            console.error('Erro ao carregar o país dos contactos:', profilesError);
+            console.error('Erro ao carregar os perfis dos contactos:', profilesError);
           } else {
             profiles?.forEach((profile) => {
               const contact = uniqueContacts.get(profile.id);
               const countryCode = getProfileCountryCode(profile.metadados);
-              if (contact && countryCode) {
-                uniqueContacts.set(profile.id, { ...contact, countryCode });
+              const avatarUrl = getProfileAvatarUrl(profile);
+              if (contact && (countryCode || avatarUrl)) {
+                uniqueContacts.set(profile.id, {
+                  ...contact,
+                  ...(countryCode ? { countryCode } : {}),
+                  ...(avatarUrl ? { avatarUrl } : {}),
+                });
               }
             });
           }
@@ -805,6 +860,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: communityLastMessage.time,
         timestamp: communityLastMessage.timestamp,
         isMe: communityLastMessage.isMe,
+        avatarUrl: '/logo-tb.jpg',
+        avatarLabel: 'T',
+        avatarColor: '#2481cc',
         actionBtn: null,
         tag: null,
         isSubordinate: false,
@@ -826,6 +884,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 20),
         timestamp: Date.now() - 1000 * 60 * 60 * 20,
         isMe: false,
+        avatarUrl: '/pavel_durov.png',
+        avatarLabel: 'P',
+        avatarColor: '#2481cc',
         actionBtn: null,
         tag: null,
         isSubordinate: false,
@@ -855,6 +916,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 36),
         timestamp: Date.now() - 1000 * 60 * 60 * 36,
         isMe: false,
+        avatarUrl: '/logo-tb.jpg',
+        avatarLabel: 'P',
+        avatarColor: '#2481cc',
         actionBtn: null,
         isSubordinate: false,
         nivel: null,
@@ -880,6 +944,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 48),
         timestamp: Date.now() - 1000 * 60 * 60 * 48,
         isMe: false,
+        avatarUrl: '/logo-tb.jpg',
+        avatarLabel: 'W',
+        avatarColor: '#2481cc',
         actionBtn: null,
         isSubordinate: false,
         nivel: null,
@@ -906,6 +973,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 72),
         timestamp: Date.now() - 1000 * 60 * 60 * 72,
         isMe: false,
+        avatarUrl: '/BotFather.jpg',
+        avatarLabel: 'B',
+        avatarColor: '#2481cc',
         isSubordinate: false,
         nivel: null,
         actionBtn: (
@@ -956,15 +1026,26 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           time: formatTelegramTime(ts),
           timestamp: ts,
           isMe: c.isMe,
+          avatarUrl: getProfileAvatarUrl(c) || null,
+          avatarLabel: label,
+          avatarColor: color,
           actionBtn: null,
           avatar: (
             <div className="relative shrink-0">
-              <div
-                className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-white text-[17px] font-bold"
-                style={{ backgroundColor: color }}
-              >
-                {label}
-              </div>
+              {c.avatarUrl ? (
+                <img
+                  src={c.avatarUrl}
+                  alt=""
+                  className="h-[52px] w-[52px] rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-white text-[17px] font-bold"
+                  style={{ backgroundColor: color }}
+                >
+                  {label}
+                </div>
+              )}
               {isSub && nv && (
                 <div
                   className={`absolute bottom-0 right-0 w-[18px] h-[18px] rounded-full border-2 border-white dark:border-[#17212b] flex items-center justify-center text-[10px] font-bold text-white shadow-xs ${
@@ -1134,34 +1215,52 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               aria-label={t('chat.main_navigation')}
             >
               <div className="border-b border-gray-100 bg-[#2481cc] px-4 pb-3 pt-5 text-white dark:border-[#202b36] dark:bg-[#1c242f]">
+                <div className="mb-3 flex items-start justify-between">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNavigationDrawerOpen(false);
+                      navigate("/perfil");
+                    }}
+                    className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[20px] font-semibold"
+                    aria-label={t('chat.edit_profile')}
+                  >
+                    {drawerAvatar ? (
+                      <img src={drawerAvatar} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      drawerName.trim().charAt(0).toUpperCase()
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={darkMode}
+                    aria-label={darkMode ? t('theme.dark') : t('theme.light')}
+                    title={darkMode ? t('theme.dark') : t('theme.light')}
+                    onClick={() => setDarkMode(!darkMode)}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                  >
+                    {darkMode
+                      ? <Moon className="h-5 w-5" aria-hidden="true" />
+                      : <Sun className="h-5 w-5" aria-hidden="true" />}
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
                     setIsNavigationDrawerOpen(false);
                     navigate("/perfil");
                   }}
-                  className="block w-full cursor-pointer text-left"
+                  className="flex w-full cursor-pointer items-center justify-between gap-2 text-left"
                   aria-label={t('chat.edit_profile')}
                 >
-                  <div className="mb-3 flex items-start justify-between">
-                    <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[20px] font-semibold">
-                      {drawerAvatar ? (
-                        <img src={drawerAvatar} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        drawerName.trim().charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    <span className="pt-1 text-xl" aria-hidden="true">☼</span>
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-semibold">{drawerName}</p>
+                    <p className="mt-0.5 truncate text-[13px] text-white/75">
+                      {drawerPhone ? formatDrawerPhone(drawerPhone) : t('chat.phone_missing')}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-[15px] font-semibold">{drawerName}</p>
-                      <p className="mt-0.5 truncate text-[13px] text-white/75">
-                        {drawerPhone ? formatDrawerPhone(drawerPhone) : t('chat.phone_missing')}
-                      </p>
-                    </div>
-                    <ChevronDown className="h-4 w-4 shrink-0 text-white/80" />
-                  </div>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-white/80" />
                 </button>
               </div>
               {[
@@ -1323,9 +1422,22 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   onClick={chat.onClick}
                   className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-[#202b36] active:bg-gray-100 dark:active:bg-[#242f3d] transition-colors cursor-pointer border-b border-gray-100/80 dark:border-[#202b36]"
                 >
-                  <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setAvatarPreview({
+                        src: chat.avatarUrl || null,
+                        name: chat.name,
+                        label: chat.avatarLabel,
+                        color: chat.avatarColor,
+                      });
+                    }}
+                    className="relative shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2481cc]"
+                    aria-label={`Ver avatar de ${chat.name}`}
+                  >
                     {chat.avatar}
-                  </div>
+                  </button>
 
                   <div className="flex-1 min-w-0 py-0.5">
                     <div className="flex justify-between items-center mb-0.5">
@@ -1404,13 +1516,34 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                       onClick={() => navigate(`/chat/${contact.id}?t=${encodeURIComponent(contact.telefone)}${nv ? `&nv=${nv}` : ''}`)}
                       className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-[#202b36] active:bg-gray-100 dark:active:bg-[#242f3d] transition-colors cursor-pointer border-b border-gray-100/80 dark:border-[#202b36]"
                     >
-                      <div className="relative shrink-0">
-                        <div
-                          className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-white text-[17px] font-bold"
-                          style={{ backgroundColor: color }}
-                        >
-                          {label}
-                        </div>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setAvatarPreview({
+                            src: getProfileAvatarUrl(contact) || null,
+                            name: contact.nome_exibicao || formatSenderPhone(contact.telefone, contact.countryCode),
+                            label,
+                            color,
+                          });
+                        }}
+                        className="relative shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2481cc]"
+                        aria-label={`Ver avatar de ${contact.nome_exibicao || formatSenderPhone(contact.telefone, contact.countryCode)}`}
+                      >
+                        {contact.avatarUrl ? (
+                          <img
+                            src={contact.avatarUrl}
+                            alt=""
+                            className="h-[52px] w-[52px] rounded-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-white text-[17px] font-bold"
+                            style={{ backgroundColor: color }}
+                          >
+                            {label}
+                          </div>
+                        )}
 
                         {isSub && nv && (
                           <div
@@ -1422,7 +1555,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                             {nv}
                           </div>
                         )}
-                      </div>
+                      </button>
 
                       <div className="flex-1 min-w-0 py-0.5">
                         <div className="flex justify-between items-start">
@@ -1485,6 +1618,31 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             <Edit3 className="h-5 w-5 stroke-[1.8]" />
           </button>
         </>
+      )}
+      {avatarPreview && (
+        <button
+          type="button"
+          onClick={() => setAvatarPreview(null)}
+          className="fixed inset-0 z-[200] flex cursor-zoom-out items-center justify-center bg-black/90 p-5"
+          aria-label={`Fechar avatar de ${avatarPreview.name}`}
+        >
+          {avatarPreview.src ? (
+            <img
+              src={avatarPreview.src}
+              alt={avatarPreview.name}
+              className="h-[min(88vw,80vh)] w-[min(88vw,80vh)] max-h-full max-w-full rounded-full object-contain shadow-2xl"
+              onError={() => setAvatarPreview((current) => current ? { ...current, src: null } : null)}
+            />
+          ) : (
+            <span
+              className="flex h-[min(80vw,360px)] w-[min(80vw,360px)] items-center justify-center rounded-full text-8xl font-semibold text-white shadow-2xl"
+              style={{ backgroundColor: avatarPreview.color }}
+              aria-hidden="true"
+            >
+              {avatarPreview.label}
+            </span>
+          )}
+        </button>
       )}
       </div>
     </div>

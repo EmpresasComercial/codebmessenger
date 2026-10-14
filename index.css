@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* ══════════════════════════════════════════════════════════════════
    SISTEMA DE DESIGN OFICIAL DO TELEGRAM MESSENGER
@@ -98,7 +99,7 @@ html, body, * {
    ══════════════════════════════════════════════════════════════════ */
 
 /* 1. Botões a nível global (sem arredondamento) */
-button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn),
+button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn):not(.gallery-photo-button),
 [role="button"]:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn),
 input[type="button"],
 input[type="submit"],
@@ -149,8 +150,8 @@ button[class*="rounded-xl"].auth-input-btn {
 .ms-flat-card,
 .card,
 [class*="card"],
-div[class*="shadow"][class*="rounded-"]:not([class*="w-"]):not([class*="h-"]),
-div[class*="border"][class*="rounded-"]:not([class*="w-"]):not([class*="h-"]) {
+div[class*="shadow"][class*="rounded-"]:not([class*="w-"]):not([class*="h-"]):not(.avatar-picker-grid),
+div[class*="border"][class*="rounded-"]:not([class*="w-"]):not([class*="h-"]):not(.avatar-picker-grid) {
   border-radius: 0px !important;
 }
 
@@ -167,9 +168,17 @@ main[class*="rounded"],
 form[class*="rounded"],
 div[class*="rounded-xl"]:not([class*="w-"]):not([class*="h-"]):not(.tg-bubble):not(.auth-input-wrap),
 div[class*="rounded-2xl"]:not([class*="w-"]):not([class*="h-"]):not(.tg-bubble),
-div[class*="rounded-[20px]"]:not(.tg-bubble),
+div[class*="rounded-[20px]"]:not(.tg-bubble):not(.avatar-picker-grid),
 div[class*="rounded-[24px]"]:not(.tg-bubble) {
   border-radius: 0px !important;
+}
+
+.avatar-picker-grid {
+  border-radius: 20px !important;
+}
+
+.gallery-photo-button {
+  border-radius: 16px !important;
 }
 
 .botfather-commands-overlay .botfather-commands-dialog {

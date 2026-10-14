@@ -422,7 +422,7 @@ export const arTranslations: Record<string, string> = {
   'profile.notifications_updated': 'تم تحديث إعدادات الإشعارات',
   'profile.show_translate_button': 'إظهار زر الترجمة',
   'profile.translate_full_chats': 'ترجمة المحادثات كاملة',
-  'profile.do_not_translate': 'عدم الترجمة',
+  'profile.do_not_translate': 'اللغة المترجمة',
   'greeting.morning': 'صباح الخير،',
   'greeting.afternoon': 'مساء الخير،',
   'greeting.evening': 'مساء الخير،',
