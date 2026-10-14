@@ -247,7 +247,7 @@ export const arTranslations: Record<string, string> = {
   'home.announcement.title2': 'نظام الدعوات والأرباح الجماعية',
   'home.announcement.title3': 'مجتمع Telegram Business الرسمي',
   'home.announcement.tips': 'نصائح',
-  'home.announcement.reward_notice': '🔥 🔥 يحصل المستخدمون الجدد على مكافأة قدرها 300 AOA عند التسجيل. 🔔🔔🔔',
+  'home.announcement.reward_notice': '🔥 🔥 يحصل المستخدمون الجدد على مكافأة قدرها 50 AOA عند التسجيل. 🔔🔔🔔',
   'home.announcement.invite_notice': 'ادعُ أصدقاءك للتسجيل عبر رابط الإحالة الخاص بك واربح عمولة على مبلغ شحنهم: المستوى 1: ‏10%، المستوى 2: ‏6%، والمستوى 3: ‏2%. ادعُ 10 أصدقاء لتحصل على 500 AOA مجانًا. 🔔🔔🔔',
   'home.announcement.promo_notice': 'يمكن لكل شخص تسجيل حساب واحد فقط للمشاركة في هذا العرض الترويجي. 🔔🔔🔔',
   'home.services_section_title': 'خدماتنا في أنغولا',

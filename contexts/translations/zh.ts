@@ -214,7 +214,7 @@ export const zhTranslations: Record<string, string> = {
   'home.announcement.title2': '邀请与团队收益系统',
   'home.announcement.title3': 'Telegram Business 官方社区',
   'home.announcement.tips': '提示',
-  'home.announcement.reward_notice': '🔥 🔥 新用户注册后可获得 300 AOA 奖励。🔔🔔🔔',
+  'home.announcement.reward_notice': '🔥 🔥 新用户注册后可获得 50 AOA 奖励。🔔🔔🔔',
   'home.announcement.invite_notice': '邀请好友通过您的推荐链接注册，即可获得其充值金额的佣金：第1级 10%，第2级 6%，第3级 2%。邀请10位好友可免费获得 500 AOA。🔔🔔🔔',
   'home.announcement.promo_notice': '每人只能注册一个账户参加此促销活动。🔔🔔🔔',
   'home.services_section_title': '我们在安哥拉的服务',

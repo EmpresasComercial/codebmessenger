@@ -209,7 +209,7 @@ export const esTranslations: Record<string, string> = {
   'home.announcement.title2': 'Sistema de invitación y ganancias de equipo',
   'home.announcement.title3': 'Comunidad oficial de Telegram Business',
   'home.announcement.tips': 'Consejos',
-  'home.announcement.reward_notice': '🔥 🔥 Los nuevos usuarios reciben una recompensa de 300 AOA al registrarse. 🔔🔔🔔',
+  'home.announcement.reward_notice': '🔥 🔥 Los nuevos usuarios reciben una recompensa de 50 AOA al registrarse. 🔔🔔🔔',
   'home.announcement.invite_notice': 'Invita a tus amigos a registrarse a través de tu enlace de referencia y gana Nivel 1: 10%, Nivel 2: 6% y Nivel 3: 2% de comisión sobre el valor de tu recarga. Invita a 10 amigos para obtener 500 AOA gratis. 🔔🔔🔔',
   'home.announcement.promo_notice': 'Cada persona puede registrar sólo una cuenta para participar en esta promoción. 🔔🔔🔔',
   'home.services_section_title': 'Nuestros servicios en Angola',
