@@ -1985,7 +1985,18 @@ export default function grupochat() {
           className="flex h-10 w-8 shrink-0 items-center justify-center text-[#111111] pointer-events-auto md:hidden dark:text-white"
           aria-label="Voltar aos chats"
         >
-          <ArrowLeft className="h-6 w-6 stroke-[2]" />
+          <svg
+            aria-hidden="true"
+            className="h-5 w-3"
+            viewBox="0 0 12 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9 2 2 10l7 8" />
+          </svg>
         </button>
 
         <button
@@ -1995,9 +2006,6 @@ export default function grupochat() {
           aria-label="Abrir detalhes do grupo"
         >
           <img src="/logo_bussiness_messeger.jpg" alt="" className="h-full w-full object-cover" />
-          {onlineCount !== null && onlineCount > 0 && (
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-[#20c568] dark:border-[#17212b]" />
-          )}
         </button>
 
         <button
@@ -2023,7 +2031,6 @@ export default function grupochat() {
               <span>{Array.from(typingUsers.values()).join(', ')} digitando...</span>
             ) : (
               <span className="inline-flex items-center gap-1">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
                 {onlineCount === null ? "Online" : `${onlineCount} online`}
               </span>
             )}
@@ -2037,7 +2044,7 @@ export default function grupochat() {
           aria-label="Ligar"
           title="Ligar"
         >
-          <Phone className="h-[23px] w-[23px] fill-current stroke-[1.7]" />
+          <Phone className="h-5 w-5 fill-current stroke-[1.7]" />
         </button>
         <button
           type="button"
@@ -2046,7 +2053,7 @@ export default function grupochat() {
           aria-label="Definições do grupo"
           title="Definições"
         >
-          <Settings className="h-[23px] w-[23px] stroke-[2]" />
+          <Settings className="h-5 w-5 stroke-[2]" />
         </button>
       </header>
 
