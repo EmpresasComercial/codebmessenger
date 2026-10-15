@@ -25,7 +25,6 @@ import Messager from './pages/Messager';
 const Bots             = lazy(() => import('./pages/Bots'));
 const Invite           = lazy(() => import('./pages/contactos'));
 const Profile          = lazy(() => import('./pages/Profile'));
-const Settings         = lazy(() => import('./pages/Settings'));
 const AddBank          = lazy(() => import('./pages/AddBank'));
 const ChangePassword   = lazy(() => import('./pages/ChangePassword'));
 const Playmentbot      = lazy(() => import('./pages/paymentbot'));
