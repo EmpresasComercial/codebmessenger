@@ -26,10 +26,12 @@ import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
 import { parseNaturalLanguage } from '../lib/walletIntentParser';
 import AddBank from './AddBank';
+import { fetchWalletParams } from './walletAssistantCore';
 
-const MIN_WITHDRAW = 100;
-const MAX_WITHDRAW = 100000;
-const FEE_PERCENT = 10;
+const MIN_WITHDRAW = 3000;
+const MAX_WITHDRAW = 500000;
+const FEE_PERCENT = 14;
+const NET_FACTOR = 0.86;
 
 const VALID_COMMANDS = new Set([
   '/start', '/inicio', '/ajuda', '/help', '/menu', '/oi', '/ola',
@@ -201,6 +203,7 @@ export default function wallet() {
 
   const fetchData = useCallback(async () => {
     try {
+      void fetchWalletParams();
       const { data, error } = await supabase.rpc('get_withdraw_info_mcpn');
       let loaded: WithdrawInfo = {
         balance: 0,
@@ -1551,7 +1554,7 @@ export default function wallet() {
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                     {msg.text && renderBotText(msg.text)}
                     <div className="mt-3 flex flex-wrap gap-1.5 select-none">
-                      {[500, 1000, 2000, 5000, 10000].map((val) => (
+                      {[3000, 5000, 10000, 25000, 50000, 100000].map((val) => (
                         <button
                           key={val}
                           disabled={val > info.balance}

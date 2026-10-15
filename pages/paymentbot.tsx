@@ -21,6 +21,7 @@ import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
+import { fetchPayParams } from './paymentAssistantCore';
 
 const MIN_RECHARGE = 3000;
 const MAX_RECHARGE = 500000;
@@ -474,6 +475,7 @@ export default function PaymentBot() {
     try {
       setLoading(true);
 
+      void fetchPayParams();
       try {
         const { data: edgeData, error: edgeError } = await supabase.functions.invoke('payment-recharge', {
           body: { action: 'get_initial_data' },

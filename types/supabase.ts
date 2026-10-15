@@ -746,6 +746,8 @@ export type Database = {
       }
     }
     Functions: {
+      getpay: { Args: Record<string, never>; Returns: Json }
+      getwallet: { Args: Record<string, never>; Returns: Json }
       buy_product_mcpn: { Args: { p_product_id: string }; Returns: Json }
       collect_daily_earnings: { Args: never; Returns: Json }
       confirm_recharge_mcpn: {
