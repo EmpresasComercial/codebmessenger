@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -37,8 +37,6 @@ interface ChannelPost {
   image?: string;
   time: string;
 }
-
-const STORAGE_KEY_POSTS = 'business_messenger_community_posts_v1';
 
 // Utilitário leve de compressão de imagem via Canvas nativo
 const compressImage = async (file: File): Promise<string> => {
@@ -121,92 +119,114 @@ export default function AndrewNicolan() {
   const [proofComment, setProofComment] = useState('');
   const [isSubmittingProof, setIsSubmittingProof] = useState(false);
 
-  // Carrega e sincroniza posts salvos no LocalStorage e no Supabase sem duplicidade
-  useEffect(() => {
-    let localSaved: ChannelPost[] = [];
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_POSTS);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          localSaved = deduplicatePosts(parsed).map(p => {
-            const isProof = p.isProof || !!p.amount || p.id.startsWith('sp-') || p.id.startsWith('proof-');
-            if (isProof) {
-              return {
-                ...p,
-                isProof: true,
-                createdAt: p.createdAt || (Date.now() - 65 * 60 * 1000),
-                forwardedFrom: p.forwardedFrom
-                  ? { ...p.forwardedFrom, avatar: undefined }
-                  : undefined
-              };
-            }
-            return p;
-          });
-          localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(localSaved));
-        }
-      }
-    } catch (e) {
-      logger.warn('AndrewNicolán', 'Erro ao ler posts locais:', e);
-    }
+  // Helper para converter registos de canal_posts para o formato ChannelPost
+  const canalRowToPost = useCallback((row: any): ChannelPost => {
+    const date = row.created_at ? new Date(row.created_at) : new Date();
+    return {
+      id: `post-${row.id}`,
+      isProof: false,
+      createdAt: date.getTime(),
+      title: row.titulo || 'Comunicado Oficial',
+      content: row.conteudo,
+      image: row.imagem_url || undefined,
+      forwardedFrom: {
+        name: row.author_name || 'Andrew Nicolán (Oficial)',
+      },
+      time: date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+    };
+  }, []);
 
-    // Carrega provas via Edge Function (não acessa o banco diretamente)
-    const fetchSupabaseProofs = async () => {
+  // Carrega e sincroniza posts oficiais e comprovativos diretamente do Supabase com Realtime
+  useEffect(() => {
+    const fetchAllChannelContent = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) return;
 
-        const res = await fetch(`${EDGE_FN_URL}?action=list`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!res.ok) {
-          logger.warn('AndrewNicolán', 'Edge function erro:', res.status);
-          return;
+        // 1. Carrega comunicados oficiais da tabela canal_posts (sem localStorage)
+        let officialPosts: ChannelPost[] = [];
+        try {
+          const { data: rpcPosts, error: rpcErr } = await (supabase as any).rpc('get_canal_posts_mcpn');
+          if (!rpcErr && Array.isArray(rpcPosts)) {
+            officialPosts = rpcPosts.map(canalRowToPost);
+          } else {
+            const { data: directPosts } = await (supabase as any)
+              .from('canal_posts')
+              .select('*')
+              .order('created_at', { ascending: true })
+              .limit(50);
+            if (Array.isArray(directPosts)) {
+              officialPosts = directPosts.map(canalRowToPost);
+            }
+          }
+        } catch (postErr) {
+          logger.warn('AndrewNicolán', 'Erro ao carregar canal_posts:', postErr);
         }
 
-        const json = await res.json();
-        const rows = json?.data;
-        if (!Array.isArray(rows)) return;
-
-        const dbPosts: ChannelPost[] = rows
-          .filter((row: any) => row.imagem_url)
-          .map((row: any) => {
-            const date = row.created_at ? new Date(row.created_at) : new Date();
-            return {
-              id: `sp-${row.id}`,
-              isProof: true,
-              createdAt: date.getTime(),
-              forwardedFrom: {
-                name: row.userLabel || '***???'
-              },
-              title: row.valorStr ? `Comprovativo enviado pelo utilizador: ${row.valorStr}` : 'Comprovativo enviado pelo utilizador',
-              amount: row.valorStr || '',
-              content: (row.comentario || '').trim(),
-              image: row.imagem_url,
-              time: date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
-            };
+        // 2. Carrega provas sociais aprovadas via Edge Function
+        let proofPosts: ChannelPost[] = [];
+        try {
+          const res = await fetch(`${EDGE_FN_URL}?action=list`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
           });
 
-        setPosts(() => deduplicatePosts([...localSaved, ...dbPosts]));
+          if (res.ok) {
+            const json = await res.json();
+            const rows = json?.data;
+            if (Array.isArray(rows)) {
+              proofPosts = rows
+                .filter((row: any) => row.imagem_url)
+                .map((row: any) => {
+                  const date = row.created_at ? new Date(row.created_at) : new Date();
+                  return {
+                    id: `sp-${row.id}`,
+                    isProof: true,
+                    createdAt: date.getTime(),
+                    forwardedFrom: {
+                      name: row.userLabel || '***???',
+                    },
+                    title: row.valorStr ? `Comprovativo enviado pelo utilizador: ${row.valorStr}` : 'Comprovativo enviado pelo utilizador',
+                    amount: row.valorStr || '',
+                    content: (row.comentario || '').trim(),
+                    image: row.imagem_url,
+                    time: date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+                  };
+                });
+            }
+          }
+        } catch (proofErr) {
+          logger.warn('AndrewNicolán', 'Erro ao carregar provas:', proofErr);
+        }
+
+        // Combina e ordena cronologicamente
+        const combined = [...officialPosts, ...proofPosts].sort(
+          (a, b) => (a.createdAt || 0) - (b.createdAt || 0)
+        );
+        setPosts(deduplicatePosts(combined));
       } catch (err) {
-        logger.warn('AndrewNicolán', 'Erro ao carregar provas via edge function:', err);
+        logger.warn('AndrewNicolán', 'Erro ao sincronizar canal:', err);
       }
     };
 
-    if (localSaved.length > 0) {
-      setPosts(() => deduplicatePosts(localSaved));
-    }
+    fetchAllChannelContent();
 
-    fetchSupabaseProofs();
-
-    // Sincronização em tempo real de novas provas sociais aprovadas
+    // Sincronização em tempo real de novos comunicados e provas sociais
     const channel = supabase
-      .channel('official_channel_proofs_sync')
+      .channel('official_channel_realtime_sync')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'canal_posts' },
+        (payload) => {
+          const row = payload.new as any;
+          if (!row) return;
+          const newPost = canalRowToPost(row);
+          setPosts(prev => deduplicatePosts([...prev, newPost]));
+        }
+      )
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'social_proofs_mcpn' },
@@ -224,7 +244,7 @@ export default function AndrewNicolan() {
             isProof: true,
             createdAt: new Date(row.created_at || Date.now()).getTime(),
             forwardedFrom: {
-              name: `***${String(row.user_id || '').substring(0, 4)}`
+              name: `***${String(row.user_id || '').substring(0, 4)}`,
             },
             title: valStr ? `Comprovativo enviado pelo utilizador: ${valStr}` : 'Comprovativo enviado pelo utilizador',
             amount: valStr,
@@ -241,15 +261,7 @@ export default function AndrewNicolan() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
-
-  const savePostsToLocalStorage = (updated: ChannelPost[]) => {
-    try {
-      localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(updated));
-    } catch (e) {
-      logger.warn('AndrewNicolán', 'Erro ao salvar posts localmente:', e);
-    }
-  };
+  }, [canalRowToPost]);
 
   const handleForwardPost = (post: ChannelPost) => {
     if (navigator.clipboard) {
@@ -262,32 +274,46 @@ export default function AndrewNicolan() {
     showToast(t('social.post_copied'), 'success');
   };
 
-  // Envio de anúncio ou mensagem de texto comum
-  const handleSendBroadcast = () => {
-    if (!inputText.trim()) return;
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+  // Envio de anúncio ou comunicado oficial persistido no banco com Realtime
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
 
-    const newPost: ChannelPost = {
-      id: `post-${Date.now()}`,
-      content: inputText.trim(),
-      time: timeStr,
-    };
+  const handleSendBroadcast = async () => {
+    if (!inputText.trim() || isSendingBroadcast) return;
+    const content = inputText.trim();
+    setIsSendingBroadcast(true);
 
-    setPosts(prev => {
-      const next = [...prev, newPost];
-      savePostsToLocalStorage(next);
-      return next;
-    });
+    try {
+      // 1. Tenta publicação via RPC segura
+      const { error: rpcErr } = await (supabase as any).rpc('publish_canal_post_mcpn', {
+        p_conteudo: content,
+        p_titulo: 'Comunicado Oficial',
+      });
 
-    setInputText('');
-    showToast(t('social.local_draft_saved'), 'info');
-
-    setTimeout(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      // 2. Se a RPC falhar, faz inserção direta na tabela canal_posts
+      if (rpcErr) {
+        const { data: userAuth } = await supabase.auth.getUser();
+        const { error: directErr } = await (supabase as any).from('canal_posts').insert({
+          author_id: userAuth.user?.id || null,
+          titulo: 'Comunicado Oficial',
+          conteudo: content,
+        });
+        if (directErr) throw directErr;
       }
-    }, 100);
+
+      setInputText('');
+      showToast('Comunicado publicado no Canal Oficial!', 'success');
+
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 100);
+    } catch (err: any) {
+      logger.error('AndrewNicolán', 'Erro ao publicar comunicado:', err);
+      showToast(err.message || 'Erro ao publicar comunicado no canal.', 'error');
+    } finally {
+      setIsSendingBroadcast(false);
+    }
   };
 
   // Seleção de imagem via galeria / arquivo (clique no 📎)
@@ -411,11 +437,7 @@ export default function AndrewNicolan() {
         time: timeStr,
       };
 
-      setPosts(prev => {
-        const next = deduplicatePosts([...prev, newProofPost]);
-        savePostsToLocalStorage(next);
-        return next;
-      });
+      setPosts(prev => deduplicatePosts([...prev, newProofPost]));
 
       showToast(t('social.proof_submitted_unverified'), 'info');
       
