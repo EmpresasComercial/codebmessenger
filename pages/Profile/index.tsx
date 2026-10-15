@@ -8,7 +8,8 @@ import {
   ShieldAlert,
   Volume2,
   MessagesSquare,
-  Smartphone,
+  Monitor,
+  ShieldCheck,
   Globe,
   ChevronRight,
   Star,
@@ -52,6 +53,11 @@ export default function Profile() {
   const [showLanguage, setShowLanguage] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isProfileSectionHidden, setIsProfileSectionHidden] = useState(false);
+  const [showBottomNavMenu, setShowBottomNavMenu] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = window.localStorage.getItem('show_bottom_nav_menu');
+    return saved === null ? true : saved === 'true';
+  });
   const [balance, setBalance] = useState<number>(0);
   const [totalDeposits, setTotalDeposits] = useState<number>(0);
   const [totalWithdrawals, setTotalWithdrawals] = useState<number>(0);
@@ -181,6 +187,13 @@ export default function Profile() {
     }
   };
 
+  const toggleBottomNavMenu = useCallback(() => {
+    const nextValue = !showBottomNavMenu;
+    setShowBottomNavMenu(nextValue);
+    window.localStorage.setItem('show_bottom_nav_menu', String(nextValue));
+    window.dispatchEvent(new Event('bottomNavMenuPreferenceChanged'));
+  }, [showBottomNavMenu]);
+
   return (
     <div className="w-full min-h-screen bg-white dark:bg-[#17212b] font-sans text-black dark:text-white flex flex-col pb-24">
 
@@ -306,20 +319,6 @@ export default function Profile() {
               </button>
             )}
           />
-          <SettingsItem
-            icon={<MessageSquare className="w-5 h-5 text-white" />}
-            iconBg="bg-[#f2a93b]"
-            title={t('chat.group_telegram')}
-            subtitle={t('profile.community_subtitle')}
-            onClick={() => navigate("/org")}
-          />
-          <SettingsItem
-            icon={<MessagesSquare className="w-5 h-5 text-white" />}
-            iconBg="bg-[#3390ec]"
-            title={t('chat.channel_posts')}
-            subtitle={t('profile.channel_subtitle')}
-            onClick={() => navigate("/canal-oficial")}
-          />
         </div>
 
         {/* DIVISOR DE SEÇÃO */}
@@ -397,6 +396,37 @@ export default function Profile() {
           />
 
           <SettingsItem
+            icon={<Monitor className="w-5 h-5 text-white" />}
+            iconBg="bg-[#7c8dff]"
+            title="Controle do menu"
+            subtitle={showBottomNavMenu ? 'Ativado' : 'Desativado'}
+            onClick={toggleBottomNavMenu}
+            trailing={(
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showBottomNavMenu}
+                aria-label="Controle do menu"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleBottomNavMenu();
+                }}
+                className="relative h-[14px] w-[34px] shrink-0 rounded-full transition-colors duration-200 focus:outline-none"
+                style={{ backgroundColor: showBottomNavMenu ? '#007aff' : '#d1d1d6' }}
+              >
+                <span
+                  className="absolute left-[-1px] top-[-3px] h-[20px] w-[20px] rounded-full border bg-white transition-transform duration-200"
+                  style={{
+                    transform: showBottomNavMenu ? 'translateX(16px)' : 'translateX(0px)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                    borderColor: showBottomNavMenu ? '#007aff' : '#d1d1d6',
+                  }}
+                />
+              </button>
+            )}
+          />
+
+          <SettingsItem
             icon={<Globe className="w-5 h-5 text-white" />}
             iconBg="bg-[#b375d6]"
             title={t('settings.language')}
@@ -413,11 +443,19 @@ export default function Profile() {
           />
 
           <SettingsItem
-            icon={<Smartphone className="w-5 h-5 text-white" />}
+            icon={<Monitor className="w-5 h-5 text-white" />}
+            iconBg="bg-[#2481cc]"
+            title={t('devices.active_sessions')}
+            subtitle={t('devices.active_sessions_subtitle')}
+            onClick={() => navigate("/sessoes-ativas")}
+          />
+
+          <SettingsItem
+            icon={<ShieldCheck className="w-5 h-5 text-white" />}
             iconBg="bg-[#46c2ca]"
             title={t('chat.terms_privacy')}
             subtitle={t('profile.privacy_subtitle')}
-            onClick={() => navigate("/devices")}
+            onClick={() => navigate("/privacidade")}
           />
 
           <button

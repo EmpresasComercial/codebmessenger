@@ -9,7 +9,6 @@ import { logger } from '../lib/logger';
 import {
   Smartphone,
   Monitor,
-  Shield,
   ShieldAlert,
   ShieldCheck,
   LogOut,
@@ -19,8 +18,6 @@ import {
   Check,
   RotateCcw,
   ChevronLeft,
-  ChevronDown,
-  ChevronUp,
   AlertTriangle,
   Loader2,
 } from 'lucide-react';
@@ -33,18 +30,6 @@ interface AuditSession {
   details?: Record<string, any>;
   created_at: string;
 }
-
-const sectionKeys = [
-  ['devices.section1_title', 'devices.section1_text'],
-  ['devices.section2_title', 'devices.section2_text'],
-  ['devices.section3_title', 'devices.section3_text'],
-  ['devices.section4_title', 'devices.section4_text'],
-  ['devices.section5_title', 'devices.section5_text'],
-  ['devices.section6_title', 'devices.section6_text'],
-  ['devices.section7_title', 'devices.section7_text'],
-  ['devices.section8_title', 'devices.section8_text'],
-  ['devices.section9_title', 'devices.section9_text'],
-] as const;
 
 function getDeviceInfo() {
   if (typeof navigator === 'undefined') {
@@ -81,7 +66,6 @@ export default function DevicesPrivacy() {
   const [copiedId, setCopiedId] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [terminating, setTerminating] = useState(false);
-  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
 
   const localDeviceId = getDeviceId();
   const deviceInfo = getDeviceInfo();
@@ -234,9 +218,8 @@ export default function DevicesPrivacy() {
   const activeDeviceId = dbDeviceId || localDeviceId;
 
   return (
-    <div className="flex min-h-[100dvh] w-full flex-col bg-[#f1f1f2] dark:bg-[#0e1621] font-sans text-[#222] dark:text-[#f5f5f5] pb-16">
-      {/* ── TOP HEADER (ESTILO TELEGRAM) ── */}
-      <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#17212b] px-4 shadow-sm">
+    <div className="flex min-h-[100dvh] w-full flex-col bg-white dark:bg-[#0e1621] font-sans text-[#222] dark:text-[#f5f5f5]">
+      <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-[#e6e8eb] dark:border-white/10 bg-white dark:bg-[#0e1621] px-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -247,11 +230,11 @@ export default function DevicesPrivacy() {
             <ChevronLeft className="h-6 w-6" strokeWidth={2.2} />
           </button>
           <div className="flex flex-col">
-            <h1 className="text-[17px] font-bold tracking-tight text-black dark:text-white">
-              {t('devices.title')}
+            <h1 className="text-[17px] font-medium tracking-tight text-black dark:text-white">
+              {t('devices.active_sessions')}
             </h1>
             <span className="text-[11.5px] text-[#707579] dark:text-[#8e9aa5]">
-              Sessões e Auditoria de Segurança
+              {t('devices.active_sessions_subtitle')}
             </span>
           </div>
         </div>
@@ -267,7 +250,7 @@ export default function DevicesPrivacy() {
         </button>
       </header>
 
-      <main className="mx-auto w-full max-w-[680px] flex-1 px-3 sm:px-4 py-4 space-y-4">
+      <main className="mx-auto w-full max-w-[680px] flex-1 px-4 sm:px-6 py-2">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-8 h-8 text-[#2481cc] animate-spin" />
@@ -277,10 +260,9 @@ export default function DevicesPrivacy() {
           </div>
         ) : (
           <>
-            {/* ── CARD 1: ESTE DISPOSITIVO (CURRENT SESSION) ── */}
-            <div className="bg-white dark:bg-[#17212b] rounded-2xl p-4 sm:p-5 shadow-sm border border-black/5 dark:border-white/5 space-y-4">
+            <section className="border-b border-[#e6e8eb] dark:border-white/10 py-5 space-y-4">
               <div className="flex items-start gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-[#2481cc]/10 dark:bg-[#2481cc]/20 flex items-center justify-center text-[#2481cc] shrink-0">
+                <div className="w-10 h-10 flex items-center justify-center text-[#2481cc] shrink-0">
                   {deviceInfo.isMobile ? (
                     <Smartphone className="w-6 h-6" />
                   ) : (
@@ -290,7 +272,7 @@ export default function DevicesPrivacy() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-[16px] font-bold text-black dark:text-white truncate">
+                    <h2 className="text-[15px] font-medium text-black dark:text-white truncate">
                       {deviceInfo.os}
                     </h2>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#29b85e]/15 text-[#29b85e]">
@@ -312,8 +294,8 @@ export default function DevicesPrivacy() {
               </div>
 
               {/* Informações técnicas da sessão */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-black/5 dark:border-white/5 text-[12.5px]">
-                <div className="flex items-center justify-between sm:justify-start gap-2 bg-[#f8f9fa] dark:bg-[#111922] px-3 py-2 rounded-xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 text-[12.5px]">
+                <div className="flex items-center justify-between sm:justify-start gap-2 py-2 border-b border-[#edf0f2] dark:border-white/5">
                   <span className="text-[#707579] dark:text-[#8e9aa5] flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-[#2481cc]" />
                     IP Atual:
@@ -323,7 +305,7 @@ export default function DevicesPrivacy() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-start gap-2 bg-[#f8f9fa] dark:bg-[#111922] px-3 py-2 rounded-xl">
+                <div className="flex items-center justify-between sm:justify-start gap-2 py-2 border-b border-[#edf0f2] dark:border-white/5">
                   <span className="text-[#707579] dark:text-[#8e9aa5] flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#29b85e]" />
                     Auditoria:
@@ -336,25 +318,24 @@ export default function DevicesPrivacy() {
 
               {/* Identificador do dispositivo com Cópia Rápida */}
               <div className="space-y-1.5 pt-1">
-                <label className="text-[11.5px] font-semibold text-[#707579] dark:text-[#8e9aa5] uppercase tracking-wider">
+                <label className="text-[11.5px] font-normal text-[#707579] dark:text-[#8e9aa5]">
                   ID do Dispositivo (Device ID)
                 </label>
-                <div className="flex items-center justify-between gap-2 bg-[#f1f1f5] dark:bg-[#1e2a38] px-3 py-2 rounded-xl font-mono text-[12px] text-black dark:text-white">
+                <div className="flex items-center justify-between gap-2 border-b border-[#edf0f2] dark:border-white/5 py-2 font-mono text-[12px] text-black dark:text-white">
                   <span className="truncate">{activeDeviceId}</span>
                   <button
                     type="button"
                     onClick={handleCopyDeviceId}
-                    className="p-1.5 text-[#2481cc] hover:bg-[#2481cc]/10 rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
+                    className="p-1.5 text-[#2481cc] transition active:scale-95 shrink-0 cursor-pointer"
                     title="Copiar Device ID"
                   >
                     {copiedId ? <Check className="w-4 h-4 text-[#29b85e]" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* ── BOTÃO DE ENCERRAMENTO EM MASSA (TELEGRAM STYLE) ── */}
-            <div className="bg-white dark:bg-[#17212b] rounded-2xl p-4 shadow-sm border border-black/5 dark:border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#e6e8eb] dark:border-white/10 py-5">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2 text-[#e53935] font-semibold text-[14.5px]">
                   <ShieldAlert className="w-4 h-4" />
@@ -368,19 +349,18 @@ export default function DevicesPrivacy() {
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#e53935]/10 hover:bg-[#e53935]/20 text-[#e53935] font-semibold text-[13.5px] transition active:scale-95 cursor-pointer shrink-0"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-1 py-2 text-[#e53935] font-medium text-[13.5px] transition active:scale-95 cursor-pointer shrink-0"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Terminar Outras Sessões</span>
               </button>
-            </div>
+            </section>
 
-            {/* ── CARD 2: LISTA DE SESSÕES / HISTÓRICO DE AUDITORIA ── */}
-            <div className="bg-white dark:bg-[#17212b] rounded-2xl shadow-sm border border-black/5 dark:border-white/5 overflow-hidden">
-              <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+            <section className="border-b border-[#e6e8eb] dark:border-white/10">
+              <div className="py-4 border-b border-[#e6e8eb] dark:border-white/10 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-[#2481cc]" />
-                  <h3 className="text-[14px] font-bold text-black dark:text-white">
+                  <h3 className="text-[14px] font-medium text-black dark:text-white">
                     Histórico de Acessos & Conexões
                   </h3>
                 </div>
@@ -400,7 +380,7 @@ export default function DevicesPrivacy() {
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-black/5 dark:divide-white/5">
+                <div className="divide-y divide-[#e6e8eb] dark:divide-white/10">
                   {sessions.map((sess) => {
                     const isCurrent = currentIp && sess.ip_address.includes(currentIp);
                     const sessDevice = sess.details?.device_id || '';
@@ -409,10 +389,10 @@ export default function DevicesPrivacy() {
                     return (
                       <div
                         key={sess.id}
-                        className="p-3.5 sm:p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition flex items-center justify-between gap-3"
+                        className="py-3.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          <div className={`w-9 h-9 flex items-center justify-center shrink-0 ${
                             isCurrent || isSameDev
                               ? 'bg-[#2481cc]/15 text-[#2481cc]'
                               : 'bg-black/5 dark:bg-white/10 text-[#707579] dark:text-[#9eaab6]'
@@ -467,51 +447,8 @@ export default function DevicesPrivacy() {
                   })}
                 </div>
               )}
-            </div>
+            </section>
 
-            {/* ── CARD 3: POLÍTICAS DE PRIVACIDADE E PROTEÇÃO DE DADOS (EXPANSÍVEL) ── */}
-            <div className="bg-white dark:bg-[#17212b] rounded-2xl shadow-sm border border-black/5 dark:border-white/5 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowPrivacyPolicy(!showPrivacyPolicy)}
-                className="w-full px-4 py-3.5 flex items-center justify-between text-left transition hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Shield className="w-5 h-5 text-[#2481cc]" />
-                  <div>
-                    <h3 className="text-[14.5px] font-bold text-black dark:text-white">
-                      {t('devices.heading')}
-                    </h3>
-                    <p className="text-[12px] text-[#707579] dark:text-[#8e9aa5]">
-                      Termos de uso, diretrizes e privacidade de dados
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-[#707579] dark:text-[#8e9aa5]">
-                  {showPrivacyPolicy ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                </div>
-              </button>
-
-              {showPrivacyPolicy && (
-                <div className="px-5 py-5 border-t border-black/5 dark:border-white/5 space-y-5 text-[14px] leading-relaxed text-[#444] dark:text-[#cfd8dc] bg-[#fafafa] dark:bg-[#111922]">
-                  {sectionKeys.map(([titleKey, textKey]) => (
-                    <section key={titleKey} className="space-y-1">
-                      <h4 className="text-[14.5px] font-bold text-black dark:text-white">
-                        {t(titleKey)}
-                      </h4>
-                      <p className="text-[13px] text-[#666] dark:text-[#a0acb9]">
-                        {t(textKey)}
-                      </p>
-                    </section>
-                  ))}
-
-                  <p className="pt-4 text-center text-[12px] text-gray-400 dark:text-gray-500">
-                    {t('devices.footer')}
-                  </p>
-                </div>
-              )}
-            </div>
           </>
         )}
       </main>

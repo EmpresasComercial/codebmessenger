@@ -616,7 +616,7 @@
   'chat.bank_wallet': 'Cartera bancaria',
   'chat.notifications': 'Notificaciones',
   'chat.channel_posts': 'Canal',
-  'chat.faq': 'Preguntas frecuentes',
+  'chat.faq': 'Ayuda',
   'chat.reset_password': 'Restablecer contraseña',
   'chat.settings': 'Configuración',
   'chat.terms_privacy': 'Términos y privacidad',

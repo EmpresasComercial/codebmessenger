@@ -35,6 +35,7 @@ const ChatsHome        = lazy(() => import('./pages/ChatsHome'));
 const GrupoChat        = lazy(() => import('./pages/grupochat'));
 const PrivateChat      = lazy(() => import('./pages/PrivateChat'));
 const DevicesPrivacy   = lazy(() => import('./pages/DevicesPrivacy'));
+const PrivacyPolicy    = lazy(() => import('./pages/PrivacyPolicy'));
 const AndrewNicolan    = lazy(() => import('./pages/andrewnicolan'));
 const DownloadApp      = lazy(() => import('./pages/DownloadApp'));
 
@@ -136,6 +137,7 @@ function GlobalLanguageSelector() {
     'canais',
     'canal',
     'perfil',
+    'sessoes-ativas',
   ]);
 
   if (alwaysVisibleRoutes.has(firstSegment)) {
@@ -208,7 +210,8 @@ export default function App() {
                   <Route path="/Mensagens" element={<Navigate to="/create" replace />} />
                   <Route path="/android"  element={<DownloadApp />} />
                   <Route path="/download-apk" element={<Navigate to="/android?setln=pt" replace />} />
-                  <Route path="/privacidade" element={<DevicesPrivacy />} />
+                  <Route path="/privacidade" element={<PrivacyPolicy />} />
+                  <Route path="/sessoes-ativas" element={<ProtectedRoute><DevicesPrivacy /></ProtectedRoute>} />
 
                   <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                     {/* Rotas Simplificadas Oficiais */}
@@ -217,7 +220,7 @@ export default function App() {
                     <Route path="Senha"                  element={<ChangePassword />} />
                     <Route path="conversas"              element={<ChatsHome />} />
                     <Route path="Contactos"              element={<Invite />} />
-                    <Route path="Dispositivos"           element={<DevicesPrivacy />} />
+                    <Route path="Dispositivos"           element={<Navigate to="/sessoes-ativas" replace />} />
                     <Route path="grupo"                  element={<GrupoChat />} />
                     <Route path="Ajuda"                  element={<HelpFAQ />} />
                     <Route path="Canal"                  element={<AndrewNicolan />} />
@@ -275,13 +278,13 @@ export default function App() {
                     <Route path="comunidade-chat"         element={<Navigate to="/grupo" replace />} />
                     <Route path="grupochat"               element={<Navigate to="/grupo" replace />} />
                     <Route path="chat/:contactId"         element={<PrivateChat />} />
-                    <Route path="devices"                 element={<DevicesPrivacy />} />
+                    <Route path="devices"                 element={<Navigate to="/sessoes-ativas" replace />} />
                     <Route path="telegram-premium"        element={<Navigate to="/Contactos" replace />} />
                     <Route path="premium"                 element={<Navigate to="/Contactos" replace />} />
                     <Route path="stars"                   element={<Navigate to="/botfather" replace />} />
                     <Route path="telegram-stars"          element={<Navigate to="/botfather" replace />} />
                     <Route path="canais"                  element={<AndrewNicolan />} />
-                    <Route path="canal-oficial"           element={<AndrewNicolan />} />
+                    <Route path="andrewnicolan"           element={<AndrewNicolan />} />
                     <Route path="pavelDurov"              element={<AndrewNicolan />} />
                     <Route path="pavel-durov"             element={<AndrewNicolan />} />
                   </Route>

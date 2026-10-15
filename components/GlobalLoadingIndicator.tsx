@@ -19,7 +19,7 @@ export const GlobalLoadingIndicator: React.FC = () => {
       '/telegram-business',
       '/web',
       '/canais',
-      '/canal-oficial',
+      '/andrewnicolan',
       '/pavelDurov',
       '/pavel-durov'
     ].includes(location.pathname);

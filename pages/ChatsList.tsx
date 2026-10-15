@@ -832,7 +832,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       {
         id: 'community-chat',
         folder: 'groups' as ChatFolder,
-        name: 'Chat Messenger',
+        name: 'Chat da comunidade',
         isVerified: true,
         lastMessage: communityLastMessage.text,
         senderPrefix: communityLastMessage.sender ? `${communityLastMessage.sender}: ` : null,
@@ -875,14 +875,14 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             <img src="/Andrew_avatar_1792019295598.jpg" alt="Andrew Nicolan" className="w-full h-full object-cover" />
           </div>
         ),
-        onClick: () => navigate('/canal-oficial')
+        onClick: () => navigate('/andrewnicolan')
       },
       {
         id: 'deposit-bot',
         folder: 'bots' as ChatFolder,
-        name: 'Messenger TopUp',
+        name: '+44 7722211733',
         isVerified: true,
-        tag: 'BOT',
+        tag: null,
         lastMessage: 'Recargas e depósitos automáticos via Multicaixa Express e IBAN.',
         senderPrefix: null,
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 36),
@@ -895,10 +895,10 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         isSubordinate: false,
         nivel: null,
         avatar: (
-          <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
+          <div className="w-12 h-12 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
             <img 
               src="/logo_bussiness_messeger.jpg"
-              alt="Messenger TopUp"
+              alt="+44 7722211733"
               className="w-full h-full object-cover"
             />
           </div>
@@ -908,9 +908,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       {
         id: 'withdrawal-bot',
         folder: 'bots' as ChatFolder,
-        name: 'Messenger wallet',
+        name: '+44 7721452217',
         isVerified: true,
-        tag: 'BOT',
+        tag: null,
         lastMessage: 'Solicitações de saque e levantamentos rápidos para conta bancária.',
         senderPrefix: null,
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 48),
@@ -923,10 +923,10 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         isSubordinate: false,
         nivel: null,
         avatar: (
-          <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
+          <div className="w-12 h-12 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
             <img 
               src="/logo_bussiness_messeger.jpg"
-              alt="Messenger wallet"
+              alt="+44 7721452217"
               className="w-full h-full object-cover"
             />
           </div>
@@ -1129,9 +1129,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     aria-label={t('chat.open_menu')}
                     aria-expanded={isNavigationDrawerOpen}
                   >
-                    <Menu className="h-[22px] w-[22px]" />
+                    <Menu className="h-[20px] w-[20px]" />
                   </button>
-                  <h1 className="min-w-0 truncate whitespace-nowrap text-[18px] font-bold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
+                  <h1 className="min-w-0 truncate whitespace-nowrap text-[20px] font-semibold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
                     Business
                   </h1>
                 </>
@@ -1187,7 +1187,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                       setIsNavigationDrawerOpen(false);
                       navigate("/perfil");
                     }}
-                    className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[20px] font-semibold"
+                    className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[22px] font-semibold"
                     aria-label={t('chat.edit_profile')}
                   >
                     {drawerAvatar ? (
@@ -1221,7 +1221,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 >
                   <div className="min-w-0">
                     <p className="truncate text-[15px] font-semibold">{drawerName}</p>
-                    <p className="mt-0.5 truncate text-[13px] text-white/75">
+                    <p className="mt-0.5 truncate text-[14px] text-white/80">
                       {drawerPhone ? formatDrawerPhone(drawerPhone) : t('chat.phone_missing')}
                     </p>
                   </div>
@@ -1229,7 +1229,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 </button>
               </div>
               {[
-                { label: t('chat.group_telegram'), path: "/web", icon: MessageCircle },
                 { label: t('invite.title'), path: "/contactos", icon: UserRoundPlus },
               ].map(({ label, path, icon: Icon }) => (
                 <button
@@ -1239,7 +1238,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     setIsNavigationDrawerOpen(false);
                     navigate(path);
                   }}
-                  className={`flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
+                  className={`flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[20px] transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
                     label === "Botfather" ? "text-[#2481cc] dark:text-[#2481cc]" : "text-[#222] dark:text-white"
                   }`}
                 >
@@ -1256,54 +1255,20 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 { label: t('chat.introduction'), path: "/sobre-business", icon: Lightbulb },
                 { label: t('chat.download_apk'), path: "/android?setln=pt", icon: Download },
                 { label: t('chat.bank_wallet'), path: "/carteira?intent=add-bank", icon: CreditCard },
-                { label: t('chat.notifications'), action: "notifications", icon: Bell },
-                { label: t('chat.channel_posts'), path: "/canal-oficial", icon: MessagesSquare },
                 { label: t('chat.faq'), path: "/help-faq", icon: HelpCircle },
                 { label: t('chat.reset_password'), path: "/alterar-senha", icon: ShieldAlert },
                 { label: t('chat.settings'), path: "/definicoes", icon: Settings },
                 { label: t('settings.language'), path: "/definicoes", icon: Globe, state: { openLanguage: true } },
-                { label: t('chat.terms_privacy'), path: "/devices", icon: Smartphone },
-              ].map(({ label, path, icon: Icon, state, action }) => (
+                { label: t('chat.terms_privacy'), path: "/privacidade", icon: Smartphone },
+              ].map(({ label, path, icon: Icon, state }) => (
                 <button
                   key={label}
                   type="button"
                   onClick={() => {
                     setIsNavigationDrawerOpen(false);
-                    if (action === "notifications") {
-                      if ("Notification" in window) {
-                        Notification.requestPermission().then((permission) => {
-                          showToast(
-                            permission === "granted"
-                              ? t('chat.notifications_enabled')
-                              : t('chat.notifications_denied'),
-                            permission === "granted" ? "success" : "info"
-                          );
-                        }).catch(() => showToast(t('chat.notifications_error'), "error"));
-                      } else {
-                        showToast(t('chat.notifications_unavailable'), "info");
-                      }
-                      return;
-                    }
                     if (path) navigate(path, state ? { state } : undefined);
                   }}
-                  className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
-                >
-                  <Icon className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" />
-                  {label}
-                </button>
-              ))}
-              <div className="my-2 shrink-0 border-t border-gray-100 dark:border-[#202b36]" />
-              {[
-                { label: t('chat.about_telegram'), path: "/sobre-business", icon: Info },
-              ].map(({ label, path, icon: Icon }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => {
-                    setIsNavigationDrawerOpen(false);
-                    navigate(path);
-                  }}
-                  className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
+                  className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[20px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
                 >
                   <Icon className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" />
                   {label}
@@ -1322,7 +1287,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   showToast(t('chat.logout_success'), "success");
                   navigate("/login");
                 }}
-                className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[15px] text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+                className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[20px] text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
               >
                 <LogOut className="h-5 w-5" />
                 {t('chat.logout')}

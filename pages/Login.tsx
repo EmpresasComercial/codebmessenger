@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { AsYouType, validatePhoneNumberLength, type CountryCode } from 'libphonenumber-js/max';
 import { Eye, EyeOff, Loader2, ChevronDown } from 'lucide-react';
 import {
   COUNTRIES,
@@ -165,6 +166,19 @@ export default function Login() {
     }
   };
 
+  const nationalDigits = phone.replace(/\D/g, '');
+  const formattedPhone = nationalDigits
+    ? new AsYouType(selectedCountry.code as CountryCode).input(nationalDigits)
+    : '';
+  const phoneLengthStatus = validatePhoneNumberLength(
+    nationalDigits,
+    selectedCountry.code as CountryCode
+  );
+  const showPhoneError =
+    nationalDigits.length > 0 &&
+    !validatePhoneNumber(phone, selectedCountry).isValid &&
+    phoneLengthStatus !== 'TOO_SHORT';
+
   return (
     <div className="w-full min-h-screen bg-white pb-12 font-sans antialiased text-black select-none flex flex-col items-center justify-center p-4">
       <main className="w-full max-w-[340px] sm:max-w-[360px] flex flex-col items-center">
@@ -172,49 +186,53 @@ export default function Login() {
           <img
             src="/logo_bussiness_messeger.jpg"
             alt="Business Messenger"
-            className="w-[68px] h-[68px] rounded-full object-cover"
+            className="w-[80px] h-[80px] rounded-full object-cover"
           />
         </div>
 
-        <h1 className="text-[26px] font-bold text-center mb-1.5 tracking-tight text-[#1c1c1e]">Business</h1>
+        <h1 className="text-[20px] font-medium text-center mb-1.5 text-[#1c1c1e]">
+          Business
+        </h1>
+        <p className="w-full text-[13px] text-[#707579] text-center mb-6 leading-snug">
+          {t('auth.login_description')}
+        </p>
+
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
           <div className="w-full flex flex-col gap-4 mt-2">
             {/* Country Selector Button */}
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">
+                <label className="text-[12px] text-[#707579] font-normal leading-none">
                   {t('common.country')}
                 </label>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCountryModal(true)}
-                style={{ borderRadius: '12px' }}
-                className="w-full h-[46px] auth-input-btn border border-[#dfdfe0] bg-white flex items-center justify-between px-3.5 hover:border-[#3390ec] focus:border-[#3390ec] focus:outline-none transition-colors cursor-pointer"
+                style={{ borderRadius: '14px' }}
+                className="w-full h-[46px] auth-input-btn border border-[#d6d9de] bg-white flex items-center justify-between px-3.5 hover:border-[#3390ec] focus:border-[#3390ec] focus:outline-none transition-colors cursor-pointer"
                 title={t('common.change_country')}
               >
-                <span className="text-[16px] text-black font-normal flex items-center gap-2.5 truncate">
-                  <span className="text-[22px] leading-none select-none">
-                    {selectedCountry.emoji}
-                  </span>
+                <span className="text-[15px] text-black font-normal flex items-center gap-2 truncate">
+                  <span className="shrink-0">{selectedCountry.code}</span>
                   <span className="truncate">{selectedCountry.name}</span>
                 </span>
-                <ChevronDown className="w-5 h-5 text-[#a2a6aa] shrink-0" strokeWidth={2} />
+                <ChevronDown className="w-5 h-5 text-[#707579] shrink-0" strokeWidth={1.5} />
               </button>
             </div>
 
             {/* Phone Number Input */}
-            <div className="relative w-full">
+            <div className="relative w-full group">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">
+                <label className="text-[12px] text-[#707579] group-focus-within:text-[#3390ec] font-normal leading-none">
                   {t('auth.phone_label')}
                 </label>
               </div>
               <div
-                style={{ borderRadius: '12px' }}
-                className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
+                style={{ borderRadius: '14px' }}
+                className="auth-input-wrap w-full h-[46px] border border-[#d6d9de] bg-white flex items-center px-3.5 focus-within:border-2 focus-within:border-[#3390ec] transition-colors"
               >
-                <span className="text-[16px] text-black mr-2 font-medium shrink-0">
+                <span className="text-[15px] text-black mr-1 font-normal shrink-0">
                   {selectedCountry.dial_code}
                 </span>
                 <input
@@ -222,25 +240,30 @@ export default function Login() {
                   type="tel"
                   inputMode="numeric"
                   autoComplete="tel"
-                  className="flex-1 bg-transparent outline-none text-[16px] text-black font-normal h-full w-full"
-                  value={phone}
+                  className="flex-1 bg-transparent outline-none text-[15px] text-black font-normal h-full w-full"
+                  value={formattedPhone}
                   onChange={handlePhoneChange}
                   maxLength={selectedCountry.maxLength + selectedCountry.dial_code.replace(/\D/g, '').length + 8}
                   placeholder=""
                 />
               </div>
+              {showPhoneError && (
+                <p role="alert" className="mt-1.5 px-3 text-[12px] leading-4 text-[#d93025]">
+                  {getPhoneNumberErrorMessage(selectedCountry)}
+                </p>
+              )}
             </div>
 
             {/* Password Input */}
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">
+                <label className="text-[12px] text-[#707579] font-normal leading-none">
                   {t('auth.password_label')}
                 </label>
               </div>
               <div
-                style={{ borderRadius: '12px' }}
-                className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
+                style={{ borderRadius: '14px' }}
+                className="auth-input-wrap w-full h-[46px] border border-[#d6d9de] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
               >
                 <input
                   name="passkey"
@@ -266,8 +289,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isSubmitting}
-              style={{ borderRadius: '12px' }}
-              className="w-full h-[48px] btn-auth bg-[#3390ec] hover:bg-[#2881dc] active:scale-[0.98] text-white font-semibold text-[15px] transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer shadow-sm"
+              className="w-full h-11 rounded-full btn-auth bg-[#3390ec] hover:bg-[#2881dc] active:scale-[0.98] text-white font-medium text-[15px] transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer"
             >
               {isSubmitting ? (
                 <Loader2 className="animate-spin h-5 w-5 text-white" />
@@ -279,7 +301,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => navigate('/create')}
-              className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-medium text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
+              className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-normal text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
             >
               {t('auth.no_account')} {t('auth.create_one')}
             </button>

@@ -171,7 +171,7 @@ export default function ContactsInvite() {
             className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 px-4 text-[14px] text-[#2481cc] transition-colors hover:bg-gray-50"
           >
             <Share2 className="h-4 w-4" />
-            {t('invite.btn_share')}
+            Compartilhar
           </button>
           <button
             type="button"
@@ -184,10 +184,7 @@ export default function ContactsInvite() {
         </div>
 
         <section className="space-y-6 border-t border-gray-200 pt-8 text-[15px] leading-7 text-[#333333]">
-          <section id="participando-de-programas-de-afiliados" className="space-y-3">
-            <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
-              {t('invite.program_heading')}
-            </h2>
+          <section id="programa-afiliados" className="space-y-3">
             <p>
               {t('invite.program_description')}
             </p>
@@ -202,9 +199,9 @@ export default function ContactsInvite() {
             </p>
           </section>
 
-          <section id="recebendo-comissoes" className="space-y-3">
+          <section id="comissoes" className="space-y-3">
             <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
-              {t('invite.commissions_heading')}
+              Comissões
             </h2>
             <img
               src="/invite-rewards-levels.png"

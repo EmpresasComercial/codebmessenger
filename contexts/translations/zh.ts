@@ -591,7 +591,7 @@
   'chat.bank_wallet': '银行钱包',
   'chat.notifications': '通知',
   'chat.channel_posts': '频道',
-  'chat.faq': '常见问题',
+  'chat.faq': '帮助',
   'chat.reset_password': '重置密码',
   'chat.settings': '设置',
   'chat.terms_privacy': '条款与隐私',

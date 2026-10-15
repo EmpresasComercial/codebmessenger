@@ -8,16 +8,13 @@ import { useToast } from "../components/Toast";
 import { cn } from "../lib/utils";
 import { 
   ChevronLeft, 
-  Paperclip, 
-  Camera,
-  Send, 
   X, 
   CheckCheck,
   Clock,
-  MoreVertical,
+  Phone,
+  Settings,
   ArrowDown,
   Download,
-  Smile,
   ArrowLeft,
   Pencil,
   MessageCircle,
@@ -33,8 +30,6 @@ import {
   Loader2,
   FileText,
   Link2,
-  Mic,
-  BadgeCheck
 } from 'lucide-react';
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import ChatsList from "./ChatsList";
@@ -616,7 +611,7 @@ const MessageItem = React.memo(({
             onClick={handleMessageClick}
             className={cn(
               "tg-bubble max-w-[85%] px-[10px] pt-[6px] pb-[6px] text-[#000000] dark:text-[#f3f4f6] shadow-[0_1px_2px_rgba(16,35,47,0.15)] relative cursor-pointer active:brightness-95 active:scale-[0.985] transition-all select-none",
-              isMe ? "bg-[#eeffde] dark:bg-[#2b5278] is-me" : "bg-white dark:bg-[#182533] is-other is-other-top",
+              isMe ? "bg-[#1877f2] text-white dark:bg-[#2b5278] is-me" : "bg-[#f5f5f5] dark:bg-[#182533] is-other is-other-top",
               isSelectedInContextMenu && "brightness-90 scale-[0.985]"
             )}
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
@@ -631,7 +626,7 @@ const MessageItem = React.memo(({
                 stroke="none"
                 color="inherit"
               >
-                <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#eeffde] dark:fill-[#2b5278]" />
+                <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#1877f2] dark:fill-[#2b5278]" />
               </svg>
             ) : (
               <svg
@@ -641,7 +636,7 @@ const MessageItem = React.memo(({
                 className="absolute pointer-events-none"
                 style={{ top: 0, left: -8, fill: 'currentColor' }}
               >
-                <path d="M9 0H0C4.5 0 8 4 9 12V0Z" className="fill-white dark:fill-[#182533]" />
+                <path d="M9 0H0C4.5 0 8 4 9 12V0Z" className="fill-[#f5f5f5] dark:fill-[#182533]" />
               </svg>
             )}
 
@@ -658,7 +653,7 @@ const MessageItem = React.memo(({
               </p>
             )}
             {isMe && isVerifiedSender && (
-              <p className="mb-[2px] flex min-w-0 items-center justify-end gap-1 text-[11px] font-medium text-[#2481cc]">
+              <p className="mb-[2px] flex min-w-0 items-center justify-end gap-1 text-[11px] font-medium text-white/90">
                 <span>{verifiedSenderPhone}</span>
                 <VerifiedBadge className="h-[14px] w-[14px]" />
               </p>
@@ -729,7 +724,7 @@ const MessageItem = React.memo(({
               
               <span className="inline-block h-[1px]" style={{ width: isEdited ? (isMe ? '75px' : '60px') : (isMe ? '56px' : '42px') }}></span>
 
-              <div className="absolute bottom-[-1px] right-0 flex items-center gap-[2px] select-none text-[12px]" style={{ color: isMe ? '#55864e' : '#8e8e93' }}>
+              <div className="absolute bottom-[-1px] right-0 flex items-center gap-[2px] select-none text-[12px]" style={{ color: isMe ? 'rgba(255,255,255,0.82)' : '#8e8e93' }}>
                 {isEdited && (
                   <span className="opacity-80 mr-[2px]">{editedLabel}</span>
                 )}
@@ -738,10 +733,10 @@ const MessageItem = React.memo(({
                 </span>
                 {isMe && (
                   m.status === 'sending'
-                    ? <Clock className="w-[14px] h-[14px] text-[#8e8e93] stroke-[2] ml-[2px]" />
+                    ? <Clock className={`w-[14px] h-[14px] stroke-[2] ml-[2px] ${isMe ? 'text-white/70' : 'text-[#8e8e93]'}`} />
                     : m.status === 'failed'
                     ? <span className="text-[12px] text-[#e53e3e] font-bold ml-[2px] leading-none">!</span>
-                    : <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
+                    : <CheckCheck className={`w-[14px] h-[14px] stroke-[2.5] ml-[2px] ${isMe ? 'text-white' : 'text-[#4fae4e]'}`} />
                 )}
               </div>
               {isMe && m.status === 'failed' && (
@@ -800,12 +795,7 @@ export default function grupochat() {
       if (!cached) return [];
       const parsed = JSON.parse(cached);
       if (!Array.isArray(parsed)) return [];
-      if (!navigator.onLine) return parsed;
-      return parsed.filter((message: any) =>
-        typeof message.id === 'number' &&
-        message.id > 1000000000000 &&
-        (message.status === 'sending' || message.status === 'failed')
-      );
+      return parsed;
     } catch {
       return [];
     }
@@ -999,7 +989,6 @@ export default function grupochat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   // IDs de mensagens com reações em voo (impede o realtime de sobrescrever estado otimista)
   const pendingReactionIds = useRef<Set<number>>(new Set());
@@ -1236,24 +1225,6 @@ export default function grupochat() {
   };
 
   useEffect(() => {
-    if (navigator.onLine) {
-      setPublicMessages(prev => {
-        const pendingLocal = prev.filter(m =>
-          typeof m.id === 'number' &&
-          m.id > 1000000000000 &&
-          (m.status === 'sending' || m.status === 'failed')
-        );
-        try {
-          if (pendingLocal.length > 0) {
-            localStorage.setItem('community_chat_cache', JSON.stringify(pendingLocal));
-          } else {
-            localStorage.removeItem('community_chat_cache');
-          }
-        } catch {}
-        return pendingLocal;
-      });
-    }
-
     if (!navigator.onLine) {
       try {
         const cached = localStorage.getItem('community_chat_cache');
@@ -1274,22 +1245,6 @@ export default function grupochat() {
 
     const handleSync = () => {
       if (!navigator.onLine) return;
-      setPublicMessages(prev => {
-        const pendingLocal = prev.filter(m =>
-          typeof m.id === 'number' &&
-          m.id > 1000000000000 &&
-          (m.status === 'sending' || m.status === 'failed')
-        );
-        try {
-          if (pendingLocal.length > 0) {
-            localStorage.setItem('community_chat_cache', JSON.stringify(pendingLocal));
-          } else {
-            localStorage.removeItem('community_chat_cache');
-          }
-        } catch {}
-        return pendingLocal;
-      });
-      setIsLoading(true);
       fetchMessages(false);
     };
     window.addEventListener('online', handleSync);
@@ -2010,12 +1965,12 @@ export default function grupochat() {
   })).values());
 
   return (
-    <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-[#f4f4f5] dark:bg-[#0e1621]">
+    <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-white dark:bg-[#0e1621]">
       <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
         <ChatsList embedded />
       </aside>
       <div 
-      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden tg-wallpaper transition-colors"
+      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden bg-white transition-colors"
       onContextMenu={(e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
@@ -2024,62 +1979,81 @@ export default function grupochat() {
       }}
     >
       <div className="h-[68px] shrink-0 md:hidden" aria-hidden="true" />
-      <header className="fixed left-0 right-0 top-0 z-40 flex w-full shrink-0 select-none items-center justify-between bg-transparent px-3 py-3 pointer-events-none sm:px-4 md:sticky md:left-auto md:right-auto md:top-0">
-        <button 
-          onClick={() => navigate('/org')} 
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto md:hidden"
+      <header className="fixed left-0 right-0 top-0 z-40 flex h-[68px] w-full shrink-0 select-none items-center gap-3 border-b border-[#e5e5e5] bg-white px-3 sm:px-4 pointer-events-none md:sticky md:left-auto md:right-auto md:top-0 dark:border-[#27313d] dark:bg-[#17212b]">
+        <button
+          onClick={() => navigate('/org')}
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-[#111111] pointer-events-auto md:hidden dark:text-white"
           aria-label="Voltar aos chats"
         >
-          <ArrowLeft className="w-6 h-6 stroke-[2]" />
+          <ArrowLeft className="h-6 w-6 stroke-[2]" />
         </button>
 
-        <div 
-          onClick={() => setShowInfo(true)} 
-          className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
+        <button
+          type="button"
+          onClick={() => setShowInfo(true)}
+          className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full pointer-events-auto"
+          aria-label="Abrir detalhes do grupo"
         >
-          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
-            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
-          </div>
+          <img src="/logo_bussiness_messeger.jpg" alt="" className="h-full w-full object-cover" />
+          {onlineCount !== null && onlineCount > 0 && (
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-[#20c568] dark:border-[#17212b]" />
+          )}
+        </button>
 
-          <div className="flex flex-col min-w-0">
-            <h1 className="mt-0.5 flex min-w-0 items-center gap-1 text-[15px] font-medium leading-[1.15] tracking-tight text-black dark:text-white">
-              <span className="truncate">Chat Messenger</span>
-              <BadgeCheck
-                className="h-[15px] w-[15px] shrink-0 fill-[#2481cc] stroke-white"
-                aria-label="Verificado"
-                role="img"
-              />
-            </h1>
-            <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate flex items-center gap-1">
-              {statusText ? (
-                <>
-                  <Loader2 className="w-3 h-3 text-[#2481cc] animate-spin shrink-0" />
-                  <span className="text-[#2481cc] font-medium">{statusText}</span>
-                </>
-              ) : typingUsers.size > 0 ? (
-                <span className="text-[#2481cc] font-medium italic">
-                  {Array.from(typingUsers.values()).join(', ')} digitando...
-                </span>
-              ) : (
-                onlineCount === null ? "2 membros" : `${onlineCount} online`
-              )}
-            </span>
-          </div>
-        </div>
-
-        <button 
-          onClick={() => setShowInfo(true)} 
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto"
-          aria-label="Mais informações"
+        <button
+          type="button"
+          onClick={() => setShowInfo(true)}
+          className="flex min-w-0 flex-1 flex-col items-start justify-center text-left pointer-events-auto"
+          aria-label="Abrir detalhes do grupo"
         >
-          <MoreVertical className="w-[22px] h-[22px]" />
+          <span className="w-full truncate text-[16px] font-semibold leading-tight text-[#111111] dark:text-white">
+            Chat da comunidade
+          </span>
+          <span className={`mt-0.5 w-full truncate text-[13px] font-normal leading-tight ${
+            statusText || typingUsers.size > 0
+              ? "text-[#2481cc] dark:text-[#6ab3f3]"
+              : "text-[#20a85a] dark:text-[#36c875]"
+          }`}>
+            {statusText ? (
+              <span className="flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {statusText}
+              </span>
+            ) : typingUsers.size > 0 ? (
+              <span>{Array.from(typingUsers.values()).join(', ')} digitando...</span>
+            ) : (
+              <span className="inline-flex items-center gap-1">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
+                {onlineCount === null ? "Online" : `${onlineCount} online`}
+              </span>
+            )}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowInfo(true)}
+          className="flex h-10 w-10 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
+          aria-label="Ligar"
+          title="Ligar"
+        >
+          <Phone className="h-[23px] w-[23px] fill-current stroke-[1.7]" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowInfo(true)}
+          className="flex h-10 w-10 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
+          aria-label="Definições do grupo"
+          title="Definições"
+        >
+          <Settings className="h-[23px] w-[23px] stroke-[2]" />
         </button>
       </header>
 
       <main 
         ref={scrollRef} 
         onScroll={handleScroll}
-        className="w-full min-h-0 flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative [overflow-anchor:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="w-full min-h-0 flex-1 overflow-y-auto bg-white dark:bg-[#0e1621] no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-3 relative [overflow-anchor:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {publicMessages.map((m, i) => {
           const isMe = m.uid_emissor === user?.id;
@@ -2169,8 +2143,8 @@ export default function grupochat() {
         )}
       </AnimatePresence>
 
-      <div className="absolute bottom-0 left-0 right-0 p-2.5 z-40 flex justify-center">
-        <div ref={composerRef} className="w-full max-w-[480px] flex flex-col gap-1.5">
+      <div className="absolute bottom-0 left-0 right-0 z-40 flex justify-center border-t border-[#e5e5e5] bg-white px-3 py-2.5 dark:border-[#27313d] dark:bg-[#17212b]">
+        <div ref={composerRef} className="flex w-full flex-col gap-1.5">
           <AnimatePresence>
             {editingMessage && (
               <motion.div 
@@ -2242,28 +2216,62 @@ export default function grupochat() {
           <div className="flex items-end gap-2">
             <input 
               type="file" 
-              accept="image/*" 
+              accept="image/*,application/pdf,.pdf"
               className="hidden" 
               ref={fileInputRef} 
-              onChange={handleImageSelect} 
-            />
-            <input
-              type="file"
-              accept="application/pdf,.pdf"
-              className="hidden"
-              ref={pdfInputRef}
-              onChange={handlePdfSelect}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                if (file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
+                  void handlePdfSelect(event);
+                } else {
+                  void handleImageSelect(event);
+                }
+              }}
             />
 
-            <div className={`flex-1 bg-white ${isComposerExpanded && !voiceComposerActive ? 'rounded-[24px] items-end' : 'rounded-full items-center'} shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex px-3.5 py-1.5 min-h-[46px] border border-gray-100/80`}>
+            {!voiceComposerActive && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex h-10 w-9 shrink-0 items-center justify-center text-[#1877f2] active:scale-90"
+                  title="Escolher foto"
+                  aria-label="Escolher foto"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="h-[25px] w-[25px]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <rect x="2.5" y="3.5" width="19" height="17" rx="2.5" stroke="currentColor" strokeWidth="2.4" />
+                    <circle cx="8.5" cy="9" r="1.7" fill="currentColor" />
+                    <path d="m4.5 18 5.1-5.1a1.7 1.7 0 0 1 2.4 0l1.3 1.3 1.8-1.8a1.7 1.7 0 0 1 2.4 0l2 2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void voiceComposerRef.current?.mainAction()}
+                  disabled={isSending}
+                  className="flex h-10 w-9 shrink-0 items-center justify-center text-[#1877f2] active:scale-90 disabled:opacity-50"
+                  title={t('chat.voice_record')}
+                  aria-label={t('chat.voice_record')}
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="h-[25px] w-[25px]"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                    <path d="M17 11a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z" />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            <div className={`flex min-w-0 flex-1 items-center bg-[#f1f2f4] ${isComposerExpanded && !voiceComposerActive ? 'rounded-[22px]' : 'rounded-full'} px-3 py-1.5 min-h-[46px] dark:bg-[#242f3d]`}>
               {!voiceComposerActive && <>
-              <button 
-                type="button" 
-                className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0"
-                title="Emojis"
-              >
-                <Smile className="w-6 h-6 stroke-[1.8]" />
-              </button>
 
               {imagePreview && (
                 <div className="relative mr-2 shrink-0">
@@ -2329,30 +2337,10 @@ export default function grupochat() {
                   }
                 }}
                 placeholder={editingMessage ? "Editar mensagem..." : "Mensagem"}
-                className="w-full min-h-[24px] px-2 py-1.5 text-[14px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black placeholder:text-gray-400 font-normal leading-snug"
+                className="w-full min-h-[24px] min-w-0 px-1 py-1.5 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-[#111111] placeholder:text-[#7b7b7b] font-normal leading-snug dark:text-white dark:placeholder:text-[#a0aab5]"
                 rows={1}
               />
 
-              <button 
-                type="button"
-                onClick={() => pdfInputRef.current?.click()}
-                disabled={voiceComposerActive}
-                className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0 rotate-[-45deg]"
-                title="Anexar PDF"
-                aria-label="Anexar PDF"
-              >
-                <Paperclip className="w-5 h-5 stroke-[2]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={voiceComposerActive}
-                className="text-gray-400 hover:text-gray-600 p-1 active:scale-90 transition-transform shrink-0"
-                title="Escolher foto"
-                aria-label="Escolher foto"
-              >
-                <Camera className="w-5 h-5 stroke-[1.8]" />
-              </button>
               </>}
               <VoiceMessageComposer
                 ref={voiceComposerRef}
@@ -2382,24 +2370,24 @@ export default function grupochat() {
             {!voiceComposerActive && <button
               type="button"
               onClick={() => {
-                if (editingMessage || publicInput.trim() || imagePreview || pdfPreview) {
-                  void handleSend();
-                } else {
-                  void voiceComposerRef.current?.mainAction();
-                }
+                if (editingMessage || publicInput.trim() || imagePreview || pdfPreview) void handleSend();
               }}
-              disabled={isSending || (editingMessage ? !publicInput.trim() : false)}
-              style={{ borderRadius: '9999px' }}
-              className="w-[46px] h-[46px] !rounded-full rounded-full bg-[#2481cc] hover:bg-[#1f72b5] text-white flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_10px_rgba(36,129,204,0.4)] cursor-pointer disabled:opacity-50"
-              title={editingMessage ? "Salvar alterações" : (publicInput.trim() || imagePreview || pdfPreview || voiceComposerActive) ? t('common.send') : t('chat.voice_record')}
-              aria-label={editingMessage ? "Salvar alterações" : (publicInput.trim() || imagePreview || pdfPreview || voiceComposerActive) ? t('common.send') : t('chat.voice_record')}
+              disabled={isSending || (!publicInput.trim() && !imagePreview && !pdfPreview)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50"
+              title={editingMessage ? "Salvar alterações" : t('common.send')}
+              aria-label={editingMessage ? "Salvar alterações" : t('common.send')}
             >
               {editingMessage ? (
-                <Check className="w-5 h-5 text-white stroke-[2.5]" />
-              ) : (publicInput.trim() || imagePreview || pdfPreview || voiceComposerActive) ? (
-                <Send className="w-5 h-5 text-white ml-0.5 stroke-[2]" />
+                <Check className="h-6 w-6 stroke-[2.5]" />
               ) : (
-                <Mic className="w-5 h-5 text-white stroke-[2]" />
+                <svg
+                  aria-hidden="true"
+                  className="h-[27px] w-[27px]"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
               )}
             </button>}
           </div>

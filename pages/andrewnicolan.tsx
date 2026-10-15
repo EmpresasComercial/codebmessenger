@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import AutoTranslatedText from '../components/AutoTranslatedText';
+import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -493,7 +494,7 @@ export default function AndrewNicolan() {
           <ArrowLeft className="w-6 h-6 stroke-[2]" />
         </button>
 
-        <div className="flex items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 max-w-[65%] pointer-events-auto">
+        <div className="flex w-full max-w-[min(72vw,440px)] items-center gap-2.5 bg-white/95 dark:bg-[#1c242f]/95 rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 pointer-events-auto backdrop-blur-[2px]">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
             <img
               src="/Andrew_avatar_1792019295598.jpg"
@@ -501,10 +502,13 @@ export default function AndrewNicolan() {
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="flex flex-col min-w-0">
-            <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-              Andrew Nicolan
-            </h1>
+          <div className="flex min-w-0 flex-col">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
+                Andrew Nicolan
+              </h1>
+              <VerifiedBadge className="mt-0.5 h-[14px] w-[14px] shrink-0" />
+            </div>
             <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
               725.251 inscritos
             </span>
@@ -538,33 +542,31 @@ export default function AndrewNicolan() {
           return (
             <div key={post.id} className="flex items-end justify-start gap-2 relative min-w-0">
               
-              <div className={`max-w-[88%] sm:max-w-[82%] min-w-0 relative ${
-                isProofPost
-                  ? 'flex flex-col gap-1.5'
-                  : 'bg-white dark:bg-[#182533] rounded-[16px] rounded-tl-[4px] px-3.5 pt-3 pb-2 border border-[#e4e4e4] dark:border-[#1e2c3a]'
-              }`}>
-                
+              <div className="max-w-[88%] min-w-0 sm:max-w-[82%] rounded-[16px] rounded-bl-[4px] bg-white px-3 py-2 shadow-[0_1px_2px_rgba(16,35,47,0.15)] dark:bg-[#182533] dark:shadow-[0_1px_2px_rgba(0,0,0,0.24)]">
                 {/* 1. Nome/Número do Membro */}
                 {post.forwardedFrom && (
-                  <div className={isProofPost ? 'px-1' : 'mb-1.5'}>
+                  <div className="mb-1.5">
                     <div className="flex items-center gap-1.5">
                       {post.forwardedFrom.avatar ? (
                         <img 
                           src={post.forwardedFrom.avatar} 
                           alt="Avatar do Membro"
-                          className="w-6 h-6 rounded-full object-cover shrink-0 border border-orange-200"
+                          className="h-6 w-6 shrink-0 rounded-full border border-orange-200 object-cover"
                           onError={(e) => {
                             (e.target as any).src = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=80&h=80&fit=crop";
                           }}
                         />
                       ) : (
-                        <div className="w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
                           👤
                         </div>
                       )}
-                      <span className="text-[13.5px] font-bold text-[#e67e22] dark:text-[#f39c12] truncate">
-                        {post.forwardedFrom.name.replace(/^Prova de Retirada •\s*/i, '').replace(/^Membro\s*/i, '').trim()}
-                      </span>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="min-w-0 truncate text-[13.5px] font-bold text-[#e67e22] dark:text-[#f39c12]">
+                          {post.forwardedFrom.name.replace(/^Prova de Retirada •\s*/i, '').replace(/^Membro\s*/i, '').replace(/\s*\(Oficial\)\s*$/i, '').trim()}
+                        </span>
+                        <VerifiedBadge className="h-[13px] w-[13px] shrink-0" />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -572,35 +574,27 @@ export default function AndrewNicolan() {
                 {/* 2. Imagem em cima — clique abre fullscreen */}
                 {post.image && (
                   <div
-                    className={`relative group cursor-zoom-in ${isProofPost ? 'w-full' : ''}`}
+                    className="group relative w-full cursor-zoom-in"
                     onClick={() => setFullscreenImage(post.image!)}
                     title="Toque para ampliar"
                   >
                     <img
                       src={post.image}
                       alt={post.title || "Comprovativo"}
-                      className={`w-full h-auto max-h-[550px] object-contain block select-none transition-opacity group-active:opacity-80 ${
-                        isProofPost ? 'my-0 rounded-[12px]' : 'my-2 rounded-[12px]'
-                      }`}
+                      className="my-1.5 block h-auto max-h-[550px] w-full rounded-[12px] object-contain select-none transition-opacity group-active:opacity-80"
                       onError={(e) => {
                         (e.target as any).src = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=350&fit=crop";
                       }}
                     />
-                    <div className="absolute top-3 right-3 bg-black/40 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <ZoomIn className="w-4 h-4 text-white" />
+                    <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/40 p-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <ZoomIn className="h-4 w-4 text-white" />
                     </div>
                   </div>
                 )}
 
-                <div className={isProofPost
-                  ? 'bg-white dark:bg-[#182533] rounded-[14px] px-3 py-2 border border-[#e4e4e4] dark:border-[#1e2c3a]'
-                  : ''
-                }>
-                  {/* O título descreve o envio do utilizador, não valida a transação. */}
-                  {displayedTitle && (
-                  <h2 className={`text-[15px] font-bold leading-snug ${
-                    isProofPost ? 'mb-1' : 'mt-2 mb-1'
-                  }`}>
+                {/* O título descreve o envio do utilizador, não valida a transação. */}
+                {displayedTitle && (
+                  <h2 className="mb-1 text-[15px] font-bold leading-snug">
                     <AutoTranslatedText
                       text={displayedTitle}
                       language={language}
@@ -620,9 +614,9 @@ export default function AndrewNicolan() {
                   </h2>
                 )}
 
-                  {/* 4. Descrição / Comentário em baixo */}
-                  {displayedContent && (
-                  <p className="text-[14px] text-[#111827] dark:text-[#f3f4f6] leading-relaxed break-words whitespace-pre-line font-normal mb-1 pr-2">
+                {/* 4. Descrição / Comentário em baixo */}
+                {displayedContent && (
+                  <p className="mb-1 break-words whitespace-pre-line pr-2 text-[14px] font-normal leading-relaxed text-[#111827] dark:text-[#f3f4f6]">
                     <AutoTranslatedText
                       text={displayedContent}
                       language={language}
@@ -632,13 +626,10 @@ export default function AndrewNicolan() {
                 )}
 
                 {/* O conteúdo de comprovativos é enviado por utilizadores e não é verificado. */}
-                <div className={`flex items-center justify-between ${
-                  isProofPost ? 'mt-1' : 'mt-2 pt-1'
-                }`}>
-                  <span className="text-[11px] text-[#8e8e93] dark:text-[#8e9aa5] ml-auto">
+                <div className="mt-1 flex items-center justify-between">
+                  <span className="ml-auto text-[11px] text-[#8e8e93] dark:text-[#8e9aa5]">
                     {isProofPost ? t('social.proof_unverified') : post.time}
                   </span>
-                </div>
                 </div>
               </div>
 
@@ -670,7 +661,7 @@ export default function AndrewNicolan() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSendBroadcast();
               }}
-              placeholder={t('social.local_draft_placeholder')}
+              placeholder="Mensagem"
               className="flex-1 min-w-0 px-1 py-1 text-[14.5px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
             />
 

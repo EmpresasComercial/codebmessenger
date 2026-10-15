@@ -6,7 +6,12 @@ import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { getDeviceId } from '../lib/device';
 import { subscribeToPushNotifications } from '../lib/pushNotifications';
-import { Loader2, Check, Copy, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import {
+  AsYouType,
+  validatePhoneNumberLength,
+  type CountryCode,
+} from 'libphonenumber-js/max';
+import { Loader2, Check, Copy, Eye, EyeOff, ChevronDown, Pencil } from 'lucide-react';
 import {
   COUNTRIES,
   Country,
@@ -51,6 +56,9 @@ export default function Messager() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [privacyNoticeAccepted, setPrivacyNoticeAccepted] = useState(false);
   const [formData, setFormData] = useState({ phone: '', inviteCode: '' });
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const [isPhoneStepComplete, setIsPhoneStepComplete] = useState(false);
+  const [inviteCodeFromUrl, setInviteCodeFromUrl] = useState(false);
 
   const [showPasskeyDialog, setShowPasskeyDialog] = useState(false);
   const [generatedPasskey, setGeneratedPasskey] = useState('');
@@ -97,6 +105,9 @@ export default function Messager() {
     if (code) {
       const cleanCode = code.trim().slice(0, 6);
       setFormData((prev) => ({ ...prev, inviteCode: cleanCode }));
+      setInviteCodeFromUrl(Boolean(cleanCode));
+    } else {
+      setInviteCodeFromUrl(false);
     }
   }, [searchParams]);
 
@@ -104,6 +115,8 @@ export default function Messager() {
     setSelectedCountry(country);
     // Keep phone field clean and synchronized
     setFormData((prev) => ({ ...prev, phone: '' }));
+    setIsPhoneValid(false);
+    setIsPhoneStepComplete(false);
     try {
       localStorage.setItem('saved_country_code', country.code);
       localStorage.setItem('saved_dial_code', country.dial_code);
@@ -121,11 +134,18 @@ export default function Messager() {
           const detected = detectCountryFromPhone(trimmed);
           const detectedCountry = detected.country;
           if (detectedCountry) {
+            const nationalNumber = (detected.nationalNumber || '').slice(
+              0,
+              detectedCountry.maxLength
+            );
             setSelectedCountry(detectedCountry);
             setFormData((prev) => ({
               ...prev,
-              phone: (detected.nationalNumber || '').slice(0, detectedCountry.maxLength),
+              phone: nationalNumber,
             }));
+            setIsPhoneValid(
+              validatePhoneNumber(nationalNumber, detectedCountry).isValid
+            );
             return;
           }
         }
@@ -136,6 +156,9 @@ export default function Messager() {
         }
         sanitized = sanitized.slice(0, selectedCountry.maxLength);
         setFormData((prev) => ({ ...prev, phone: sanitized }));
+        setIsPhoneValid(
+          validatePhoneNumber(sanitized, selectedCountry).isValid
+        );
       } else {
         setFormData((prev) => ({ ...prev, [name]: value }));
       }
@@ -145,6 +168,8 @@ export default function Messager() {
 
   const executeRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isPhoneStepComplete) return;
 
     if (!privacyNoticeAccepted) {
       showToast(t('auth.privacy_consent_required'), 'error');
@@ -304,171 +329,242 @@ export default function Messager() {
   };
 
   const displayNationalPhone = formData.phone.replace(/\D/g, '');
-  const formattedPhone = `+${selectedCountry.dial_code.replace(/\D/g, '')}${displayNationalPhone.slice(0, 1)} ${displayNationalPhone.slice(1)}`;
+  const formattedNationalPhone = displayNationalPhone
+    ? new AsYouType(selectedCountry.code as CountryCode).input(displayNationalPhone)
+    : '';
+  const formattedPhone = `${selectedCountry.dial_code} ${formattedNationalPhone}`;
+  const phoneLengthStatus = validatePhoneNumberLength(
+    displayNationalPhone,
+    selectedCountry.code as CountryCode
+  );
+  const showPhoneError =
+    displayNationalPhone.length > 0 &&
+    !isPhoneValid &&
+    phoneLengthStatus !== 'TOO_SHORT';
 
   return (
     <div className="w-full min-h-screen bg-white pb-12 font-sans antialiased text-black select-none flex flex-col items-center justify-center p-4">
       <main className="w-full max-w-[340px] sm:max-w-[360px] flex flex-col items-center">
-        <div className="mb-3.5 flex items-center justify-center">
-          <img
-            src="/logo_bussiness_messeger.jpg"
-            alt="Business Messenger"
-            className="w-[68px] h-[68px] rounded-full object-cover"
-          />
-        </div>
+        {!isPhoneStepComplete && (
+          <>
+            <div className="mb-3.5 flex items-center justify-center">
+              <img
+                src="/logo_bussiness_messeger.jpg"
+                alt="Business Messenger"
+                className="w-[80px] h-[80px] rounded-full object-cover"
+              />
+            </div>
 
-        <h1 className="text-[26px] font-bold text-center mb-1.5 tracking-tight text-[#1c1c1e]">Business</h1>
+            <h1 className="text-[20px] font-medium text-center mb-1.5 text-[#1c1c1e]">
+              Business
+            </h1>
+          </>
+        )}
 
-        <p className="text-[13px] text-[#8e8e93] text-center mb-6 leading-snug max-w-[290px]">
-          {t('auth.signup_description')}
-        </p>
+        {isPhoneStepComplete ? (
+          <div className="mb-6 flex w-full flex-col items-center gap-2 text-center">
+            <p className="text-[13px] text-[#707579]">{t('auth.phone_confirm_intro')}</p>
+            <span className="text-[20px] font-medium tracking-[0.01em] text-[#1c1c1e]">
+              {formattedPhone}
+            </span>
+            <div className="flex items-center justify-center gap-1.5 text-[13px] text-[#707579]">
+              <span>{t('auth.phone_confirm_prompt')}</span>
+              <button
+                type="button"
+                onClick={() => setIsPhoneStepComplete(false)}
+                className="inline-flex items-center justify-center rounded p-1 text-[#3390ec] transition-colors hover:text-[#2881dc]"
+                aria-label={t('auth.edit_phone')}
+                title={t('auth.edit_phone')}
+              >
+                <Pencil className="h-4 w-4" strokeWidth={1.8} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="w-full text-[13px] text-[#707579] text-center mb-6 leading-snug">
+            {t('auth.signup_phone_prompt')}{' '}
+            <Link to="/login" className="text-[#2481cc] hover:underline">
+              {t('auth.signup_login_here')}
+            </Link>
+          </p>
+        )}
 
         <form onSubmit={executeRegistration} className="w-full flex flex-col gap-4">
           <div className="w-full flex flex-col gap-4 mt-2">
-            {/* Country Selector Button */}
-            <div className="relative w-full">
-              <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  {t('common.country')}
-                </label>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCountryModal(true)}
-                style={{ borderRadius: '12px' }}
-                className="w-full h-[46px] auth-input-btn border border-[#dfdfe0] bg-white flex items-center justify-between px-3.5 hover:border-[#3390ec] focus:border-[#3390ec] focus:outline-none transition-colors cursor-pointer"
-                title={t('common.change_country')}
-              >
-                <span className="text-[16px] text-black font-normal flex items-center gap-2.5 truncate">
-                  <span className="text-[22px] leading-none select-none">
-                    {selectedCountry.emoji}
-                  </span>
-                  <span className="truncate">{selectedCountry.name}</span>
-                </span>
-                <ChevronDown className="w-5 h-5 text-[#a2a6aa] shrink-0" strokeWidth={2} />
-              </button>
-            </div>
+            {!isPhoneStepComplete && (
+              <>
+                {/* Country Selector Button */}
+                <div className="relative w-full">
+                  <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
+                    <label className="text-[12px] text-[#707579] font-normal leading-none">
+                      {t('common.country')}
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCountryModal(true)}
+                    style={{ borderRadius: '14px' }}
+                    className="w-full h-[48px] auth-input-btn border border-[#d6d9de] bg-white flex items-center justify-between px-3.5 hover:border-[#3390ec] focus:border-[#3390ec] focus:outline-none transition-colors cursor-pointer"
+                    title={t('common.change_country')}
+                  >
+                    <span className="text-[15px] text-black font-normal flex items-center gap-2 truncate">
+                      <span className="shrink-0">{selectedCountry.code}</span>
+                      <span className="truncate">{selectedCountry.name}</span>
+                    </span>
+                    <ChevronDown className="w-5 h-5 text-[#707579] shrink-0" strokeWidth={1.5} />
+                  </button>
+                </div>
 
-            {/* Phone Number Input */}
-            <div className="relative w-full">
-              <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  {t('auth.phone_label')}
-                </label>
-              </div>
-              <div
-                style={{ borderRadius: '12px' }}
-                className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
-              >
-                <span className="text-[16px] text-black mr-2 font-medium shrink-0">
-                  {selectedCountry.dial_code}
-                </span>
-                <input
-                  name="phone"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  className="flex-1 bg-transparent outline-none text-[16px] text-black font-normal h-full w-full"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  maxLength={selectedCountry.maxLength + selectedCountry.dial_code.replace(/\D/g, '').length + 8}
-                  placeholder=""
-                />
-              </div>
-            </div>
+                {/* Phone Number Input */}
+                <div className="relative w-full group">
+                  <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
+                    <label className="text-[12px] text-[#707579] group-focus-within:text-[#3390ec] font-normal leading-none">
+                      {t('auth.phone_label')}
+                    </label>
+                  </div>
+                  <div
+                    style={{ borderRadius: '14px' }}
+                    className="auth-input-wrap w-full h-[48px] border border-[#d6d9de] bg-white flex items-center px-3.5 focus-within:border-2 focus-within:border-[#3390ec] transition-colors"
+                  >
+                    <span className="text-[15px] text-black mr-1 font-normal shrink-0">
+                      {selectedCountry.dial_code}
+                    </span>
+                    <input
+                      name="phone"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      className="flex-1 bg-transparent outline-none text-[15px] text-black font-normal h-full w-full"
+                      value={formattedNationalPhone}
+                      onChange={handleChange}
+                      maxLength={selectedCountry.maxLength + selectedCountry.dial_code.replace(/\D/g, '').length + 8}
+                      placeholder=""
+                    />
+                  </div>
+                  {showPhoneError && (
+                    <p role="alert" className="mt-1.5 px-3 text-[12px] leading-4 text-[#d93025]">
+                      {getPhoneNumberErrorMessage(selectedCountry)}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
 
-            {/* Password Input */}
-            <div className="relative w-full">
-              <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  {t('auth.password_label')}
-                </label>
-              </div>
-              <div
-                style={{ borderRadius: '12px' }}
-                className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
-              >
-                <input
-                  name="userPasskey"
-                  type={showUserPasskey ? 'text' : 'password'}
-                  className="flex-1 bg-transparent outline-none text-[16px] text-black font-normal h-full w-full"
-                  value={userPasskey}
-                  onChange={(e) => setUserPasskey(e.target.value)}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowUserPasskey((v) => !v)}
-                  className="ml-2 text-[#a2a6aa] hover:text-[#3390ec] transition-colors shrink-0 cursor-pointer"
-                  aria-label={showUserPasskey ? t('auth.hide_password') : t('auth.show_password')}
+            {isPhoneStepComplete && (
+              <div className="relative w-full">
+                <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
+                  <label className="text-[12px] text-[#707579] font-normal leading-none">
+                    {t('auth.password_label')}
+                  </label>
+                </div>
+                <div
+                  style={{ borderRadius: '12px' }}
+                  className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
                 >
-                  {showUserPasskey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+                  <input
+                    name="userPasskey"
+                    type={showUserPasskey ? 'text' : 'password'}
+                    className="flex-1 bg-transparent outline-none text-[16px] text-black font-normal h-full w-full"
+                    value={userPasskey}
+                    onChange={(e) => setUserPasskey(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowUserPasskey((v) => !v)}
+                    className="ml-2 text-[#a2a6aa] hover:text-[#3390ec] transition-colors shrink-0 cursor-pointer"
+                    aria-label={showUserPasskey ? t('auth.hide_password') : t('auth.show_password')}
+                  >
+                    {showUserPasskey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Invite Code Input */}
-            <div className="relative w-full">
-              <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
-                <label className="text-[14px] text-[#707579] font-medium leading-none">
-                  {t('auth.invite_code')}
-                </label>
+            {isPhoneStepComplete && !inviteCodeFromUrl && (
+              <div className="relative w-full">
+                <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
+                  <label className="text-[12px] text-[#707579] font-normal leading-none">
+                    {t('auth.invite_code')}
+                  </label>
+                </div>
+                <div
+                  style={{ borderRadius: '12px' }}
+                  className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
+                >
+                  <input
+                    name="inviteCode"
+                    type="text"
+                    className="flex-1 bg-transparent outline-none text-[16px] text-black font-normal h-full w-full"
+                    value={formData.inviteCode}
+                    onChange={handleChange}
+                    maxLength={10}
+                  />
+                </div>
               </div>
-              <div
-                style={{ borderRadius: '12px' }}
-                className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
-              >
-                <input
-                  name="inviteCode"
-                  type="text"
-                  className="flex-1 bg-transparent outline-none text-[16px] text-black font-normal h-full w-full"
-                  value={formData.inviteCode}
-                  onChange={handleChange}
-                  maxLength={10}
-                />
-              </div>
-            </div>
+            )}
           </div>
 
-          <label className="flex items-start gap-2 text-[12px] leading-5 text-[#555]">
-            <input
-              type="checkbox"
-              required
-              checked={privacyNoticeAccepted}
-              onChange={(event) => setPrivacyNoticeAccepted(event.target.checked)}
-              className="mt-1 shrink-0 accent-[#3390ec]"
-            />
-            <span>
-              {t('auth.privacy_consent_prefix')}{' '}
-              <Link to="/privacidade" className="text-[#2481cc] underline">
-                {t('devices.heading')}
-              </Link>
-              .
-            </span>
-          </label>
+          {!isPhoneStepComplete && (
+            <label className="mt-1 flex items-start gap-3 px-4 text-[14px] leading-5 text-[#1c1c1e]">
+              <input
+                type="checkbox"
+                required
+                checked={privacyNoticeAccepted}
+                onChange={(event) => setPrivacyNoticeAccepted(event.target.checked)}
+                className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-[#3390ec]"
+              />
+              <span>
+                {t('auth.privacy_consent_prefix')}{' '}
+                <Link to="/privacidade" className="text-[#2481cc] underline">
+                  {t('auth.privacy_policy_link')}
+                </Link>
+              </span>
+            </label>
+          )}
 
-          <div className="w-full pt-1 space-y-2.5">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              style={{ borderRadius: '12px' }}
-              className="w-full h-[48px] btn-auth bg-[#3390ec] hover:bg-[#2881dc] active:scale-[0.98] text-white font-semibold text-[15px] transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer shadow-sm"
-            >
-              {isSubmitting ? (
-                <Loader2 className="animate-spin h-5 w-5 text-white" />
-              ) : (
-                t('auth.signup_button')
-              )}
-            </button>
-
+          {!isPhoneStepComplete && isPhoneValid && (
             <button
               type="button"
-              onClick={() => navigate('/login')}
-              className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-medium text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
+              onClick={() => {
+                if (!privacyNoticeAccepted) {
+                  showToast(t('auth.privacy_consent_required'), 'error');
+                  return;
+                }
+                setIsPhoneStepComplete(true);
+              }}
+              className="mt-8 h-11 w-full rounded-full bg-[#3390ec] text-[15px] font-medium text-white transition-colors hover:bg-[#2881dc] active:scale-[0.98]"
             >
-              {t('auth.has_account')} {t('auth.login')}
+              {t('auth.next')}
             </button>
-          </div>
+          )}
+
+          {isPhoneStepComplete && (
+            <>
+              <div className="w-full pt-1 space-y-2.5">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full h-11 rounded-full btn-auth bg-[#3390ec] hover:bg-[#2881dc] active:scale-[0.98] text-white font-normal text-[15px] transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="animate-spin h-5 w-5 text-white" />
+                  ) : (
+                    t('auth.verify_button')
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/login')}
+                  className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-medium text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
+                >
+                  {t('auth.has_account')} {t('auth.login')}
+                </button>
+              </div>
+            </>
+          )}
         </form>
       </main>
 
