@@ -34,6 +34,8 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import ChatsList from './ChatsList';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import { useLanguage } from '../contexts/LanguageContext';
+import { isVerifiedManagerPhone } from '../lib/verifiedManager';
+import VerifiedBadge from '../components/VerifiedBadge';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
@@ -1044,6 +1046,10 @@ export default function PrivateChat() {
           const isMe =
             m.remetente_id === user?.id ||
             (m.destinatario_id === contactId && m.remetente_id !== contactId);
+          const verifiedSenderPhone = isMe
+            ? user?.phone || user?.user_metadata?.telefone || user?.user_metadata?.phone
+            : contactProfile.phone || rawContactPhone;
+          const isVerifiedSender = isVerifiedManagerPhone(verifiedSenderPhone);
           const showDate = i === 0 || formatDateLabel(m.created_at) !== formatDateLabel(messages[i - 1].created_at);
 
           return (
@@ -1153,12 +1159,17 @@ export default function PrivateChat() {
 
                     {m.detalhes?.audio_path && (
                       <>
-                        {!isMe && (
+                        {(!isMe || isVerifiedSender) && (
                           <p
-                            className="mb-1 truncate text-[13px] font-medium"
+                            className="mb-1 flex items-center gap-1 truncate text-[13px] font-medium"
                             style={{ color: isCommunityChat ? '#2481cc' : contactColor }}
                           >
-                            {isCommunityChat ? 'Comunidade Business Messenger' : formatPhoneClean(contactDisplayName)}
+                            <span className="truncate">
+                              {isVerifiedSender
+                                ? formatPhoneClean(verifiedSenderPhone || '')
+                                : isCommunityChat ? 'Comunidade Business Messenger' : formatPhoneClean(contactDisplayName)}
+                            </span>
+                            {isVerifiedSender && <VerifiedBadge className="h-[14px] w-[14px]" />}
                           </p>
                         )}
                         <VoiceMessagePlayer
@@ -1201,12 +1212,17 @@ export default function PrivateChat() {
                     )}
 
                     {!m.detalhes?.audio_path && <div className="relative pointer-events-none leading-[1.3]">
-                      {!isMe && (
+                      {(!isMe || isVerifiedSender) && (
                         <p
-                          className="text-[13px] font-medium mb-[2px] cursor-pointer truncate"
+                          className="mb-[2px] flex items-center gap-1 text-[13px] font-medium"
                           style={{ color: isCommunityChat ? '#2481cc' : contactColor }}
                         >
-                          {isCommunityChat ? 'Comunidade Business Messenger' : formatPhoneClean(contactDisplayName)}
+                          <span className="truncate">
+                            {isVerifiedSender
+                              ? formatPhoneClean(verifiedSenderPhone || '')
+                              : isCommunityChat ? 'Comunidade Business Messenger' : formatPhoneClean(contactDisplayName)}
+                          </span>
+                          {isVerifiedSender && <VerifiedBadge className="h-[14px] w-[14px]" />}
                         </p>
                       )}
 

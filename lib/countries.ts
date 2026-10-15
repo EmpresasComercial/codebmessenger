@@ -6,6 +6,7 @@ export interface Country {
   code: string;
   dial_code: string;
   emoji: string;
+  /** Maximum digits typed in the national number field, excluding the dial code. */
   maxLength: number;
 }
 
@@ -36,7 +37,7 @@ export const COUNTRIES: Country[] = [
     "code": "GB",
     "dial_code": "+44",
     "emoji": "🇬🇧",
-    "maxLength": 12
+    "maxLength": 11
   },
   {
     "name": "Estados Unidos",
@@ -1735,8 +1736,8 @@ export interface PhoneValidationResult {
 }
 
 /**
- * Validates a phone number against a selected country's rules.
- * Enforces length, country calling code, and valid national prefixes.
+ * Validates a national number against the selected country, then combines it
+ * with that country's calling code before checking the complete international number.
  */
 export function validatePhoneNumber(phoneInput: string, country: Country): PhoneValidationResult {
   const trimmed = (phoneInput || '').trim();

@@ -14,6 +14,32 @@ import {
 } from '../lib/countries';
 import CountryModal from '../components/CountryModal';
 
+async function getRegistrationErrorMessage(error: unknown): Promise<string> {
+  if (!error || typeof error !== 'object') return '';
+
+  const message =
+    'message' in error && typeof error.message === 'string' ? error.message : '';
+  const context = 'context' in error ? error.context : undefined;
+
+  if (context instanceof Response) {
+    try {
+      const responseBody: unknown = await context.clone().json();
+      if (responseBody && typeof responseBody === 'object') {
+        if ('error' in responseBody && typeof responseBody.error === 'string') {
+          return responseBody.error;
+        }
+        if ('message' in responseBody && typeof responseBody.message === 'string') {
+          return responseBody.message;
+        }
+      }
+    } catch {
+      // Fall back to the function error message when its response is not JSON.
+    }
+  }
+
+  return message;
+}
+
 export default function Messager() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -190,44 +216,59 @@ export default function Messager() {
         },
       });
 
-      if (data?.session) {
+      if (error) {
+        const errorMessage = await getRegistrationErrorMessage(error);
+        const normalizedError = errorMessage.toLowerCase();
+
+        console.error('Registration failed:', errorMessage || error);
+        if (normalizedError.includes('already registered')) {
+          showToast(t('auth.phone_already_registered'), 'error');
+        } else if (normalizedError.includes('rate limit')) {
+          showToast(t('auth.signup_rate_limited'), 'error');
+        } else {
+          showToast(errorMessage || t('auth.signup_failed'), 'error');
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!data?.user) {
+        console.error('Registration response did not include a user:', data);
+        showToast(t('auth.signup_failed'), 'error');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (data.session) {
         await supabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });
       }
 
-      if (error) {
-        if (
-          error.message.includes('already registered') ||
-          error.message.includes('User already registered')
-        ) {
-          showToast(t('auth.phone_already_registered'), 'error');
-        } else {
-          console.error('Registration failed:', error);
-          showToast(t('auth.signup_failed'), 'error');
-        }
-        setIsSubmitting(false);
-        return;
+      if ('Notification' in window && Notification.permission === 'granted') {
+        subscribeToPushNotifications().catch(() => {});
       }
-
-      if (data.user) {
-        if ('Notification' in window && Notification.permission === 'granted') {
-          subscribeToPushNotifications().catch(() => {});
-        }
-        try {
-          localStorage.setItem('saved_country_name', selectedCountry.name);
-          localStorage.setItem('saved_dial_code', selectedCountry.dial_code);
-          localStorage.setItem('saved_country_code', selectedCountry.code);
-          localStorage.setItem('saved_phone', phoneValidation.nationalNumber);
-        } catch {}
-        setGeneratedPasskey(userPasskey);
-        setShowPasskeyDialog(true);
-      }
+      try {
+        localStorage.setItem('saved_country_name', selectedCountry.name);
+        localStorage.setItem('saved_dial_code', selectedCountry.dial_code);
+        localStorage.setItem('saved_country_code', selectedCountry.code);
+        localStorage.setItem('saved_phone', phoneValidation.nationalNumber);
+      } catch {}
+      setGeneratedPasskey(userPasskey);
+      setShowPasskeyDialog(true);
     } catch (err: any) {
-      const isRateLimited = typeof err?.message === 'string' && err.message.includes('email rate limit exceeded');
-      console.error('Registration failed:', err);
-      showToast(isRateLimited ? t('auth.signup_rate_limited') : t('auth.signup_failed'), 'error');
+      const errorMessage = await getRegistrationErrorMessage(err);
+      const normalizedError = errorMessage.toLowerCase();
+
+      console.error('Registration failed:', errorMessage || err);
+      if (normalizedError.includes('already registered')) {
+        showToast(t('auth.phone_already_registered'), 'error');
+      } else if (normalizedError.includes('rate limit')) {
+        showToast(t('auth.signup_rate_limited'), 'error');
+      } else {
+        showToast(errorMessage || t('auth.signup_failed'), 'error');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -316,7 +357,7 @@ export default function Messager() {
                   className="flex-1 bg-transparent outline-none text-[16px] text-black font-normal h-full w-full"
                   value={formData.phone}
                   onChange={handleChange}
-                  maxLength={selectedCountry.maxLength + selectedCountry.dial_code.replace(/\D/g, '').length}
+                  maxLength={selectedCountry.maxLength + selectedCountry.dial_code.replace(/\D/g, '').length + 8}
                   placeholder=""
                 />
               </div>

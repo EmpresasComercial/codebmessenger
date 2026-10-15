@@ -223,7 +223,7 @@ export default function Login() {
                   className="flex-1 bg-transparent outline-none text-[16px] text-black font-normal h-full w-full"
                   value={phone}
                   onChange={handlePhoneChange}
-                  maxLength={selectedCountry.maxLength}
+                  maxLength={selectedCountry.maxLength + selectedCountry.dial_code.replace(/\D/g, '').length + 8}
                   placeholder=""
                 />
               </div>
@@ -276,7 +276,7 @@ export default function Login() {
 
             <button
               type="button"
-              onClick={() => navigate('/messager')}
+              onClick={() => navigate('/create')}
               className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-medium text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
             >
               {t('auth.no_account')} {t('auth.create_one')}

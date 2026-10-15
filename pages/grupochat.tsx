@@ -33,7 +33,8 @@ import {
   Loader2,
   FileText,
   Link2,
-  Mic
+  Mic,
+  BadgeCheck
 } from 'lucide-react';
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import ChatsList from "./ChatsList";
@@ -43,6 +44,8 @@ import { deleteVoiceMessage, uploadVoiceMessage } from "../lib/voiceMessages";
 import AutoTranslatedText from "../components/AutoTranslatedText";
 import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { COUNTRIES } from "../lib/countries";
+import { isVerifiedManagerPhone } from "../lib/verifiedManager";
+import VerifiedBadge from "../components/VerifiedBadge";
 
 const FORBIDDEN_WORDS = Array.from(new Set([
   "burla", "burlas", "fraude", "fraudes", "scam", "scams", "golpe", "golpes", 
@@ -399,6 +402,8 @@ interface MessageItemProps {
   isMe: boolean;
   displayName: string;
   displayPhone?: string;
+  isVerifiedSender: boolean;
+  verifiedSenderPhone?: string;
   authorColor: string;
   showDate: boolean;
   dateLabel: string;
@@ -424,6 +429,8 @@ const MessageItem = React.memo(({
   isMe,
   displayName,
   displayPhone,
+  isVerifiedSender,
+  verifiedSenderPhone,
   authorColor,
   showDate,
   dateLabel,
@@ -644,9 +651,16 @@ const MessageItem = React.memo(({
                 style={{ color: authorColor }}
               >
                 <span className="truncate">{displayName}</span>
+                {isVerifiedSender && <VerifiedBadge className="h-[14px] w-[14px]" />}
                 {displayPhone && (
                   <span className="shrink-0 text-[11px] font-normal opacity-80">{displayPhone}</span>
                 )}
+              </p>
+            )}
+            {isMe && isVerifiedSender && (
+              <p className="mb-[2px] flex min-w-0 items-center justify-end gap-1 text-[11px] font-medium text-[#2481cc]">
+                <span>{verifiedSenderPhone}</span>
+                <VerifiedBadge className="h-[14px] w-[14px]" />
               </p>
             )}
 
@@ -815,6 +829,9 @@ export default function grupochat() {
   const [pdfPreview, setPdfPreview] = useState<{ name: string; url: string; sizeBytes: number } | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [isGroupAvatarPinned, setIsGroupAvatarPinned] = useState(false);
+  const groupInfoHeaderRef = useRef<HTMLDivElement>(null);
+  const groupInfoAvatarRef = useRef<HTMLDivElement>(null);
   const [activeGroupTab, setActiveGroupTab] = useState<GroupTab>('members');
   const [isCopiedLink, setIsCopiedLink] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
@@ -2025,8 +2042,13 @@ export default function grupochat() {
           </div>
 
           <div className="flex flex-col min-w-0">
-            <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-              Business Messenger Empresa
+            <h1 className="mt-0.5 flex min-w-0 items-center gap-1 text-[15px] font-medium leading-[1.15] tracking-tight text-black dark:text-white">
+              <span className="truncate">Chat Messenger</span>
+              <BadgeCheck
+                className="h-[15px] w-[15px] shrink-0 fill-[#2481cc] stroke-white"
+                aria-label="Verificado"
+                role="img"
+              />
             </h1>
             <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate flex items-center gap-1">
               {statusText ? (
@@ -2066,6 +2088,21 @@ export default function grupochat() {
           const senderPhone = formatSenderPhone(m.perfil?.telefone, m.perfil?.countryCode);
           const displayName = isMe ? "Eu" : hasSavedName ? savedName : senderPhone;
           const displayPhone = !isMe && hasSavedName ? senderPhone : undefined;
+          const verifiedSenderPhone = isMe
+            ? (m.perfil?.telefone && m.perfil.telefone !== "Eu"
+              ? m.perfil.telefone
+              : phoneCache[user?.id || '']?.telefone
+                || user?.phone
+                || user?.user_metadata?.telefone
+                || user?.user_metadata?.phone)
+            : m.perfil?.telefone;
+          const formattedVerifiedSenderPhone = verifiedSenderPhone
+            ? formatSenderPhone(verifiedSenderPhone, m.perfil?.countryCode || getProfileCountryCode(user?.user_metadata))
+            : undefined;
+          const isVerifiedSender = isVerifiedManagerPhone(
+            verifiedSenderPhone,
+            m.perfil?.countryCode || getProfileCountryCode(user?.user_metadata),
+          );
           const prevDate = i > 0 ? formatDateLabel(publicMessages[i - 1].data_registrada) : "";
           const currDate = formatDateLabel(m.data_registrada);
           const showDate = i === 0 || currDate !== prevDate;
@@ -2078,6 +2115,8 @@ export default function grupochat() {
               isMe={isMe}
               displayName={displayName}
               displayPhone={displayPhone}
+              isVerifiedSender={isVerifiedSender}
+              verifiedSenderPhone={formattedVerifiedSenderPhone}
               authorColor={authorColor}
               showDate={showDate}
               dateLabel={currDate}
@@ -2380,33 +2419,57 @@ export default function grupochat() {
           >
             {/* ── Header: × Group Info [icon] ── */}
             <div
+              ref={groupInfoHeaderRef}
               className="w-full flex items-center justify-between px-4 pt-3 pb-3 sticky top-0 z-10"
               style={{ backgroundColor: '#efeff4' }}
             >
               <button
                 type="button"
-                onClick={() => setShowInfo(false)}
+                onClick={() => {
+                  setIsGroupAvatarPinned(false);
+                  setShowInfo(false);
+                }}
                 className="w-9 h-9 flex items-center justify-center text-[#8e8e93] active:opacity-50 transition-opacity cursor-pointer"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5 stroke-[2.5]" />
               </button>
               <span className="text-[17px] font-semibold text-[#111] dark:text-white tracking-tight">
-                Group Info
+                Detalhes grupo
               </span>
-              <div className="w-9 h-9"></div>
+              <div
+                className={`w-9 h-9 rounded-full overflow-hidden transition-all duration-200 ${
+                  isGroupAvatarPinned ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+                }`}
+                aria-hidden="true"
+              >
+                <img
+                  src="/logo_bussiness_messeger.jpg"
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
 
             {/* ── Scrollable content ── */}
-            <div className="flex-1 overflow-y-auto">
+            <div
+              className="flex-1 overflow-y-auto"
+              onScroll={(event) => {
+                const avatarTop = groupInfoAvatarRef.current?.getBoundingClientRect().top;
+                const headerBottom = groupInfoHeaderRef.current?.getBoundingClientRect().bottom;
+                if (avatarTop !== undefined && headerBottom !== undefined) {
+                  setIsGroupAvatarPinned(avatarTop < headerBottom);
+                }
+              }}
+            >
 
               {/* ── Avatar + Nome + Membros ── */}
               <div className="flex flex-col items-center pt-6 pb-5 px-4">
-                <div className="w-[80px] h-[80px] rounded-full overflow-hidden mb-4">
+                <div ref={groupInfoAvatarRef} className="w-[96px] h-[96px] rounded-full overflow-hidden mb-4">
                   <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
                 </div>
                 <h1 className="text-[18px] font-bold text-[#111] text-center leading-tight">
-                  Business Messenger Empresa
+                  Chat Messenger
                 </h1>
                 <p className="text-[13px] mt-1" style={{ color: '#8e8e93' }}>
                   {registeredUserCount === null
@@ -2764,4 +2827,3 @@ export default function grupochat() {
     </div>
   );
 }
-

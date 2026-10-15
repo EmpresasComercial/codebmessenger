@@ -36,7 +36,7 @@
   'auth.enter_password': 'Introduce la contraseña',
   'auth.forgot_password': '¿Olvidaste tu contraseña?',
   'auth.has_account': '¿Ya tienes una cuenta?',
-  'auth.signup_description': 'Te damos la bienvenida a Business Messenger. Regístrate gratis.',
+  'auth.signup_description': 'Business Messenger: la aplicación de mensajería más rápida del mundo.',
   'auth.passkey_instructions': 'Esta es tu contraseña de acceso. Guárdala para iniciar sesión en tu cuenta.',
   'auth.copied_clipboard': '¡Copiado al portapapeles!',
   'auth.registered_phone': 'Teléfono registrado:',

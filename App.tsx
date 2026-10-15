@@ -202,6 +202,7 @@ export default function App() {
                 <Routes>
                   <Route path="/"         element={<RootRedirect />} />
                   <Route path="/create"   element={<Messager />} />
+                  <Route path="/messager" element={<Navigate to="/create" replace />} />
                   <Route path="/Entrar"   element={<Login />} />
                   <Route path="/join"     element={<Navigate to="/create" replace />} />
                   <Route path="/login"    element={<Login />} />
