@@ -24,12 +24,12 @@ import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
+import { parseNaturalLanguage } from '../lib/walletIntentParser';
 import AddBank from './AddBank';
 
 const MIN_WITHDRAW = 100;
 const MAX_WITHDRAW = 100000;
 const FEE_PERCENT = 10;
-const CHAT_STORAGE_KEY = 'telegram_withdraw_bot_v2';
 
 const VALID_COMMANDS = new Set([
   '/start', '/inicio', '/ajuda', '/help', '/menu', '/oi', '/ola',
@@ -94,201 +94,6 @@ function getWalletCommandMessage(input: string): string {
   return messages[normalized] || input.trim();
 }
 
-function parseNaturalLanguage(rawInput: string): {
-  intent: 'balance' | 'withdraw' | 'withdraw_info' | 'support' | 'history' | 'bank' | 'add_bank' | 'delete_bank' | 'schedule' | 'fees' | 'help' | 'clear' | 'cancel' | 'confirm' | 'greeting' | 'unknown';
-  amount?: number;
-  isAll?: boolean;
-} {
-  const clean = rawInput.trim();
-  const lower = clean.toLowerCase();
-  const norm = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-
-  // Ações de cadastro bancário devem ser distintas das consultas ao banco.
-  const bankAddCommands = [
-    '/adicionar_banco', '/adicionar-banco', '/adicionar_conta', '/adicionar-conta',
-    '/adicionar_iban', '/adicionar-iban', '/vincular_banco', '/vincular-banco',
-    '/salvar_banco', '/salvar-banco', '/guardar_banco', '/guardar-banco'
-  ];
-  const bankAddVerbs = ['adicionar', 'vincular', 'inserir', 'gravar', 'salvar', 'guardar', 'cadastrar'];
-  const bankAddTargets = ['banco', 'conta', 'iban', 'numero', 'número'];
-  if (
-    bankAddCommands.includes(norm.split(/\s+/)[0]) ||
-    (bankAddVerbs.some((verb) => norm.includes(verb)) && bankAddTargets.some((target) => norm.includes(target))) ||
-    ['salvar numero', 'guardar numero', 'gravar numero', 'adicionar conta bancaria', 'vincular conta'].some((phrase) => norm.includes(phrase))
-  ) {
-    return { intent: 'add_bank' };
-  }
-
-  if (
-    ['/deletar_conta', '/deletar-conta', '/remover_conta', '/remover-conta'].includes(norm.split(/\s+/)[0]) ||
-    (['deletar', 'apagar', 'excluir', 'eliminar', 'remover'].some((verb) => norm.includes(verb)) &&
-      ['conta', 'banco', 'iban'].some((target) => norm.includes(target)))
-  ) {
-    return { intent: 'delete_bank' };
-  }
-
-  // 1. Confirmar
-  if (
-    norm === '/confirmar' ||
-    ['sim', 'confirmar', 'confirma', 'confirmado', 'quero', 'yes', 's', 'ok', 'prosseguir', 'avancar', 'pode ser', 'pode mandar', 'exato', 'com certeza', 'claro'].includes(norm)
-  ) {
-    return { intent: 'confirm' };
-  }
-
-  // 2. Cancelar
-  if (
-    norm === '/cancelar' ||
-    ['cancelar', 'cancela', 'cancelado', 'nao', 'abortar', 'deixa', 'deixa pra la', 'desistir', 'esquece', 'voltar', 'sair'].includes(norm)
-  ) {
-    return { intent: 'cancel' };
-  }
-
-  // 3. Limpar / Reset
-  if (
-    norm === '/limpar' || norm === '/reset' || norm === '/clear' ||
-    ['limpar', 'reset', 'clear', 'limpar chat', 'limpar conversa', 'apagar conversa', 'reiniciar'].includes(norm)
-  ) {
-    return { intent: 'clear' };
-  }
-
-  const reportsWithdrawalProblem =
-    ['saque', 'saquei', 'retirada', 'retirei', 'levantamento', 'levantei'].some((word) => norm.includes(word)) &&
-    ['nao caiu', 'nao recebi', 'nao chegou', 'ainda nao', 'nao entrou', 'nao apareceu', 'nao foi creditado'].some((phrase) => norm.includes(phrase));
-  const expressesWithdrawalConcern =
-    ['saque', 'saquei', 'retirada', 'retirei', 'levantamento', 'levantei'].some((word) => norm.includes(word)) &&
-    ['medo', 'preocupado', 'preocupada', 'ansioso', 'ansiosa', 'nervoso', 'nervosa', 'triste'].some((word) => norm.includes(word));
-  const reportsPossibleFraud = ['burla', 'fraude', 'golpe', 'enganado', 'enganada', 'roubaram'].some((word) => norm.includes(word));
-  if (reportsWithdrawalProblem || expressesWithdrawalConcern || reportsPossibleFraud) {
-    return { intent: 'support' };
-  }
-
-  if (
-    ['como sacar', 'como retirar', 'como levantar', 'como fazer um saque',
-      'como solicitar uma retirada', 'como funciona o saque', 'como posso realizar uma retirada',
-      'como posso fazer uma retirada', 'posso realizar uma retirada', 'posso fazer um saque',
-      'como posso sacar', 'como posso retirar'].some((phrase) => norm.includes(phrase))
-  ) {
-    return { intent: 'withdraw_info' };
-  }
-
-  // 4. Saudações conversacionais
-  const greetings = ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'feliz noite', 'opa', 'e ai', 'tudo bem', 'tudo bom', 'como vai', 'como foi o dia', 'como foi teu dia', 'como foi seu dia', 'fala', 'alo'];
-  if (greetings.includes(norm) || greetings.some(g => norm.startsWith(g + ' ') || norm.endsWith(' ' + g))) {
-    return { intent: 'greeting' };
-  }
-
-  // 5. Saldo em tempo real (consultas conversacionais e comandos)
-  if (
-    norm === '/saldo' || norm === '/carteira' ||
-    norm.includes('saldo') || norm.includes('carteira') ||
-    norm.includes('quanto tenho') || norm.includes('quanto eu tenho') ||
-    norm.includes('meu dinheiro') || norm.includes('dinheiro na conta') ||
-    norm.includes('ver saldo') || norm.includes('consultar saldo') ||
-    norm.includes('mostrar saldo') || norm.includes('quanto sobrou') ||
-    norm.includes('quanto posso') || norm.includes('meu saldo') ||
-    norm.includes('saldo disponivel') || norm.includes('saldo atual')
-  ) {
-    return { intent: 'balance' };
-  }
-
-  // 6. Histórico de retiradas real (consultas conversacionais e comandos)
-  if (
-    norm === '/historico' || norm === '/registos' || norm === '/extrato' ||
-    norm.includes('historico') || norm.includes('extrato') ||
-    norm.includes('meus saques') || norm.includes('minhas retiradas') ||
-    norm.includes('ver historico') || norm.includes('ultimos saques') ||
-    norm.includes('ultimas retiradas') || norm.includes('registos') ||
-    norm.includes('pedidos de retirada') || norm.includes('registro de retirada') ||
-    norm.includes('saques anteriores') || norm.includes('status do meu saque') ||
-    norm.includes('consultar historico') || norm.includes('ver retiradas') ||
-    norm.includes('meu saque caiu') || norm.includes('onde esta meu saque')
-  ) {
-    return { intent: 'history' };
-  }
-
-  // 7. Dados bancários / Conta
-  if (
-    norm === '/banco' || norm === '/iban' || norm === '/conta' ||
-    norm.includes('meu banco') || norm.includes('minha conta') ||
-    norm.includes('qual meu banco') || norm.includes('qual meu iban') ||
-    norm.includes('dados bancarios') || norm.includes('conta cadastrada') ||
-    norm.includes('cadastrar banco') || norm.includes('trocar banco') ||
-    norm.includes('mudar banco') || norm.includes('meu iban') ||
-    norm.includes('consultar banco')
-  ) {
-    return { intent: 'bank' };
-  }
-
-  // 8. Horário de funcionamento
-  if (
-    norm === '/horario' || norm === '/horarios' ||
-    norm.includes('horario') || norm.includes('que horas') ||
-    norm.includes('ta aberto') || norm.includes('esta aberto') ||
-    norm.includes('quando abre') || norm.includes('quando fecha') ||
-    norm.includes('atendimento') || norm.includes('funciona hoje') ||
-    norm.includes('posso sacar agora') || norm.includes('ta fechado') || norm.includes('esta fechado')
-  ) {
-    return { intent: 'schedule' };
-  }
-
-  // 9. Taxas, regras e limites
-  if (
-    norm === '/taxa' || norm === '/taxas' || norm === '/limites' || norm === '/regras' ||
-    norm.includes('taxa') || norm.includes('qual a taxa') ||
-    norm.includes('quanto desconta') || norm.includes('limite') ||
-    norm.includes('regras') || norm.includes('valor minimo') ||
-    norm.includes('valor maximo') || norm.includes('qual o minimo') ||
-    norm.includes('quanto posso sacar') || norm.includes('minimo de saque')
-  ) {
-    return { intent: 'fees' };
-  }
-
-  // 10. Retirar tudo / Saldo total
-  if (
-    norm.includes('sacar tudo') || norm.includes('retirar tudo') ||
-    norm.includes('saldo total') || norm.includes('levantar tudo') ||
-    norm.includes('todo o saldo') || norm.includes('todo meu saldo')
-  ) {
-    return { intent: 'withdraw', isAll: true };
-  }
-
-  if (
-    norm.includes('como sacar') || norm.includes('como retirar') ||
-    norm.includes('como levantar') || norm.includes('como fazer um saque') ||
-    norm.includes('como solicitar uma retirada') || norm.includes('como funciona o saque')
-  ) {
-    return { intent: 'withdraw_info' };
-  }
-
-  // 11. Saque com extração inteligente de valor
-  const withdrawTriggers = ['sacar', 'retirar', 'levantar', 'saque', 'retirada', 'quero', 'pedir', 'tirar', 'fazer', 'manda', 'enviar'];
-  const hasWithdrawWord = withdrawTriggers.some(w => norm.includes(w)) || norm.startsWith('/retirar') || norm.startsWith('/sacar');
-
-  // Regex para capturar números digitados (ex: 500, 1.000, 2500 kz, sacar 300)
-  const numberMatch = norm.match(/(?:(?:kz|ao|akz)\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?:\s*(?:kz|kwanza|reais|ao|akz))?/i);
-  if (numberMatch && (hasWithdrawWord || /^\d+$/.test(clean.replace(/[\s.,]/g, '')))) {
-    const rawVal = numberMatch[1].replace(/\./g, '').replace(',', '.');
-    const parsedAmt = Math.floor(parseFloat(rawVal));
-    if (!isNaN(parsedAmt) && parsedAmt > 0) {
-      return { intent: 'withdraw', amount: parsedAmt };
-    }
-  }
-
-  if (hasWithdrawWord) {
-    return { intent: 'withdraw' };
-  }
-
-  // 12. Ajuda / Boas-vindas
-  if (
-    norm === '/ajuda' || norm === '/help' || norm === '/menu' || norm === '/start' || norm === '/inicio' ||
-    ['ajuda', 'help', 'menu', 'inicio', 'start', 'como funciona', 'o que voce faz', 'comandos', 'instrucoes'].includes(norm)
-  ) {
-    return { intent: 'help' };
-  }
-
-  return { intent: 'unknown' };
-}
-
 const isWithdrawAllowed = (): boolean => {
   const now = new Date();
   const day = now.getDay();
@@ -346,6 +151,7 @@ export default function wallet() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
   const { t } = useLanguage();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const [info, setInfo] = useState<WithdrawInfo>({
     balance: 0,
@@ -362,7 +168,6 @@ export default function wallet() {
   const [isTyping, setIsTyping] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [pendingAmount, setPendingAmount] = useState<number | null>(null);
   const [pendingBankDeletion, setPendingBankDeletion] = useState(false);
@@ -382,20 +187,11 @@ export default function wallet() {
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
-  const hasInitialized = useRef(false);
   const hasProcessedEntryIntent = useRef(false);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      try {
-        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
-      } catch (e) {}
-    }
-  }, [messages]);
 
   const handleScroll = () => {
     if (!mainChatRef.current) return;
@@ -476,39 +272,25 @@ export default function wallet() {
   }, []);
 
   useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-
-    async function initChat() {
-      await fetchData();
-
-      try {
-        const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setMessages(parsed);
-            return;
-          }
-        }
-      } catch (e) {}
-
-      setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-        setMessages([
-          {
-            id: 'welcome-init',
-            sender: 'bot',
-            time: nowTime(),
-            type: 'welcome',
-          },
-        ]);
-      }, 80);
-    }
-
-    initChat();
+    void fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (messages.length > 0) return;
+
+    setIsTyping(true);
+    const timeout = window.setTimeout(() => {
+      setIsTyping(false);
+      setMessages([{
+        id: 'welcome-' + Date.now(),
+        sender: 'bot',
+        time: nowTime(),
+        type: 'welcome',
+      }]);
+    }, 80);
+
+    return () => window.clearTimeout(timeout);
+  }, [messages.length]);
 
   const botReply = useCallback((builder: () => ChatMessage, delay = 180) => {
     setIsTyping(true);
@@ -952,7 +734,6 @@ export default function wallet() {
 
       // 3. INTENT: LIMPAR CHAT
       if (parsed.intent === 'clear') {
-        try { localStorage.removeItem(CHAT_STORAGE_KEY); } catch (e) {}
         setPendingAmount(null);
         setMessages([{ id: 'welcome-' + Date.now(), sender: 'bot', time: nowTime(), type: 'welcome' }]);
         showToast('Conversa reiniciada!', 'success');
