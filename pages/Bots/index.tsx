@@ -15,10 +15,10 @@ import { useToast } from "../../components/Toast";
 import { formatCurrency } from "../../lib/currency";
 import { useLanguage } from "../../contexts/LanguageContext";
 
-/* â”€â”€â”€ SVG Doodle Background (Telegram BotFather style) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── SVG Doodle Background (Telegram BotFather style) ─────────── */
 const DOODLE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2372a072' stroke-width='1.2' opacity='0.45'%3E%3Ccircle cx='30' cy='28' r='10'/%3E%3Cpath d='M22 20L19 13L25 19'/%3E%3Cpath d='M38 20L41 13L35 19'/%3E%3Ccircle cx='26' cy='25' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='34' cy='25' r='1.5' fill='%2372a072'/%3E%3Cpath d='M30 31L28 33L30 32L32 33Z'/%3E%3Cpath d='M19 27L24 28'/%3E%3Cpath d='M41 27L36 28'/%3E%3Cpath d='M164 15L167 7L170 15L178 15L172 20L174 28L167 23L160 28L162 20L156 15Z'/%3E%3Cpath d='M95 52C95 44 84 38 84 49C84 58 95 67 95 67C95 67 106 58 106 49C106 38 95 44 95 52Z'/%3E%3Ccircle cx='20' cy='112' r='7'/%3E%3Ccircle cx='10' cy='103' r='3.5'/%3E%3Ccircle cx='30' cy='103' r='3.5'/%3E%3Ccircle cx='14' cy='97' r='3'/%3E%3Ccircle cx='26' cy='97' r='3'/%3E%3Crect x='150' cy='100' width='26' height='19' rx='2'/%3E%3Crect x='148' y='93' width='30' height='9' rx='2'/%3E%3Cline x1='163' y1='93' x2='163' y2='119'/%3E%3Cpath d='M159 93C156 87 163 84 163 93'/%3E%3Cpath d='M167 93C170 87 163 84 163 93'/%3E%3Ccircle cx='163' cy='162' r='10'/%3E%3Cpath d='M155 154L152 146L158 153'/%3E%3Cpath d='M171 154L174 146L168 153'/%3E%3Ccircle cx='159' cy='160' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='167' cy='160' r='1.5' fill='%2372a072'/%3E%3Cpath d='M163 164L161 166L163 165L165 166Z'/%3E%3Cpath d='M152 162L158 163'/%3E%3Cpath d='M174 162L168 163'/%3E%3Cpath d='M57 143C57 138 51 135 51 140C51 145 57 150 57 150C57 150 63 145 63 140C63 135 57 138 57 143Z'/%3E%3Cpath d='M140 44C140 39 134 36 134 41C134 46 140 51 140 51C140 51 146 46 146 41C146 36 140 39 140 44Z'/%3E%3Cpath d='M64 72L66 64L68 72L76 72L70 77L72 85L66 81L60 85L62 77L56 72Z'/%3E%3Cpath d='M127 134L129 126L131 134L139 134L133 139L135 147L129 143L123 147L125 139L119 134Z'/%3E%3Cpath d='M95 110L95 128'/%3E%3Ccircle cx='92' cy='129' r='4'/%3E%3Cpath d='M95 110L106 106L106 120'/%3E%3Ccircle cx='103' cy='121' r='4'/%3E%3C/g%3E%3C/svg%3E")`;
 
-/* â”€â”€â”€ Interfaces â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Interfaces ─────────────────────────────────────────── */
 export interface ProductItem {
   id: string;
   nome: string;
@@ -53,14 +53,14 @@ interface ChatMessage {
   payload?: any;
 }
 
-/* â”€â”€â”€ Lista de Comandos VÃ¡lidos â”€â”€â”€ */
+/* ─── Lista de Comandos Válidos ─── */
 const VALID_COMMANDS = new Set([
-  "/start", "/inicio", "/inÃ­cio", "/help", "/ajuda", "/menu",
-  "/bots", "/catalogo", "/catÃ¡logo", "/comprar", "/loja", "/produtos",
+  "/start", "/inicio", "/início", "/help", "/ajuda", "/menu",
+  "/bots", "/catalogo", "/catálogo", "/comprar", "/loja", "/produtos",
   "/meusbots", "/mybots", "/ativos", "/compras", "/minhascompras",
-  "/saldo", "/carteira", "/rendas", "/historico", "/histÃ³rico",
+  "/saldo", "/carteira", "/rendas", "/historico", "/histórico",
   "/limites", "/limite", "/limpar", "/reset", "/clear",
-  "/cupons", "/cupon", "/coupon", "/codigo", "/cÃ³digo"
+  "/cupons", "/cupon", "/coupon", "/codigo", "/código"
 ]);
 
 function isRecognizedCommand(text: string): boolean {
@@ -71,10 +71,10 @@ function isRecognizedCommand(text: string): boolean {
   return VALID_COMMANDS.has(cmd) || cmd.startsWith("/comprar_");
 }
 
-/* â”€â”€â”€ Chave de PersistÃªncia no Dispositivo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Chave de Persistência no Dispositivo ─────────────────── */
 const CHAT_STORAGE_KEY = "telegram_botfather_chat_v3";
 
-/* â”€â”€â”€ Helpers de Tempo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Helpers de Tempo ───────────────────────────────────── */
 function getCurrentTime(): string {
   return new Date().toLocaleTimeString("pt-AO", { hour: "2-digit", minute: "2-digit" });
 }
@@ -102,7 +102,7 @@ function formatCountdown(seconds: number): string {
 }
 
 function displayBotName(name: string): string {
-  return name.replace(/\brob[oÃ´]s?\b/gi, (term) => {
+  return name.replace(/\brob[oô]s?\b/gi, (term) => {
     const isCapitalized = term[0] === term[0].toUpperCase();
     const isPlural = /s$/i.test(term);
     return `${isCapitalized ? "B" : "b"}ot${isPlural ? "s" : ""}`;
@@ -126,7 +126,7 @@ function PurchasedBotCountdown({ dataInicio }: { dataInicio: string }) {
   );
 }
 
-/* â”€â”€â”€ Bot Bubble with tail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Bot Bubble with tail ────────────────────────────────────────── */
 function BotBubble({ children, time }: { children: React.ReactNode; time: string }) {
   return (
     <div className="flex flex-col items-start mb-2 max-w-[88%] sm:max-w-[80%] pl-2">
@@ -154,7 +154,7 @@ function BotBubble({ children, time }: { children: React.ReactNode; time: string
   );
 }
 
-/* â”€â”€â”€ User Bubble with tail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── User Bubble with tail ───────────────────────────────────────── */
 function UserBubble({ text, time }: { text: string; time: string }) {
   const isCmd = text?.trim().startsWith("/");
   return (
@@ -169,7 +169,7 @@ function UserBubble({ text, time }: { text: string; time: string }) {
           </p>
           <div className="flex justify-end items-center gap-1 mt-0.5 select-none">
             <span className="text-[11px] text-[#6a9a6a]">{time}</span>
-            <span className="text-[11px] text-[#4fae4e] font-bold leading-none">âœ“âœ“</span>
+            <span className="text-[11px] text-[#4fae4e] font-bold leading-none">✓✓</span>
           </div>
         </div>
         <svg
@@ -186,7 +186,7 @@ function UserBubble({ text, time }: { text: string; time: string }) {
   );
 }
 
-/* â”€â”€â”€ Inline Buttons for actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Inline Buttons for actions ────────────────────────────────── */
 function GrayButton({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
   return (
     <button
@@ -199,7 +199,7 @@ function GrayButton({ children, onClick, disabled }: { children: React.ReactNode
   );
 }
 
-/* â”€â”€â”€ Componente Principal: BotFather Oficial Telegram â”€â”€â”€â”€â”€ */
+/* ─── Componente Principal: BotFather Oficial Telegram ───── */
 export default function BusinessMessengerBotsChat() {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -218,13 +218,13 @@ export default function BusinessMessengerBotsChat() {
   const pendingReplyTimeouts = useRef<Set<number>>(new Set());
 
   const quickReplies = [
-    { shortcut: "/bots", text: "Ver catÃ¡logo completo de Bots de rendimento" },
-    { shortcut: "/meusbots", text: "Consultar Bots ativos e ganhos diÃ¡rios" },
+    { shortcut: "/bots", text: "Ver catálogo completo de Bots de rendimento" },
+    { shortcut: "/meusbots", text: "Consultar Bots ativos e ganhos diários" },
     { shortcut: "/saldo", text: "Ver saldo em conta e lucros acumulados" },
-    { shortcut: "/rendas", text: "Consultar rendimentos diÃ¡rios" },
+    { shortcut: "/rendas", text: "Consultar rendimentos diários" },
     { shortcut: "/limites", text: "Ver limites de compra" },
-    { shortcut: "/cupons", text: "Resgatar cÃ³digo promocional ou cupom" },
-    { shortcut: "/ajuda", text: "InstruÃ§Ãµes de ativaÃ§Ã£o e suporte do gestor de bots" },
+    { shortcut: "/cupons", text: "Resgatar código promocional ou cupom" },
+    { shortcut: "/ajuda", text: "Instruções de ativação e suporte do gestor de bots" },
     { shortcut: "/limpar", text: "Limpar conversa" },
   ];
   const [awaitingCoupon, setAwaitingCoupon] = useState(false);
@@ -239,13 +239,13 @@ export default function BusinessMessengerBotsChat() {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // PersistÃªncia local no dispositivo do usuÃ¡rio
+  // Persistência local no dispositivo do usuário
   useEffect(() => {
     if (messages.length > 0) {
       try {
         localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
       } catch (e) {
-        console.error("Erro ao salvar histÃ³rico do chat no dispositivo:", e);
+        console.error("Erro ao salvar histórico do chat no dispositivo:", e);
       }
     }
   }, [messages]);
@@ -256,7 +256,7 @@ export default function BusinessMessengerBotsChat() {
     setShowScrollDown(scrollHeight - scrollTop - clientHeight > 150);
   };
 
-  /* â”€â”€ Buscar Dados Iniciais do Supabase â”€â”€ */
+  /* ── Buscar Dados Iniciais do Supabase ── */
   const loadData = useCallback(async () => {
     try {
       const { data: prodsData } = await supabase.rpc("get_available_products_mcpn");
@@ -351,7 +351,7 @@ export default function BusinessMessengerBotsChat() {
     }
   }, []);
 
-  /* â”€â”€ InicializaÃ§Ã£o com PersistÃªncia no Dispositivo â”€â”€ */
+  /* ── Inicialização com Persistência no Dispositivo ── */
   useEffect(() => {
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
@@ -369,7 +369,7 @@ export default function BusinessMessengerBotsChat() {
           }
         }
       } catch (e) {
-        console.error("Erro ao restaurar histÃ³rico salvo:", e);
+        console.error("Erro ao restaurar histórico salvo:", e);
       }
 
       setIsTyping(true);
@@ -403,8 +403,8 @@ export default function BusinessMessengerBotsChat() {
     try {
       localStorage.removeItem(CHAT_STORAGE_KEY);
     } catch (error) {
-      console.error("NÃ£o foi possÃ­vel limpar o histÃ³rico do gestor de bots:", error);
-      showToast("NÃ£o foi possÃ­vel limpar o histÃ³rico da conversa.", "error");
+      console.error("Não foi possível limpar o histórico do gestor de bots:", error);
+      showToast("Não foi possível limpar o histórico da conversa.", "error");
       return;
     }
 
@@ -424,7 +424,7 @@ export default function BusinessMessengerBotsChat() {
     pendingReplyTimeouts.current.clear();
   }, []);
 
-  /* â”€â”€ Tratar Comandos e Mensagens do UsuÃ¡rio â”€â”€ */
+  /* ── Tratar Comandos e Mensagens do Usuário ── */
   const handleSendMessage = useCallback(
     async (textToSend?: string) => {
       const content = (textToSend || inputText).trim();
@@ -452,7 +452,7 @@ export default function BusinessMessengerBotsChat() {
       };
 
       if (
-        normalized === "start" || normalized === "inicio" || normalized === "inÃ­cio" ||
+        normalized === "start" || normalized === "inicio" || normalized === "início" ||
         normalized === "help" || normalized === "ajuda" || normalized === "menu" || normalized === "comandos"
       ) {
         simulateBotReply(() => ({
@@ -462,7 +462,7 @@ export default function BusinessMessengerBotsChat() {
       }
 
       if (
-        normalized === "bots" || normalized === "catalogo" || normalized === "catÃ¡logo" ||
+        normalized === "bots" || normalized === "catalogo" || normalized === "catálogo" ||
         normalized === "comprar" || normalized === "newbot" || normalized === "produtos" ||
         normalized === "loja"
       ) {
@@ -491,7 +491,7 @@ export default function BusinessMessengerBotsChat() {
       if (normalized === "saldo" || normalized === "carteira") {
         simulateBotReply(() => ({
           id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-          text: `Saldo disponÃ­vel na carteira: ${formatCurrency(userBalance, "KZ")}. Envie /bots para ver o catÃ¡logo.`
+          text: `Saldo disponível na carteira: ${formatCurrency(userBalance, "KZ")}. Envie /bots para ver o catálogo.`
         }));
         return;
       }
@@ -501,19 +501,19 @@ export default function BusinessMessengerBotsChat() {
           .map((prod) => {
             const bought = getPurchasedCountForProduct(prod);
             const maxLimit = prod.limite_compra || 1;
-            const status = bought >= maxLimit ? "Esgotado" : `${maxLimit - bought} disponÃ­vel(is)`;
-            return `â€¢ ${displayBotName(prod.nome)}: ${bought}/${maxLimit} comprados (${status})`;
+            const status = bought >= maxLimit ? "Esgotado" : `${maxLimit - bought} disponível(is)`;
+            return `• ${displayBotName(prod.nome)}: ${bought}/${maxLimit} comprados (${status})`;
           })
           .join("\n");
 
         simulateBotReply(() => ({
           id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-          text: `Limites de compra por Bot:\n\n${limitsText}\n\nEnvie /bots para ver o catÃ¡logo.`
+          text: `Limites de compra por Bot:\n\n${limitsText}\n\nEnvie /bots para ver o catálogo.`
         }));
         return;
       }
 
-      if (normalized === "rendas" || normalized === "historico" || normalized === "histÃ³rico") {
+      if (normalized === "rendas" || normalized === "historico" || normalized === "histórico") {
         let currentBots = purchasedBots;
         if (!currentBots || currentBots.length === 0) {
           const res = await loadData();
@@ -533,12 +533,12 @@ export default function BusinessMessengerBotsChat() {
         }
 
         const botsSummary = activeBots
-          .map((b) => `â€¢ ${displayBotName(b.produto_nome)}: +${formatCurrency(b.renda_diaria, "KZ")}/dia (${b.dias_restantes} dias restantes)`)
+          .map((b) => `• ${displayBotName(b.produto_nome)}: +${formatCurrency(b.renda_diaria, "KZ")}/dia (${b.dias_restantes} dias restantes)`)
           .join("\n");
 
         simulateBotReply(() => ({
           id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-          text: `Rendimentos ativos:\nâ€¢ Bots ativos: ${activeBots.length}\nâ€¢ Renda diÃ¡ria total: +${formatCurrency(totalDaily, "KZ")}/dia\nâ€¢ Total investido: ${formatCurrency(totalInvested, "KZ")}\n\nDetalhamento:\n${botsSummary}`
+          text: `Rendimentos ativos:\n• Bots ativos: ${activeBots.length}\n• Renda diária total: +${formatCurrency(totalDaily, "KZ")}/dia\n• Total investido: ${formatCurrency(totalInvested, "KZ")}\n\nDetalhamento:\n${botsSummary}`
         }));
         return;
       }
@@ -548,23 +548,23 @@ export default function BusinessMessengerBotsChat() {
         return;
       }
 
-      // â”€â”€ CUPONS â”€â”€
-      if (normalized === "cupons" || normalized === "cupon" || normalized === "coupon" || normalized === "codigo" || normalized === "cÃ³digo") {
+      // ── CUPONS ──
+      if (normalized === "cupons" || normalized === "cupon" || normalized === "coupon" || normalized === "codigo" || normalized === "código") {
         setAwaitingCoupon(true);
         simulateBotReply(() => ({
           id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-          text: "ðŸŽŸï¸ *Resgatar Cupom*\n\nPor favor, cole ou digite o cÃ³digo do seu cupom:\n\nO cÃ³digo Ã© composto por letras maiÃºsculas e nÃºmeros.\nExemplo: TGRAM2024"
+          text: "🎟️ *Resgatar Cupom*\n\nPor favor, cole ou digite o código do seu cupom:\n\nO código é composto por letras maiúsculas e números.\nExemplo: TGRAM2024"
         }));
         return;
       }
 
-      // â”€â”€ AGUARDANDO CÃ“DIGO DE CUPOM â”€â”€
+      // ── AGUARDANDO CÓDIGO DE CUPOM ──
       if (awaitingCoupon) {
         const code = content.toUpperCase().replace(/[^A-Z0-9]/g, "");
         if (code.length < 5) {
           simulateBotReply(() => ({
             id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-            text: "âŒ CÃ³digo invÃ¡lido. O cÃ³digo deve ter pelo menos 5 caracteres com letras maiÃºsculas e nÃºmeros. Tente novamente ou envie /cupons para cancelar."
+            text: "❌ Código inválido. O código deve ter pelo menos 5 caracteres com letras maiúsculas e números. Tente novamente ou envie /cupons para cancelar."
           }));
           return;
         }
@@ -581,12 +581,12 @@ export default function BusinessMessengerBotsChat() {
             await loadData();
             setMessages((prev) => [...prev, {
               id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-              text: `âœ… ${result.message}\n\nSeu saldo foi atualizado! Envie /saldo para confirmar.`
+              text: `✅ ${result.message}\n\nSeu saldo foi atualizado! Envie /saldo para confirmar.`
             }]);
           } else {
             setMessages((prev) => [...prev, {
               id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-              text: `âŒ ${result?.message || 'Erro ao resgatar cupom'}\n\nVerifique o cÃ³digo e tente novamente com /cupons.`
+              text: `❌ ${result?.message || 'Erro ao resgatar cupom'}\n\nVerifique o código e tente novamente com /cupons.`
             }]);
             showToast(result?.message || 'Erro ao resgatar cupom', 'error');
           }
@@ -594,7 +594,7 @@ export default function BusinessMessengerBotsChat() {
           setIsTyping(false);
           setMessages((prev) => [...prev, {
             id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-            text: `âŒ ${err.message || 'Erro ao resgatar cupom'}\n\nTente novamente com /cupons.`
+            text: `❌ ${err.message || 'Erro ao resgatar cupom'}\n\nTente novamente com /cupons.`
           }]);
           showToast(err.message || 'Erro ao resgatar cupom', 'error');
         } finally {
@@ -634,7 +634,7 @@ export default function BusinessMessengerBotsChat() {
     [inputText, products, purchasedBots, userBalance, simulateBotReply, loadData, awaitingCoupon, restartConversation]
   );
 
-  /* â”€â”€ AÃ§Ã£o de Compra de Bot Direto no Chat â”€â”€ */
+  /* ── Ação de Compra de Bot Direto no Chat ── */
   const handleBuyProduct = useCallback(
     async (product: ProductItem) => {
       setBuyingId(product.id);
@@ -668,13 +668,13 @@ export default function BusinessMessengerBotsChat() {
           setMessages((prev) => [
             ...prev,
             { id: "err-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-              text: isNoBalance ? `Saldo insuficiente. O Bot custa ${formatCurrency(product.preco, "KZ")} e seu saldo atual Ã© de ${formatCurrency(userBalance, "KZ")}. Recarregue sua carteira para continuar.` : `Erro: ${raw}` }
+              text: isNoBalance ? `Saldo insuficiente. O Bot custa ${formatCurrency(product.preco, "KZ")} e seu saldo atual é de ${formatCurrency(userBalance, "KZ")}. Recarregue sua carteira para continuar.` : `Erro: ${raw}` }
           ]);
           showToast(isNoBalance ? "Saldo insuficiente, recarregue primeiro." : raw, "error");
         }
       } catch (err: any) {
         setIsTyping(false);
-        const raw = (err.message || "Erro de conexÃ£o ao comprar bot.").replace(/[*#]/g, "");
+        const raw = (err.message || "Erro de conexão ao comprar bot.").replace(/[*#]/g, "");
         setMessages((prev) => [
           ...prev,
           { id: "err-catch-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text", text: `Erro ao ativar Bot: ${raw}` }
@@ -712,7 +712,7 @@ export default function BusinessMessengerBotsChat() {
         backgroundImage: DOODLE_BG
       }}
     >
-      {/* â”€â”€ MODAL DE COMANDOS â”€â”€ */}
+      {/* ── MODAL DE COMANDOS ── */}
       {showCommandsModal && (
         <div
           className="botfather-commands-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-[2px]"
@@ -727,7 +727,7 @@ export default function BusinessMessengerBotsChat() {
           >
             <div className="mb-3 flex items-center justify-between border-b border-gray-100 px-1 pb-2.5 dark:border-gray-700">
               <span id="botfather-commands-title" className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-                <Zap className="h-4 w-4 text-[#2481cc]" /> Comandos rÃ¡pidos
+                <Zap className="h-4 w-4 text-[#2481cc]" /> Comandos rápidos
               </span>
               <button
                 type="button"
@@ -758,10 +758,10 @@ export default function BusinessMessengerBotsChat() {
         </div>
       )}
 
-      {/* â”€â”€ CABEÃ‡ALHO FLUTUANTE â”€â”€ */}
+      {/* ── CABEÇALHO FLUTUANTE ── */}
       <header className="w-full bg-transparent px-3 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
 
-        {/* BotÃ£o Voltar */}
+        {/* Botão Voltar */}
         <button
           onClick={() => navigate(-1)}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
@@ -772,7 +772,7 @@ export default function BusinessMessengerBotsChat() {
           </svg>
         </button>
 
-        {/* CÃ¡psula central â€” BotFather */}
+        {/* Cápsula central — BotFather */}
         <div
           className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
           onClick={() => handleSendMessage("/saldo")}
@@ -790,17 +790,17 @@ export default function BusinessMessengerBotsChat() {
           </div>
         </div>
 
-        {/* BotÃ£o Menu */}
+        {/* Botão Menu */}
         <button
           onClick={() => setShowCommandsModal(true)}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
-          aria-label="Mais opÃ§Ãµes"
+          aria-label="Mais opções"
         >
           <MoreVertical className="w-[22px] h-[22px]" />
         </button>
       </header>
 
-      {/* â”€â”€ CHAT â”€â”€ */}
+      {/* ── CHAT ── */}
       <main
         ref={mainChatRef}
         onScroll={handleScroll}
@@ -821,24 +821,24 @@ export default function BusinessMessengerBotsChat() {
                 {msg.type === "welcome" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
                     <p className="text-[14px] text-[#1c1c1e]">
-                      OlÃ¡! Sou o assistente de bots do Business Messenger. Posso ajudar-te com os teus bots, o saldo e os rendimentos. Como posso ajudar?
+                      Olá! Sou o assistente de bots do Business Messenger. Posso ajudar-te com os teus bots, o saldo e os rendimentos. Como posso ajudar?
                     </p>
                   </div>
                 )}
 
                 {msg.type === "my_bots" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="font-bold text-[14.5px] mb-1.5">Bots em ExecuÃ§Ã£o ({msg.payload?.bots?.length || 0}):</p>
+                    <p className="font-bold text-[14.5px] mb-1.5">Bots em Execução ({msg.payload?.bots?.length || 0}):</p>
                     {!msg.payload?.bots || msg.payload.bots.length === 0 ? (
                       <p className="text-[#3a3a3c]">{t('bots.no_active_bots')} /bots {t('bots.open_catalog')}</p>
                     ) : (
                       <div className="space-y-3">
                         {msg.payload.bots.map((bot: PurchasedBotItem, idx: number) => (
                           <div key={bot.id || idx} className="text-[13.5px] border-b border-gray-100 pb-2.5 last:border-0 last:pb-0">
-                            <p className="font-bold text-[#1c1c1e] mb-0.5">{idx + 1}. {displayBotName(bot.produto_nome)} <span className="text-[#25ae60] text-[12px] font-semibold">â— Ativo</span></p>
+                            <p className="font-bold text-[#1c1c1e] mb-0.5">{idx + 1}. {displayBotName(bot.produto_nome)} <span className="text-[#25ae60] text-[12px] font-semibold">● Ativo</span></p>
                             <p className="text-[#3a3a3c] text-[13px] space-y-0.5">
                               ID: <span className="font-mono text-[12px]">{bot.id?.slice(0, 8).toUpperCase()}</span><br />
-                              Renda DiÃ¡ria: <span className="text-[#25ae60] font-semibold">+{formatCurrency(bot.renda_diaria, "KZ")}/dia</span><br />
+                              Renda Diária: <span className="text-[#25ae60] font-semibold">+{formatCurrency(bot.renda_diaria, "KZ")}/dia</span><br />
                               Valor Pago: {formatCurrency(bot.preco_pago, "KZ")}<br />
                               Dias Restantes: {bot.dias_restantes} dias
                             </p>
@@ -865,10 +865,10 @@ export default function BusinessMessengerBotsChat() {
                           <div className="min-w-0 flex-1 text-[12.5px] leading-snug text-[#3a3a3c]">
                             <p className="break-words font-semibold text-[#1c1c1e]">{displayBotName(prod.nome)}</p>
                             <p className="mt-0.5 text-[11.5px] text-[#707579]">
-                              {t('bots.price')}: <span className="font-semibold text-[#1c1c1e]">{formatCurrency(prod.preco, "KZ")}</span> Â· {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(prod.renda_diaria, "KZ")}</span>
+                              {t('bots.price')}: <span className="font-semibold text-[#1c1c1e]">{formatCurrency(prod.preco, "KZ")}</span> · {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(prod.renda_diaria, "KZ")}</span>
                             </p>
                             <p className="text-[11.5px] text-[#707579]">
-                              {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e]">{prod.duracao_dias} {t('common.days')}</span> Â· {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7]">{formatCurrency(prod.renda_diaria * prod.duracao_dias, "KZ")}</span>
+                              {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e]">{prod.duracao_dias} {t('common.days')}</span> · {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7]">{formatCurrency(prod.renda_diaria * prod.duracao_dias, "KZ")}</span>
                             </p>
                           </div>
                           <button
@@ -890,10 +890,10 @@ export default function BusinessMessengerBotsChat() {
                     <div className="min-w-0 flex-1 text-[12.5px] leading-snug text-[#3a3a3c]">
                       <p className="break-words font-semibold text-[#1c1c1e]">{displayBotName(msg.payload.product.nome)}</p>
                       <p className="mt-0.5 text-[11.5px] text-[#707579]">
-                        {t('bots.price')}: <span className="font-semibold text-[#1c1c1e]">{formatCurrency(msg.payload.product.preco, "KZ")}</span> Â· {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(msg.payload.product.renda_diaria, "KZ")}</span>
+                        {t('bots.price')}: <span className="font-semibold text-[#1c1c1e]">{formatCurrency(msg.payload.product.preco, "KZ")}</span> · {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(msg.payload.product.renda_diaria, "KZ")}</span>
                       </p>
                       <p className="text-[11.5px] text-[#707579]">
-                        {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e]">{msg.payload.product.duracao_dias} {t('common.days')}</span> Â· {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7]">{formatCurrency(msg.payload.product.renda_diaria * msg.payload.product.duracao_dias, "KZ")}</span>
+                        {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e]">{msg.payload.product.duracao_dias} {t('common.days')}</span> · {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7]">{formatCurrency(msg.payload.product.renda_diaria * msg.payload.product.duracao_dias, "KZ")}</span>
                       </p>
                       <p className="text-[11.5px] text-[#707579]">{t('bots.limit')}: {msg.payload.boughtCount}/{msg.payload.maxLimit}</p>
                     </div>
@@ -951,18 +951,18 @@ export default function BusinessMessengerBotsChat() {
         </button>
       )}
 
-      {/* â”€â”€ FOOTER FLUTUANTE â€” Input + BotÃ£o Enviar â”€â”€ */}
+      {/* ── FOOTER FLUTUANTE — Input + Botão Enviar ── */}
       <footer className="fixed bottom-0 left-0 right-0 p-2 pb-[max(12px,env(safe-area-inset-bottom,12px))] z-40 flex justify-center bg-transparent pointer-events-none">
         <div className="w-full max-w-[650px] flex items-center gap-1.5 sm:gap-2 pointer-events-auto px-1 sm:px-2">
           <div className="flex-1 min-w-0 bg-white dark:bg-[#182533] rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center px-2.5 sm:px-3 py-1.5 min-h-[48px] border border-black/5 dark:border-white/10 transition-colors">
-            {/* âš¡ Comandos RÃ¡pidos */}
+            {/* ⚡ Comandos Rápidos */}
             <button
               type="button"
               onClick={() => setShowCommandsModal(!showCommandsModal)}
               className={`p-1.5 rounded-full transition-all cursor-pointer shrink-0 mr-1 ${
                 showCommandsModal ? "text-[#2481cc] bg-[#2481cc]/15" : "text-[#707579] hover:text-[#2481cc]"
               }`}
-              title="Comandos RÃ¡pidos"
+              title="Comandos Rápidos"
             >
               <Zap className="w-5 h-5" />
             </button>

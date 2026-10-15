@@ -1,5 +1,5 @@
 // Service Worker para Business Messenger - Push Notifications & Offline Support
-const CACHE_NAME = 'business-messenger-shell-v4';
+const CACHE_NAME = 'business-messenger-shell-v5';
 
 // Assets fundamentais para o App abrir offline
 const STATIC_ASSETS = [
@@ -7,7 +7,6 @@ const STATIC_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/logo_bussiness_messeger.jpg',
-  '/favicon.ico'
 ];
 
 self.addEventListener('install', (event) => {

@@ -48,14 +48,14 @@ export default function ChangePassword() {
       const email = user.email || (user.user_metadata?.phone ? `${user.user_metadata.phone}@user.com` : null);
       if (!email) throw new Error(t('password.identity_missing'));
 
-      // 1. Valida se a senha atual estÃ¡ correta tentando autenticar
+      // 1. Valida se a senha atual está correta tentando autenticar
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password: formData.currentPassword
       });
       if (signInError) throw new Error(t('password.current_incorrect'));
 
-      // 2. Atualiza a senha pelo mÃ©todo oficial padronizado do Supabase passando a senha atual
+      // 2. Atualiza a senha pelo método oficial padronizado do Supabase passando a senha atual
       const { error: updateError } = await supabase.auth.updateUser({
         password: formData.newPassword,
         current_password: formData.currentPassword

@@ -55,16 +55,21 @@ export default function DownloadApp() {
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-[17px] font-semibold">{t("download.android_title")}</h1>
+        <h1 className="text-[17px] font-semibold">Business</h1>
       </header>
 
-      <main className="mx-auto max-w-[720px] px-5 pt-10">
+      <main className="mx-auto max-w-[720px] px-5 pt-4">
         <section className="text-center">
-          <img
-            src="/logo_bussiness_messeger.jpg"
-            alt={t("download.android_alt")}
-            className="mx-auto my-10 h-[300px] w-[300px] object-contain"
-          />
+          <div
+            className="mx-auto mb-6 mt-0 h-[300px] w-[300px] overflow-hidden"
+            style={{ borderRadius: 24 }}
+          >
+            <img
+              src="/business-android-preview.png"
+              alt={t("download.android_alt")}
+              className="h-full w-full object-contain"
+            />
+          </div>
           <h2 className="mb-3 text-[26px] font-semibold tracking-tight text-[#222]">
             {t("download.android_title")}
           </h2>

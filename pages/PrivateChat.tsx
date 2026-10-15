@@ -35,7 +35,7 @@ import ChatsList from './ChatsList';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// â”€â”€ Tipos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
   id: string;
   remetente_id: string;
@@ -64,8 +64,8 @@ interface ContextMenu {
   isMe: boolean;
 }
 
-// â”€â”€ Constantes de Emojis Oficiais Telegram â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const QUICK_REACTIONS = ['ðŸ‘', 'â¤ï¸', 'ðŸ”¥', 'ðŸ¥°', 'ðŸ‘', 'ðŸ˜‚'];
+// ── Constantes de Emojis Oficiais Telegram ────────────────────────────
+const QUICK_REACTIONS = ['👍', '❤️', '🔥', '🥰', '👏', '😂'];
 
 const getMessageDetails = (details: Message['detalhes'] | string | null | undefined) => {
   if (typeof details === 'string') {
@@ -82,7 +82,7 @@ const getMessageDetails = (details: Message['detalhes'] | string | null | undefi
   return details && typeof details === 'object' ? details : {};
 };
 
-// â”€â”€ Componente Principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Componente Principal ───────────────────────────────────────────────
 export default function PrivateChat() {
   const { contactId } = useParams();
   const [searchParams] = useSearchParams();
@@ -151,7 +151,7 @@ export default function PrivateChat() {
     registeredAt: null,
   });
 
-  // â”€â”€ Indicador de Digitando em Tempo Real (Supabase Broadcast) â”€â”€
+  // ── Indicador de Digitando em Tempo Real (Supabase Broadcast) ──
   const [isContactTyping, setIsContactTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
@@ -244,7 +244,7 @@ export default function PrivateChat() {
 
   const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-  // â”€â”€ Fetch Messages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fetch Messages ────────────────────────────────────────────────────
   const isFetchingRef = useRef(false);
   const fetchMessages = async (isInitial = false) => {
     if (!user || !contactId) return;
@@ -287,7 +287,7 @@ export default function PrivateChat() {
           .eq('destinatario_id', user.id);
 
         if (readError) {
-          console.error(`NÃ£o foi possÃ­vel marcar a mensagem ${message.id} como lida:`, readError);
+          console.error(`Não foi possível marcar a mensagem ${message.id} como lida:`, readError);
           return;
         }
         readMessageIds.add(message.id);
@@ -330,7 +330,7 @@ export default function PrivateChat() {
       });
       if (isInitial) scrollToBottom('auto');
     } catch (error) {
-      console.error('NÃ£o foi possÃ­vel sincronizar as mensagens privadas:', error);
+      console.error('Não foi possível sincronizar as mensagens privadas:', error);
     } finally {
       isFetchingRef.current = false;
       setIsLoading(false);
@@ -400,7 +400,7 @@ export default function PrivateChat() {
     };
   }, [user, contactId]);
 
-  // â”€â”€ Escuta e Envio do Status "Digitando..." via Supabase Realtime Broadcast â”€â”€
+  // ── Escuta e Envio do Status "Digitando..." via Supabase Realtime Broadcast ──
   useEffect(() => {
     if (!user || !contactId) return;
     const pairId = [user.id, contactId].sort().join('_');
@@ -499,7 +499,7 @@ export default function PrivateChat() {
     };
   }, [contextMenu]);
 
-  // â”€â”€ Context Menu Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Context Menu Helpers ──────────────────────────────────────────────
   const openContextMenu = useCallback((message: Message, isMe: boolean) => {
     setShowAllReactions(false);
     setContextMenu({ message, x: 0, y: 0, isMe });
@@ -546,7 +546,7 @@ export default function PrivateChat() {
     }
   };
 
-  // â”€â”€ Long Press Gesture (Pressionar para abrir modal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Long Press Gesture (Pressionar para abrir modal) ───────────────────
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressTriggeredRef = useRef(false);
   const pressStartPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -582,7 +582,7 @@ export default function PrivateChat() {
     }
   };
 
-  // â”€â”€ Send Message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Send Message ──────────────────────────────────────────────────────
   const handleSend = async (overrideText?: string, voiceAttachment?: VoiceAttachment) => {
     const textToSend = overrideText !== undefined ? overrideText : inputText;
     if ((!textToSend.trim() && !imagePreview && !pdfPreview && !voiceAttachment) || !user || !contactId || isSending) return;
@@ -641,7 +641,7 @@ export default function PrivateChat() {
           id: `auto_${Date.now()}`,
           remetente_id: contactId,
           destinatario_id: user.id,
-          mensagem: 'Obrigado pela sua mensagem! O Business Messenger estÃ¡ ativo para impulsionar suas operaÃ§Ãµes e conexÃµes em tempo real. Se precisar de assistÃªncia financeira com Stars, consulte a aba de Carteira.',
+          mensagem: 'Obrigado pela sua mensagem! O Business Messenger está ativo para impulsionar suas operações e conexões em tempo real. Se precisar de assistência financeira com Stars, consulte a aba de Carteira.',
           lida: true,
           created_at: new Date().toISOString()
         };
@@ -680,7 +680,7 @@ export default function PrivateChat() {
         throw error;
       }
       if (!inserted) {
-        throw new Error('A persistÃªncia nÃ£o confirmou a mensagem.');
+        throw new Error('A persistência não confirmou a mensagem.');
       }
       setMessages(prev => {
         const updated = prev.map(m => m.id === tempId ? { ...inserted, status: 'sent' } : m);
@@ -741,7 +741,7 @@ export default function PrivateChat() {
     }
   };
 
-  // â”€â”€ Helpers de FormataÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Helpers de Formatação ─────────────────────────────────────────────
   const formatTime = (ts: string) =>
     ts ? new Date(ts).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
 
@@ -771,9 +771,9 @@ export default function PrivateChat() {
   };
 
   const formatProfileDate = (value: string | null | undefined) => {
-    if (!value) return 'NÃ£o informado';
+    if (!value) return 'Não informado';
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'NÃ£o informado';
+    if (Number.isNaN(date.getTime())) return 'Não informado';
     return new Intl.DateTimeFormat('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -785,9 +785,9 @@ export default function PrivateChat() {
     const normalized = String(value ?? contactLevel ?? 'L1').trim().toUpperCase();
     if (/^L[123]$/.test(normalized)) return normalized;
     if (/^[123]$/.test(normalized)) return `L${normalized}`;
-    if (/NIVEL\s*1|NÃVEL\s*1/.test(normalized)) return 'L1';
-    if (/NIVEL\s*2|NÃVEL\s*2/.test(normalized)) return 'L2';
-    if (/NIVEL\s*3|NÃVEL\s*3/.test(normalized)) return 'L3';
+    if (/NIVEL\s*1|NÍVEL\s*1/.test(normalized)) return 'L1';
+    if (/NIVEL\s*2|NÍVEL\s*2/.test(normalized)) return 'L2';
+    if (/NIVEL\s*3|NÍVEL\s*3/.test(normalized)) return 'L3';
     return 'L1';
   };
 
@@ -801,7 +801,7 @@ export default function PrivateChat() {
   const contactColor = getUserColor(contactDisplayName);
   const isCommunityChat = contactId?.startsWith('pavel');
 
-  // â”€â”€ AÃ§Ãµes do menu de contexto â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Ações do menu de contexto ─────────────────────────────────────────
   const menuActions = contextMenu ? [
     { icon: Reply, label: t('common.reply'), onClick: handleReply, color: '#2481cc' },
     { icon: Copy, label: t('common.copy'), onClick: handleCopy, color: '#555' },
@@ -809,7 +809,7 @@ export default function PrivateChat() {
     { icon: Trash2, label: t('common.delete'), onClick: handleDelete, color: '#e53e3e', subLabel: t('chat.auto_delete_31_days') },
   ] : [];
 
-  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-[#f4f4f5] dark:bg-[#0e1621]">
       <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
@@ -825,7 +825,7 @@ export default function PrivateChat() {
       }}
     >
 
-      {/* â”€â”€ HEADER â”€â”€ */}
+      {/* ── HEADER ── */}
       <div className="h-[68px] shrink-0 md:hidden" aria-hidden="true" />
       <header className="fixed left-0 right-0 top-0 z-40 flex w-full shrink-0 select-none items-center justify-between bg-transparent px-3 py-3 pointer-events-none sm:px-4 md:sticky md:left-auto md:right-auto md:top-0">
         <button
@@ -883,7 +883,7 @@ export default function PrivateChat() {
                   'Espaço de partilha da comunidade'
                 ) : contactIsOnline ? (
                   <span className="text-[#10b981] font-medium">
-                    {t('chat.online_now')}{contactLevel ? ` â€¢ ${t('chat.affiliate_level').replace('{level}', contactLevel.replace(/^L/, ''))}` : ''}
+                    {t('chat.online_now')}{contactLevel ? ` • ${t('chat.affiliate_level').replace('{level}', contactLevel.replace(/^L/, ''))}` : ''}
                   </span>
                 ) : (
                   t('chat.offline')
@@ -1026,7 +1026,7 @@ export default function PrivateChat() {
         </div>
       )}
 
-      {/* â”€â”€ ÃREA DE MENSAGENS TELEGRAM (LARGURA TOTAL FLUIDA) â”€â”€ */}
+      {/* ── ÁREA DE MENSAGENS TELEGRAM (LARGURA TOTAL FLUIDA) ── */}
       <main
         ref={scrollRef}
         className="w-full min-h-0 flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
@@ -1059,7 +1059,7 @@ export default function PrivateChat() {
               <div
                 className={`flex items-end w-full gap-1.5 ${isMe ? 'justify-end' : 'justify-start'} relative group`}
               >
-                  {/* ReaÃ§Ã£o existente */}
+                  {/* Reação existente */}
                   {m.reaction && (
                     <div
                       className={`absolute -bottom-3 ${isMe ? 'right-0' : 'left-0'} z-10 text-[16px] leading-none select-none`}
@@ -1069,7 +1069,7 @@ export default function PrivateChat() {
                     </div>
                   )}
 
-                  {/* BalÃ£o da mensagem com Long Press (Pressionar) */}
+                  {/* Balão da mensagem com Long Press (Pressionar) */}
                   <div
                     onTouchStart={(e) => {
                       const t = e.touches[0];
@@ -1220,7 +1220,7 @@ export default function PrivateChat() {
                         </span>
                       )}
                       
-                      {/* Spacer invisÃ­vel inline â€” dÃ¡ espaÃ§o ao timestamp sem forÃ§ar largura mÃ­nima */}
+                      {/* Spacer invisível inline — dá espaço ao timestamp sem forçar largura mínima */}
                       <span
                         aria-hidden="true"
                         className="inline-block h-[1px]"
@@ -1244,7 +1244,7 @@ export default function PrivateChat() {
                       </div>
                       {isMe && m.status === 'failed' && (
                         <p className="text-[10px] text-[#e53e3e] mt-0.5 text-right font-medium select-none leading-tight">
-                          Mensagem nÃ£o enviada
+                          Mensagem não enviada
                         </p>
                       )}
                     </div>}
@@ -1265,11 +1265,11 @@ export default function PrivateChat() {
           </div>
         )}
 
-        {/* EspaÃ§o extra para reaÃ§Ãµes no final */}
+        {/* Espaço extra para reações no final */}
         <div className="h-2" />
       </main>
 
-      {/* â”€â”€ CONTEXT MENU OVERLAY (TELEGRAM NATIVO) â”€â”€ */}
+      {/* ── CONTEXT MENU OVERLAY (TELEGRAM NATIVO) ── */}
       {contextMenu && (
         <div
           className="fixed inset-0 z-[100] flex flex-col justify-end items-center px-4 pb-6 bg-black/50 backdrop-blur-xs transition-opacity"
@@ -1285,7 +1285,7 @@ export default function PrivateChat() {
               touchAction: 'manipulation'
             }}
           >
-            {/* â”€â”€ Barra Flutuante de ReaÃ§Ãµes Telegram â”€â”€ */}
+            {/* ── Barra Flutuante de Reações Telegram ── */}
             <div className="bg-white dark:bg-[#2b2b2b] rounded-2xl shadow-xl px-3 py-2 flex items-center justify-around border border-gray-100 dark:border-white/10">
               {QUICK_REACTIONS.map((emoji) => (
                 <button
@@ -1301,7 +1301,7 @@ export default function PrivateChat() {
               ))}
             </div>
 
-            {/* â”€â”€ Lista de AÃ§Ãµes Essenciais â”€â”€ */}
+            {/* ── Lista de Ações Essenciais ── */}
             <div className="bg-white dark:bg-[#2b2b2b] rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-white/10">
               {menuActions.map((action, idx) => (
                 <React.Fragment key={action.label}>
@@ -1336,7 +1336,7 @@ export default function PrivateChat() {
               ))}
             </div>
 
-            {/* BotÃ£o Cancelar */}
+            {/* Botão Cancelar */}
             <button
               type="button"
               onClick={closeContextMenu}
@@ -1349,7 +1349,7 @@ export default function PrivateChat() {
         </div>
       )}
 
-      {/* â”€â”€ REPLY PREVIEW BAR â”€â”€ */}
+      {/* ── REPLY PREVIEW BAR ── */}
       {replyTo && (
         <div className="absolute bottom-[65px] left-0 right-0 z-40 flex justify-center px-2 sm:px-6">
           <div className="w-full max-w-[1000px] bg-white dark:bg-[#17212b] border-t-2 border-[#2481cc] rounded-t-xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
@@ -1371,7 +1371,7 @@ export default function PrivateChat() {
         </div>
       )}
 
-      {/* â”€â”€ BARRA DE MENSAGEM FLUTUANTE â”€â”€ */}
+      {/* ── BARRA DE MENSAGEM FLUTUANTE ── */}
       <div
         className="absolute bottom-0 left-0 right-0 z-40 flex justify-center"
         style={{
@@ -1510,7 +1510,7 @@ export default function PrivateChat() {
             />
           </div>
 
-          {/* BotÃ£o enviar flutuante */}
+          {/* Botão enviar flutuante */}
           <button
             type="button"
             onClick={() => {
@@ -1531,7 +1531,7 @@ export default function PrivateChat() {
         </div>
       </div>
 
-      {/* â”€â”€ Modal de Zoom da Imagem (VisualizaÃ§Ã£o Completa) â”€â”€ */}
+      {/* ── Modal de Zoom da Imagem (Visualização Completa) ── */}
       {zoomedImage && (
         <div 
           className="fixed inset-0 z-[300] flex h-[100dvh] w-screen flex-col items-center justify-center overflow-hidden bg-black animate-in fade-in duration-150"
@@ -1561,7 +1561,7 @@ export default function PrivateChat() {
         </div>
       )}
 
-      {/* â”€â”€ AnimaÃ§Ãµes CSS injetadas â”€â”€ */}
+      {/* ── Animações CSS injetadas ── */}
       <style>{`
         @keyframes slideUpMenu {
           from { opacity: 0; transform: translateY(18px) scale(0.96); }

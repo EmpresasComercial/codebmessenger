@@ -11,9 +11,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
 
   // Enquanto o contexto inicializa o primeiro getSession em background
-  if (!ready) return null; 
+  if (!ready) return null;
 
-  // Se nÃ£o houver sessÃ£o vÃ¡lida, redireciona imediatamente
+  // Redirect immediately when there is no valid session.
   if (!session) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -21,4 +21,3 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Se estiver autenticado, exibe a rota privada sem loaders extras
   return <>{children}</>;
 }
-

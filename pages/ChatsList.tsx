@@ -131,7 +131,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   const { t, darkMode, setDarkMode } = useLanguage();
   const { statusText } = useNetworkStatus();
 
-  // typingUsers: Map<contactId, true> â€” contatos que estÃ£o digitando agora
+  // typingUsers: Map<contactId, true> — contatos que estão digitando agora
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const typingTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const [communityTypingUser, setCommunityTypingUser] = useState<string | null>(null);
@@ -167,7 +167,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           localStorage.removeItem(key);
         }
       } catch (error) {
-        console.error(`NÃ£o foi possÃ­vel limpar o cache offline da conversa ${key}:`, error);
+        console.error(`Não foi possível limpar o cache offline da conversa ${key}:`, error);
       }
     });
 
@@ -188,7 +188,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         localStorage.removeItem('community_chat_cache');
       }
     } catch (error) {
-      console.error('NÃ£o foi possÃ­vel limpar o cache offline do grupo:', error);
+      console.error('Não foi possível limpar o cache offline do grupo:', error);
     }
 
     localStorage.removeItem(CACHE_KEY_CONTACTS);
@@ -196,7 +196,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   };
 
   const [contacts, setContacts] = useState<any[]>(() => {
-    if (typeof navigator !== 'undefined' && navigator.onLine) return [];
     try {
       const cached = localStorage.getItem(user ? `tg_cache_contacts_${user.id}` : 'tg_cache_contacts');
       return cached ? JSON.parse(cached) : [];
@@ -205,7 +204,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     }
   });
   const [isLoading, setIsLoading] = useState(() => {
-    if (typeof navigator !== 'undefined' && navigator.onLine) return true;
     try {
       const cached = localStorage.getItem(user ? `tg_cache_contacts_${user.id}` : 'tg_cache_contacts');
       return !(cached && JSON.parse(cached).length > 0);
@@ -327,7 +325,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     };
   });
   
-  // Abas oficiais conforme especificaÃ§Ã£o da Fase 1:
+  // Abas oficiais conforme especificação da Fase 1:
   // Conversas | Grupos | Canais | Bots | Mensagens lidas
   type ChatFolder = 'all' | 'groups' | 'channels' | 'bots' | 'unread';
   const [activeFilter, setActiveFilter] = useState<ChatFolder>('all');
@@ -388,7 +386,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       return 'ontem';
     }
 
-    // Ãšltimos 7 dias: dia da semana abreviado (seg., ter., qua., ...)
+    // Últimos 7 dias: dia da semana abreviado (seg., ter., qua., ...)
     const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays >= 0 && diffDays < 7) {
       return d.toLocaleDateString('pt-PT', { weekday: 'short' });
@@ -452,7 +450,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           localStorage.removeItem(CACHE_KEY_COMM_LAST);
         }
       } catch (err) {
-        console.error('Erro ao carregar Ãºltima mensagem da comunidade:', err);
+        console.error('Erro ao carregar última mensagem da comunidade:', err);
       }
     };
 
@@ -509,13 +507,13 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
         await registration.showNotification(senderName, {
           body: body.slice(0, 240),
-          icon: '/logo_bussiness_messeger.png',
-          badge: '/logo_bussiness_messeger.png',
+          icon: '/logo_bussiness_messeger.jpg',
+          badge: '/logo_bussiness_messeger.jpg',
           tag: `community-message-${messageId}`,
           data: { url: '/web' }
         });
       } catch (error) {
-        console.error('NÃ£o foi possÃ­vel mostrar a notificaÃ§Ã£o da comunidade:', error);
+        console.error('Não foi possível mostrar a notificação da comunidade:', error);
       }
     };
 
@@ -617,7 +615,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             .limit(100);
 
           if (lastMsgs && lastMsgs.length > 0) {
-            // Se houver mensagens com usuÃ¡rios nÃ£o listados na equipe, buscar dados em sys_t500
+            // Se houver mensagens com usuários não listados na equipe, buscar dados em sys_t500
             const missingIds: string[] = [];
             lastMsgs.forEach((msg: any) => {
               const otherId = msg.remetente_id === user.id ? msg.destinatario_id : msg.remetente_id;
@@ -710,9 +708,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       }
     };
 
-    if (navigator.onLine) {
-      localStorage.removeItem(CACHE_KEY_CONTACTS);
-    }
     fetchContacts();
 
     const contactChannel = supabase.channel('chatslist_contacts_sync')
@@ -730,8 +725,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     const handleSync = () => {
       if (!navigator.onLine) return;
       clearOfflineMessageCaches();
-      setContacts([]);
-      setIsLoading(true);
       fetchContacts();
     };
     window.addEventListener('online', handleSync);
@@ -744,13 +737,13 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     };
   }, [user]);
 
-  // â”€â”€ Escuta "digitando..." de todos os contatos via Supabase Broadcast â”€â”€
+  // ── Escuta "digitando..." de todos os contatos via Supabase Broadcast ──
   useEffect(() => {
     if (!user) return;
 
     // Cada conversa privada usa canal "typing_{sorted_pair}".
-    // Aqui inscrevemos um canal wildcard por padrÃ£o do Supabase nÃ£o existe,
-    // entÃ£o usamos um canal global de presenÃ§a de typing que cada contato escreve.
+    // Aqui inscrevemos um canal wildcard por padrão do Supabase não existe,
+    // então usamos um canal global de presença de typing que cada contato escreve.
     const channel = supabase.channel('chatslist_typing_global', {
       config: { broadcast: { ack: false } }
     })
@@ -758,7 +751,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         const senderId: string = payload?.payload?.userId;
         const targetId: string = payload?.payload?.targetId;
         if (senderId && targetId === 'community') {
-          const senderName = payload?.payload?.name || 'AlguÃ©m';
+          const senderName = payload?.payload?.name || 'Alguém';
           setCommunityTypingUser(senderName);
           if (communityTypingTimer.current) clearTimeout(communityTypingTimer.current);
           communityTypingTimer.current = setTimeout(() => {
@@ -768,7 +761,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           return;
         }
 
-        // SÃ³ processa se o evento Ã© direcionado ao utilizador atual
+        // Só processa se o evento é direcionado ao utilizador atual
         if (!senderId || targetId !== user.id) return;
 
         setTypingUsers(prev => ({ ...prev, [senderId]: true }));
@@ -777,7 +770,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         if (typingTimers.current[senderId]) {
           clearTimeout(typingTimers.current[senderId]);
         }
-        // Auto-remove apÃ³s 3s sem novo evento
+        // Auto-remove após 3s sem novo evento
         typingTimers.current[senderId] = setTimeout(() => {
           setTypingUsers(prev => {
             const next = { ...prev };
@@ -803,7 +796,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     return colors[Math.abs(hash) % colors.length];
   };
 
-  // Pesquisa dinÃ¢mica
+  // Pesquisa dinâmica
   const queryClean = searchQuery.toLowerCase().trim();
   const queryDigits = queryClean.replace(/\D/g, '');
 
@@ -844,7 +837,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-  // Lista de conversas com ordenaÃ§Ã£o estrita por data/hora da mensagem mais recente (sem fixaÃ§Ã£o permanente)
+  // Lista de conversas com ordenação estrita por data/hora da mensagem mais recente (sem fixação permanente)
   const allConversations = useMemo(() => {
     // 1. Conversas do Sistema / Oficiais
     const systemChats = [
@@ -858,7 +851,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: communityLastMessage.time,
         timestamp: communityLastMessage.timestamp,
         isMe: communityLastMessage.isMe,
-        avatarUrl: '/logo_bussiness_messeger.png',
+        avatarUrl: '/logo_bussiness_messeger.jpg',
         avatarLabel: 'T',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -882,7 +875,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 20),
         timestamp: Date.now() - 1000 * 60 * 60 * 20,
         isMe: false,
-        avatarUrl: '/logo_bussiness_messeger.jpg',
+        avatarUrl: '/Andrew_avatar_1792019295598.jpg',
         avatarLabel: 'B',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -891,7 +884,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         nivel: null,
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs bg-[#2481cc]/20 border border-white/40">
-            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+            <img src="/Andrew_avatar_1792019295598.jpg" alt="Andrew Nicolan" className="w-full h-full object-cover" />
           </div>
         ),
         onClick: () => navigate('/canal-oficial')
@@ -899,15 +892,15 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       {
         id: 'deposit-bot',
         folder: 'bots' as ChatFolder,
-        name: 'Payments Bot',
+        name: 'Messenger TopUp',
         isVerified: true,
         tag: 'BOT',
-        lastMessage: 'Recargas e depÃ³sitos automÃ¡ticos via Multicaixa Express e IBAN.',
+        lastMessage: 'Recargas e depósitos automáticos via Multicaixa Express e IBAN.',
         senderPrefix: null,
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 36),
         timestamp: Date.now() - 1000 * 60 * 60 * 36,
         isMe: false,
-        avatarUrl: '/logo_bussiness_messeger.png',
+        avatarUrl: '/logo_bussiness_messeger.jpg',
         avatarLabel: 'P',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -916,8 +909,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
             <img 
-              src="/logo_bussiness_messeger.png"
-              alt="Payments Bot" 
+              src="/logo_bussiness_messeger.jpg"
+              alt="Messenger TopUp"
               className="w-full h-full object-cover"
             />
           </div>
@@ -927,15 +920,15 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       {
         id: 'withdrawal-bot',
         folder: 'bots' as ChatFolder,
-        name: 'Wallet',
+        name: 'Messenger wallet',
         isVerified: true,
         tag: 'BOT',
-        lastMessage: 'SolicitaÃ§Ãµes de saque e levantamentos rÃ¡pidos para conta bancÃ¡ria.',
+        lastMessage: 'Solicitações de saque e levantamentos rápidos para conta bancária.',
         senderPrefix: null,
         time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 48),
         timestamp: Date.now() - 1000 * 60 * 60 * 48,
         isMe: false,
-        avatarUrl: '/logo_bussiness_messeger.png',
+        avatarUrl: '/logo_bussiness_messeger.jpg',
         avatarLabel: 'W',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -944,8 +937,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
             <img 
-              src="/logo_bussiness_messeger.png"
-              alt="Wallet" 
+              src="/logo_bussiness_messeger.jpg"
+              alt="Messenger wallet"
               className="w-full h-full object-cover"
             />
           </div>
@@ -1035,7 +1028,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   className={`absolute bottom-0 right-0 w-[18px] h-[18px] rounded-full border-2 border-white dark:border-[#17212b] flex items-center justify-center text-[10px] font-bold text-white shadow-xs ${
                     nv === 1 ? 'bg-[#10b981]' : nv === 2 ? 'bg-[#3b82f6]' : 'bg-[#8b5cf6]'
                   }`}
-                  title={`Subordinado de ${nv}Âº nÃ­vel`}
+                  title={`Subordinado de ${nv}º nível`}
                 >
                   {nv}
                 </div>
@@ -1046,7 +1039,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         };
       });
 
-    // 3. Combina e ordena estritamente por timestamp decrescente (a conversa mais recente sempre em 1Âº lugar!)
+    // 3. Combina e ordena estritamente por timestamp decrescente (a conversa mais recente sempre em 1º lugar!)
     return [...systemChats, ...activeContactChats].sort((a, b) => b.timestamp - a.timestamp);
   }, [communityLastMessage, contacts, navigate]);
 
@@ -1092,11 +1085,11 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       }}
     >
       <div className={`flex min-h-0 flex-1 flex-col ${embedded ? "" : "md:w-[350px] md:shrink-0 md:border-r md:border-gray-200 dark:md:border-[#202b36]"}`}>
-      {/* â”€â”€ TOP APP BAR OFICIAL DO TELEGRAM â”€â”€ */}
+      {/* ── TOP APP BAR OFICIAL DO TELEGRAM ── */}
       <header className="sticky top-0 z-40 bg-white dark:bg-[#242f3d] shadow-[0_1px_0_rgba(0,0,0,0.08)] select-none transition-colors">
         <div className="h-[56px] px-2 flex items-center justify-between gap-1">
           
-          {/* Campo de Busca ativo com botÃ£o voltar ou TÃ­tulo Telegram */}
+          {/* Campo de Busca ativo com botão voltar ou Título Telegram */}
           {isSearching ? (
             <>
               <button
@@ -1148,17 +1141,17 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     aria-label={t('chat.open_menu')}
                     aria-expanded={isNavigationDrawerOpen}
                   >
-                    <Menu className="h-6 w-6" />
+                    <Menu className="h-[22px] w-[22px]" />
                   </button>
-                  <h1 className="min-w-0 truncate whitespace-nowrap text-[clamp(14px,4.5vw,16px)] font-bold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
-                    Business Messenger
+                  <h1 className="min-w-0 truncate whitespace-nowrap text-[18px] font-bold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
+                    Business
                   </h1>
                 </>
               )}
             </div>
           )}
 
-          {/* AÃ§Ãµes da Direita */}
+          {/* Ações da Direita */}
           <div className="flex items-center gap-0">
             {!isSearching && (
               <button
@@ -1350,7 +1343,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           </div>
         )}
 
-        {/* â”€â”€ ABAS SUPERIORES â”€â”€ */}
+        {/* ── ABAS SUPERIORES ── */}
         <div className="flex overflow-x-auto no-scrollbar px-2 bg-white dark:bg-[#242f3d] border-t border-[#e8e8e8] dark:border-white/10">
           {folders.map(folder => {
             const isActive = activeFilter === folder.id;
@@ -1384,17 +1377,17 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         </div>
       </header>
 
-      {/* â”€â”€ CORPO PRINCIPAL DE CHATS (ORDENAÃ‡ÃƒO DINÃ‚MICA SEM CONVERSAS FIXAS) â”€â”€ */}
+      {/* ── CORPO PRINCIPAL DE CHATS (ORDENAÇÃO DINÂMICA SEM CONVERSAS FIXAS) ── */}
       <main className={`w-full flex-1 overflow-y-auto ${embedded ? "pb-2" : "pb-20"}`}>
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center p-8 space-y-2">
-            <Loader2 className="w-7 h-7 text-[#2481cc] animate-spin" />
-            <span className="text-[13px] text-[#707579] dark:text-[#9eaab6]">{t('chat.loading_chats')}</span>
+        {isLoading && contacts.length === 0 && (
+          <div className="flex items-center justify-center gap-2 px-4 py-3 text-[13px] text-[#707579] dark:text-[#9eaab6]">
+            <Loader2 className="h-4 w-4 animate-spin text-[#2481cc]" />
+            <span>{t('chat.loading_chats')}</span>
           </div>
-        ) : (
-          <>
-            {/* 1. Lista de conversas ativas ordenadas por recÃªncia */}
-            {filteredChats.map((chat) => {
+        )}
+        <>
+          {/* 1. Lista de conversas ativas ordenadas por recência */}
+          {filteredChats.map((chat) => {
               const rawId = chat.id.startsWith('contact-') ? chat.id.replace('contact-', '') : null;
               const isOnline = rawId ? isUserOnline(rawId) : false;
               const isSub = Boolean(chat.isSubordinate);
@@ -1476,9 +1469,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   </div>
                 </div>
               );
-            })}
+          })}
 
-            {/* 2. SeÃ§Ã£o de contatos (sem conversas recentes iniciadas) */}
+            {/* 2. Seção de contatos (sem conversas recentes iniciadas) */}
             {activeFilter === 'all' && idleContacts.length > 0 && (
               <>
                 <div className="px-4 py-2 bg-[#f4f4f5] dark:bg-[#1a2330] border-b border-gray-100/80 dark:border-[#202b36]">
@@ -1534,7 +1527,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                             className={`absolute bottom-0 right-0 w-[18px] h-[18px] rounded-full border-2 border-white dark:border-[#17212b] flex items-center justify-center text-[10px] font-bold text-white shadow-xs ${
                               nv === 1 ? 'bg-[#10b981]' : nv === 2 ? 'bg-[#3b82f6]' : 'bg-[#8b5cf6]'
                             }`}
-                            title={`Subordinado de ${nv}Âº nÃ­vel`}
+                            title={`Subordinado de ${nv}º nível`}
                           >
                             {nv}
                           </div>
@@ -1558,7 +1551,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                             <span className="text-[#4dcd5e] font-medium italic">{t('chat.typing')}</span>
                           ) : (
                             <span className="text-[#707579] dark:text-[#9eaab6]">
-                              visto Ã s {timeStr}
+                              visto às {timeStr}
                             </span>
                           )}
                         </p>
@@ -1569,7 +1562,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               </>
             )}
 
-            {/* Feedback quando a busca nÃ£o encontra nada */}
+            {/* Feedback quando a busca não encontra nada */}
             {searchQuery && filteredChats.length === 0 && idleContacts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <p className="text-[#707579] dark:text-[#9eaab6] text-[15px] mb-2">
@@ -1583,13 +1576,12 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 </button>
               </div>
             )}
-          </>
-        )}
+        </>
       </main>
 
       {!embedded && (
         <>
-          {/* â”€â”€ BOTÃƒO DE AÃ‡ÃƒO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÃPIS) â”€â”€ */}
+          {/* ── BOTÃO DE AÇÃO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÁPIS) ── */}
           <button
             onClick={() => {
               showToast(t('chat.new_conversation'), 'info');

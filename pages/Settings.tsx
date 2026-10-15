@@ -51,7 +51,7 @@ export default function Settings() {
         </div>
         <h1 className="text-[22px] font-semibold tracking-tight text-black mb-0.5">Thomas Hall</h1>
         <p className="text-[14px] text-[#8e8e93]">
-          +244 941465064 â€¢ @Asiaray_Thomas_Hall
+          +244 941465064 • @Asiaray_Thomas_Hall
         </p>
       </section>
 

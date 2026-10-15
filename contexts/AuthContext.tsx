@@ -20,13 +20,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { showToast } = useToast();
 
   useEffect(() => {
+    let active = true;
     // Safety timeout to prevent permanent white screen
     const timeout = setTimeout(() => {
-      setReady(true);
+      if (active) setReady(true);
     }, 5000);
 
     supabase.auth.getSession()
       .then(async ({ data }) => {
+        if (!active) return;
         let currentSession = data.session;
         // Se o token salvo no localStorage ainda for o token antigo pesado (>5KB com base64)
         if (currentSession?.access_token && currentSession.access_token.length > 5000) {
@@ -39,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             currentSession = null;
           }
         }
+        if (!active) return;
         setSession(currentSession);
         if (currentSession && 'Notification' in window && Notification.permission === 'granted') {
           subscribeToPushNotifications();
@@ -48,12 +51,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("Erro ao carregar sessão:", err);
       })
       .finally(() => {
-        setReady(true);
+        if (active) setReady(true);
         clearTimeout(timeout);
       });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        if (!active) return;
         setSession(currentSession);
 
         if (event === 'SIGNED_OUT') {
@@ -73,7 +77,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   return (

@@ -183,7 +183,7 @@ export default function Profile() {
   return (
     <div className="w-full min-h-screen bg-white dark:bg-[#17212b] font-sans text-black dark:text-white flex flex-col pb-24">
 
-      {/* â”€â”€ CABEÃ‡ALHO NO ESTILO OFICIAL DO TELEGRAM â”€â”€ */}
+      {/* ── CABEÇALHO NO ESTILO OFICIAL DO TELEGRAM ── */}
       <header ref={profileHeaderRef} className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-3 text-[#222222] dark:border-[#202b36] dark:bg-[#17212b] dark:text-white">
         <div className="flex items-center gap-2">
           <button 
@@ -218,7 +218,7 @@ export default function Profile() {
         </div>
       </header>
 
-      {/* â”€â”€ AVATAR & PERFIL TELEGRAM WEB â”€â”€ */}
+      {/* ── AVATAR & PERFIL TELEGRAM WEB ── */}
       <section ref={profileSectionRef} className="bg-white dark:bg-[#17212b] border-b border-gray-100 dark:border-[#202b36] pt-6 pb-5 px-2 flex flex-col items-center">
         <div className="relative mb-3 cursor-pointer" onClick={() => setShowEditProfile(true)}>
           {avatarUrl ? (
@@ -246,13 +246,13 @@ export default function Profile() {
         ) : null}
       </section>
 
-      {/* â”€â”€ LISTA DE ITENS FLAT (GRUDADO NA ESQUERDA E DIREITA COM 8px DE MARGEM) â”€â”€ */}
+      {/* ── LISTA DE ITENS FLAT (GRUDADO NA ESQUERDA E DIREITA COM 8px DE MARGEM) ── */}
       <main className="w-full flex-1 flex flex-col divide-y divide-gray-100/80 dark:divide-gray-800/80">
 
-        {/* DIVISOR DE SEÃ‡ÃƒO */}
+        {/* DIVISOR DE SEÇÃO */}
         <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
 
-        {/* SEÃ‡ÃƒO 2: OPERAÃ‡Ã•ES & AÃ‡Ã•ES */}
+        {/* SEÇÃO 2: OPERAÇÕES & AÇÕES */}
         <div className="w-full bg-white dark:bg-[#17212b]">
           <SettingsItem
             icon={<Wallet className="w-5 h-5 text-white" />}
@@ -321,10 +321,10 @@ export default function Profile() {
           />
         </div>
 
-        {/* DIVISOR DE SEÃ‡ÃƒO */}
+        {/* DIVISOR DE SEÇÃO */}
         <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
 
-        {/* SEÃ‡ÃƒO 3: AJUDA & SUPORTE */}
+        {/* SEÇÃO 3: AJUDA & SUPORTE */}
         <div className="w-full bg-white dark:bg-[#17212b]">
           <div className="px-2 pt-3 pb-1.5">
             <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.help_section')}</span>
@@ -347,10 +347,10 @@ export default function Profile() {
           />
         </div>
 
-        {/* DIVISOR DE SEÃ‡ÃƒO */}
+        {/* DIVISOR DE SEÇÃO */}
         <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
 
-        {/* SEÃ‡ÃƒO 4: DEFINIÃ‡Ã•ES */}
+        {/* SEÇÃO 4: DEFINIÇÕES */}
         <div ref={settingsSectionRef} className="w-full bg-white dark:bg-[#17212b]">
           <div className="px-2 pt-3 pb-1.5">
             <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.settings')}</span>
@@ -511,9 +511,9 @@ export default function Profile() {
   );
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════════════════════
    COMPONENTES AUXILIARES
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════════════════════ */
 function SettingsItem({
   icon,
   iconBg,

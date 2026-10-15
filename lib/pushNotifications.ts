@@ -113,15 +113,15 @@ export async function sendLocalTestNotification(title: string, body: string, url
     if (registration) {
       registration.showNotification(title, {
         body,
-      icon: '/logo_bussiness_messeger.jpg',
-      badge: '/logo_bussiness_messeger.jpg',
+        icon: '/logo_bussiness_messeger.jpg',
+        badge: '/logo_bussiness_messeger.jpg',
         vibrate: [200, 100, 200] as any,
         data: { url },
       } as any);
     } else {
       new Notification(title, {
         body,
-      icon: '/logo_bussiness_messeger.webp',
+        icon: '/logo_bussiness_messeger.jpg',
       });
     }
   } else if (Notification.permission !== 'denied') {
@@ -161,4 +161,3 @@ export async function clearAppBadge(): Promise<void> {
     console.debug('Erro ao limpar badge:', err);
   }
 }
-

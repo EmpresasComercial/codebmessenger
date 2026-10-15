@@ -23,6 +23,7 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return;
     }
 
+    let active = true;
     const channel = supabase.channel('tg_online_presence', {
       config: {
         presence: {
@@ -31,8 +32,35 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       },
     });
 
+    const trackPresence = async () => {
+      if (!active) return;
+      try {
+        const status = await channel.track({
+          user_id: user.id,
+          online_at: new Date().toISOString(),
+        });
+        if (status !== 'ok') {
+          console.error('[Presence] Could not publish online status:', status);
+        }
+      } catch (error) {
+        console.error('[Presence] Could not publish online status:', error);
+      }
+    };
+
+    const untrackPresence = async () => {
+      try {
+        const status = await channel.untrack();
+        if (status !== 'ok') {
+          console.error('[Presence] Could not clear online status:', status);
+        }
+      } catch (error) {
+        console.error('[Presence] Could not clear online status:', error);
+      }
+    };
+
     channel
       .on('presence', { event: 'sync' }, () => {
+        if (!active) return;
         const state = channel.presenceState();
         const activeIds = new Set<string>();
         Object.keys(state).forEach((key) => {
@@ -41,6 +69,7 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setOnlineUserIds(activeIds);
       })
       .on('presence', { event: 'join' }, ({ key }) => {
+        if (!active) return;
         setOnlineUserIds((prev) => {
           const next = new Set(prev);
           next.add(key);
@@ -48,6 +77,7 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
       })
       .on('presence', { event: 'leave' }, ({ key }) => {
+        if (!active) return;
         setOnlineUserIds((prev) => {
           const next = new Set(prev);
           next.delete(key);
@@ -55,39 +85,26 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
       })
       .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED' && navigator.onLine) {
-          await channel.track({
-            user_id: user.id,
-            online_at: new Date().toISOString(),
-          });
+        if (active && status === 'SUBSCRIBED' && navigator.onLine) {
+          await trackPresence();
         }
       });
 
-    const handleOnline = async () => {
-      try {
-        await channel.track({
-          user_id: user.id,
-          online_at: new Date().toISOString(),
-        });
-      } catch {}
-    };
-
-    const handleOffline = async () => {
-      try {
-        await channel.untrack();
-      } catch {}
-    };
+    const handleOnline = () => void trackPresence();
+    const handleOffline = () => void untrackPresence();
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
     return () => {
+      active = false;
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      try {
-        channel.untrack();
-        supabase.removeChannel(channel);
-      } catch {}
+      void supabase.removeChannel(channel).then((status) => {
+        if (status !== 'ok') console.error('[Presence] Could not remove presence channel:', status);
+      }).catch((error: unknown) => {
+        console.error('[Presence] Could not remove presence channel:', error);
+      });
     };
   }, [user?.id]);
 

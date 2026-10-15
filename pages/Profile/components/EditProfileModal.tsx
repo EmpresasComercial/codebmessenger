@@ -84,7 +84,7 @@ export default function EditProfileModal({
     setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("NÃ£o autenticado");
+      if (!user) throw new Error("Não autenticado");
 
       let finalAvatarUrl = avatarUrl;
       if (avatarFile) {
@@ -204,7 +204,7 @@ export default function EditProfileModal({
         </div>
       ) : (
         <>
-      {/* â”€â”€â”€â”€â”€â”€â”€â”€ HEADER â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ──────── HEADER ──────── */}
       <div className="flex items-center px-4 pt-4 pb-3 bg-[#f1f1f2]">
         <button
           onClick={onClose}
@@ -231,10 +231,10 @@ export default function EditProfileModal({
         </button>
       </div>
 
-      {/* â”€â”€â”€â”€â”€â”€â”€â”€ CONTEÃšDO ROLÃVEL â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ──────── CONTEÚDO ROLÁVEL ──────── */}
       <div className="flex-1 overflow-y-auto px-2 max-w-2xl mx-auto w-full">
 
-        {/* â”€â”€ AVATAR SECTION (clicÃ¡vel para trocar foto) â”€â”€ */}
+        {/* ── AVATAR SECTION (clicável para trocar foto) ── */}
         <button
           type="button"
           className="relative block h-[167px] w-full cursor-pointer overflow-hidden text-left"
@@ -265,7 +265,7 @@ export default function EditProfileModal({
           </div>
         </button>
 
-        {/* â”€â”€ CARD: SEU NOME â”€â”€ */}
+        {/* ── CARD: SEU NOME ── */}
         <div className="bg-white rounded-[14px] overflow-hidden shadow-2xs border border-gray-100 mb-2">
           <div className="px-4 pt-3 pb-1">
             <span className="text-[13px] font-semibold text-[#4faf64]">{t("profile.your_name")}</span>
@@ -288,7 +288,7 @@ export default function EditProfileModal({
           />
         </div>
 
-        {/* â”€â”€ CARD: BIO â”€â”€ */}
+        {/* ── CARD: BIO ── */}
         <div className="bg-white rounded-[14px] overflow-hidden shadow-2xs border border-gray-100">
           <div className="flex items-center justify-between px-4 pt-3 pb-1">
             <span className="text-[13px] font-semibold text-[#4faf64]">{t("profile.bio")}</span>
@@ -307,10 +307,10 @@ export default function EditProfileModal({
           <p className="px-4 pb-3 text-[13px] text-[#8e8e93]">{t("profile.bio_about_you")}</p>
         </div>
 
-        {/* â”€â”€ SPACER â”€â”€ */}
+        {/* ── SPACER ── */}
         <div className="h-4" />
 
-        {/* â”€â”€ CARD: SUAS INFORMAÃ‡Ã•ES â”€â”€ */}
+        {/* ── CARD: SUAS INFORMAÇÕES ── */}
         <div className="bg-white rounded-[14px] overflow-hidden shadow-2xs border border-gray-100">
           <div className="px-4 pt-3 pb-1">
             <span className="text-[13px] font-semibold text-[#4faf64]">{t("profile.your_information")}</span>
@@ -350,10 +350,10 @@ export default function EditProfileModal({
           </div>
         </div>
 
-        {/* â”€â”€ SPACER â”€â”€ */}
+        {/* ── SPACER ── */}
         <div className="h-3" />
 
-        {/* â”€â”€ CARD: ESTATÃSTICAS FINANCEIRAS â”€â”€ */}
+        {/* ── CARD: ESTATÍSTICAS FINANCEIRAS ── */}
         <div className="bg-white rounded-[14px] overflow-hidden shadow-2xs border border-gray-100">
           {/* Total Retirado */}
           <div className="flex items-center px-4 py-3 border-b border-[#e5e5e5]">
@@ -366,7 +366,7 @@ export default function EditProfileModal({
             </div>
           </div>
 
-          {/* ComissÃ£o Equipe */}
+          {/* Comissão Equipe */}
           <div className="flex items-center px-4 py-3">
             <div className="w-[34px] h-[34px] rounded-full bg-[#7a57d6] flex items-center justify-center mr-4 shrink-0">
               <Users className="w-[17px] h-[17px] text-white stroke-[2]" />

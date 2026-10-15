@@ -36,7 +36,7 @@ const ChatsHome        = lazy(() => import('./pages/ChatsHome'));
 const GrupoChat        = lazy(() => import('./pages/grupochat'));
 const PrivateChat      = lazy(() => import('./pages/PrivateChat'));
 const DevicesPrivacy   = lazy(() => import('./pages/DevicesPrivacy'));
-const PavelDurov       = lazy(() => import('./pages/pavelDurov'));
+const AndrewNicolan    = lazy(() => import('./pages/andrewnicolan'));
 const DownloadApp      = lazy(() => import('./pages/DownloadApp'));
 
 /* ── Skeleton global de transição (Telegram-style) ─────────────────────────── */
@@ -221,8 +221,8 @@ export default function App() {
                     <Route path="Dispositivos"           element={<DevicesPrivacy />} />
                     <Route path="grupo"                  element={<GrupoChat />} />
                     <Route path="Ajuda"                  element={<HelpFAQ />} />
-                    <Route path="Canal"                  element={<PavelDurov />} />
-                    <Route path="Perfil"                 element={<PavelDurov />} />
+                    <Route path="Canal"                  element={<AndrewNicolan />} />
+                    <Route path="Perfil"                 element={<AndrewNicolan />} />
                     <Route path="Pagamento"              element={<Playmentbot />} />
                     <Route path="Privado"                element={<PrivateChat />} />
                     <Route path="Privado/:contactId"     element={<PrivateChat />} />
@@ -236,7 +236,7 @@ export default function App() {
                     <Route path="contactos"               element={<Invite />} />
                     <Route path="convite"                 element={<Navigate to="/Contactos" replace />} />
                     <Route path="definicoes"              element={<Profile />} />
-                    <Route path="perfil"                  element={<PavelDurov />} />
+                    <Route path="perfil"                  element={<AndrewNicolan />} />
                     <Route path="settings"                element={<Navigate to="/Definições" replace />} />
                     <Route path="bank"                   element={<AddBank />} />
                     <Route path="adicionar-banco"         element={<Navigate to="/bank" replace />} />
@@ -281,10 +281,10 @@ export default function App() {
                     <Route path="premium"                 element={<Navigate to="/Contactos" replace />} />
                     <Route path="stars"                   element={<Navigate to="/botfather" replace />} />
                     <Route path="telegram-stars"          element={<Navigate to="/botfather" replace />} />
-                    <Route path="canais"                  element={<PavelDurov />} />
-                    <Route path="canal-oficial"           element={<PavelDurov />} />
-                    <Route path="pavelDurov"              element={<PavelDurov />} />
-                    <Route path="pavel-durov"             element={<PavelDurov />} />
+                    <Route path="canais"                  element={<AndrewNicolan />} />
+                    <Route path="canal-oficial"           element={<AndrewNicolan />} />
+                    <Route path="pavelDurov"              element={<AndrewNicolan />} />
+                    <Route path="pavel-durov"             element={<AndrewNicolan />} />
                   </Route>
 
                   <Route path="*" element={<Navigate to="/Entrar" replace />} />

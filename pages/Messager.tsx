@@ -258,20 +258,18 @@ export default function Messager() {
           <img
             src="/logo_bussiness_messeger.jpg"
             alt="Business Messenger"
-            className="w-[58px] h-[58px] rounded-full object-cover"
+            className="w-[68px] h-[68px] rounded-full object-cover"
           />
         </div>
 
-        <h1 className="text-[26px] font-bold text-center mb-1.5 tracking-tight text-[#1c1c1e]">
-          Business Messenger
-        </h1>
+        <h1 className="text-[26px] font-bold text-center mb-1.5 tracking-tight text-[#1c1c1e]">Business</h1>
 
         <p className="text-[13px] text-[#8e8e93] text-center mb-6 leading-snug max-w-[290px]">
           {t('auth.signup_description')}
         </p>
 
         <form onSubmit={executeRegistration} className="w-full flex flex-col gap-4">
-          <div className="w-full flex flex-col gap-5 mt-2">
+          <div className="w-full flex flex-col gap-4 mt-2">
             {/* Country Selector Button */}
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
@@ -283,7 +281,7 @@ export default function Messager() {
                 type="button"
                 onClick={() => setShowCountryModal(true)}
                 style={{ borderRadius: '12px' }}
-                className="w-full h-[54px] auth-input-btn border border-[#dfdfe0] bg-white flex items-center justify-between px-3.5 hover:border-[#3390ec] focus:border-[#3390ec] focus:outline-none transition-colors cursor-pointer"
+                className="w-full h-[46px] auth-input-btn border border-[#dfdfe0] bg-white flex items-center justify-between px-3.5 hover:border-[#3390ec] focus:border-[#3390ec] focus:outline-none transition-colors cursor-pointer"
                 title={t('common.change_country')}
               >
                 <span className="text-[16px] text-black font-normal flex items-center gap-2.5 truncate">
@@ -305,7 +303,7 @@ export default function Messager() {
               </div>
               <div
                 style={{ borderRadius: '12px' }}
-                className="auth-input-wrap w-full h-[54px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
+                className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
               >
                 <span className="text-[16px] text-black mr-2 font-medium shrink-0">
                   {selectedCountry.dial_code}
@@ -333,7 +331,7 @@ export default function Messager() {
               </div>
               <div
                 style={{ borderRadius: '12px' }}
-                className="auth-input-wrap w-full h-[54px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
+                className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
               >
                 <input
                   name="userPasskey"
@@ -363,7 +361,7 @@ export default function Messager() {
               </div>
               <div
                 style={{ borderRadius: '12px' }}
-                className="auth-input-wrap w-full h-[54px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
+                className="auth-input-wrap w-full h-[46px] border border-[#dfdfe0] bg-white flex items-center px-3.5 focus-within:border-[#3390ec] transition-colors"
               >
                 <input
                   name="inviteCode"

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { arTranslations } from './translations/ar';
 import { esTranslations } from './translations/es';
 import { zhTranslations } from './translations/zh';
@@ -625,7 +625,7 @@ const translations = {
     'chat.tab_groups': 'Grupos',
     'chat.tab_channels': 'Canais',
     'chat.tab_bots': 'Bots',
-    'chat.tab_unread': 'Mensagens lidas',
+    'chat.tab_unread': 'Não lidas',
     'chat.group_telegram': 'Grupo Business Messenger',
     'chat.wallet': 'Carteira',
     'chat.payment_wallet': 'Carteira de pagamentos',
@@ -1247,7 +1247,7 @@ const translations = {
     'chat.tab_groups': 'Groups',
     'chat.tab_channels': 'Channels',
     'chat.tab_bots': 'Bots',
-    'chat.tab_unread': 'Read messages',
+    'chat.tab_unread': 'Unread',
     'chat.group_telegram': 'Business Messenger Group',
     'chat.wallet': 'Wallet',
     'chat.payment_wallet': 'Payment wallet',
@@ -1871,7 +1871,7 @@ const translations = {
     'chat.tab_groups': 'Groupes',
     'chat.tab_channels': 'Chaînes',
     'chat.tab_bots': 'Bots',
-    'chat.tab_unread': 'Messages lus',
+    'chat.tab_unread': 'Non lus',
     'chat.group_telegram': 'Groupe Business Messenger',
     'chat.wallet': 'Portefeuille',
     'chat.payment_wallet': 'Portefeuille de paiement',
@@ -1959,30 +1959,30 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     () => localStorage.getItem('app_theme') === 'dark'
   );
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('app_language', lang);
-  };
+  }, []);
 
-  const setShowLanguageSelector = (show: boolean) => {
+  const setShowLanguageSelector = useCallback((show: boolean) => {
     setShowLanguageSelectorState(show);
     localStorage.setItem('show_language_selector', String(show));
-  };
+  }, []);
 
-  const setTranslateFullChats = (enabled: boolean) => {
+  const setTranslateFullChats = useCallback((enabled: boolean) => {
     setTranslateFullChatsState(enabled);
     localStorage.setItem('translate_full_chats', String(enabled));
-  };
+  }, []);
 
-  const setNotificationsMuted = (muted: boolean) => {
+  const setNotificationsMuted = useCallback((muted: boolean) => {
     setNotificationsMutedState(muted);
     localStorage.setItem('notifications_muted', String(muted));
-  };
+  }, []);
 
-  const setDarkMode = (enabled: boolean) => {
+  const setDarkMode = useCallback((enabled: boolean) => {
     setDarkModeState(enabled);
     localStorage.setItem('app_theme', enabled ? 'dark': 'light');
-  };
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -1995,7 +1995,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.style.colorScheme = darkMode ? 'dark': 'light';
   }, [darkMode]);
 
-  const t = (key: TranslationKey) => {
+  const t = useCallback((key: TranslationKey) => {
     const supplemental = supplementalTranslations[language] as Partial<Record<SupplementalTranslationKey, string>>;
     const baseSupplemental = supplementalTranslations.pt as Partial<Record<SupplementalTranslationKey, string>>;
     const catalog = translations[language] as Record<string, string>;
@@ -2005,10 +2005,36 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       ?? baseSupplemental[key as SupplementalTranslationKey]
       ?? baseCatalog[key]
       ?? key;
-  };
+  }, [language]);
+
+  const contextValue = useMemo(() => ({
+    language,
+    setLanguage,
+    showLanguageSelector,
+    setShowLanguageSelector,
+    translateFullChats,
+    setTranslateFullChats,
+    notificationsMuted,
+    setNotificationsMuted,
+    darkMode,
+    setDarkMode,
+    t,
+  }), [
+    language,
+    setLanguage,
+    showLanguageSelector,
+    setShowLanguageSelector,
+    translateFullChats,
+    setTranslateFullChats,
+    notificationsMuted,
+    setNotificationsMuted,
+    darkMode,
+    setDarkMode,
+    t,
+  ]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, showLanguageSelector, setShowLanguageSelector, translateFullChats, setTranslateFullChats, notificationsMuted, setNotificationsMuted, darkMode, setDarkMode, t }}>
+    <LanguageContext.Provider value={contextValue}>
       {children}
     </LanguageContext.Provider>
   );

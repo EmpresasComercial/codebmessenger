@@ -10,7 +10,7 @@ const CARD_NAMES = [
   'Banco BFA',
   'Banco BIC',
   'Banco SOL',
-  'Banco AtlÃ¢ntico'
+  'Banco Atlântico'
 ];
 
 const getBankDisplayName = (bankName: string) => bankName.replace(/^Banco\s+/i, '');
@@ -44,8 +44,12 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     let sanitized = value;
-    if (name === 'cardNumber') sanitized = value.replace(/\D/g, '');
-    else if (name === 'holderName') sanitized = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '').replace(/\s\s+/g, ' ');
+    if (name === 'cardNumber') {
+      const compactValue = value.toUpperCase().replace(/\s/g, '');
+      sanitized = compactValue.startsWith('AO06')
+        ? `AO06${compactValue.slice(4).replace(/\D/g, '')}`
+        : value.replace(/\D/g, '');
+    } else if (name === 'holderName') sanitized = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '').replace(/\s\s+/g, ' ');
     setFormData(prev => ({ ...prev, [name]: sanitized }));
   };
 
@@ -96,8 +100,8 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
           navigate(redirectPath || '/informacao-bancaria');
         }
       } else {
-        const message = data?.message || 'Falha ao salvar cartÃ£o.';
-        if (embedded && /jÃ¡ existe|ja existe|conta.*cadastrad/i.test(message)) {
+        const message = data?.message || 'Falha ao salvar cartão.';
+        if (embedded && /já existe|ja existe|conta.*cadastrad/i.test(message)) {
           onAlreadyExists?.();
         } else {
           showToast(message, 'error');
@@ -263,4 +267,3 @@ export default function AddBank({ embedded = false, onSaved, onAlreadyExists }: 
     </div>
   );
 }
-

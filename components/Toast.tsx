@@ -16,23 +16,18 @@ interface ToastState {
   id: number;
   message: string;
   type: ToastType;
+  title?: string;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 const AUTO_DISMISS_MS = 2200;
 
-function cleanToastMessage(msg: string): string {
-  if (!msg) return '';
-
-  return msg
-    .replace(/SEGURANÃ‡A\s+Business Messenger\b[:\s]*/gi, '')
-    .replace(/\bMICROSOFT\b[:\s]*/gi, '')
-    .trim();
-}
-
 function isErrorMessage(msg: string): boolean {
-  const lower = (msg || '').toLowerCase();
-  return /bloquead|falh|erro|insuficiente|recusad|negad|inv[aÃ¡]lid|incorret|proibid|n[aÃ£]o autorizado|expirad/.test(lower);
+  const normalized = msg
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+  return /bloquead|falh|erro|insuficiente|recusad|negad|invalid|incorret|proibid|nao autorizado|expirad/.test(normalized);
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -40,21 +35,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const showToast = useCallback((message: string, typeOrOptions?: ToastType | ToastOptions) => {
     let type: ToastType = 'info';
+    let title: string | undefined;
 
     if (typeof typeOrOptions === 'string') {
       type = typeOrOptions;
     } else if (typeOrOptions) {
       type = typeOrOptions.type ?? 'info';
-    }
-
-    if (isErrorMessage(message) && type !== 'warning') {
+      title = typeOrOptions.title;
+    } else if (isErrorMessage(message)) {
       type = 'error';
     }
 
     setToast({
       id: Date.now() + Math.random(),
-      message: cleanToastMessage(message),
+      message,
       type,
+      title,
     });
   }, []);
 
@@ -72,6 +68,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <AnimatePresence>
         {toast && (
           <div
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
             style={{
               position: 'fixed',
               top: 18,
@@ -111,6 +109,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
                   }}
                 >
+                  {toast.title && <strong className="mb-1 block font-semibold">{toast.title}</strong>}
                   {toast.message}
                 </p>
               </div>
@@ -131,4 +130,3 @@ export function useToast(): ToastContextType {
 
   return context;
 }
-

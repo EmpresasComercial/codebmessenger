@@ -57,37 +57,37 @@ function isRecognizedCommand(text: string): boolean {
 function getWalletCommandMessage(input: string): string {
   const normalized = input.trim().toLowerCase();
   const messages: Record<string, string> = {
-    '/retirar': 'Quero solicitar o levantamento para a minha conta bancÃ¡ria.',
-    '/sacar': 'Quero solicitar o levantamento para a minha conta bancÃ¡ria.',
-    '/retirada': 'Quero solicitar o levantamento para a minha conta bancÃ¡ria.',
-    '/saque': 'Quero solicitar o levantamento para a minha conta bancÃ¡ria.',
-    '/saldo': 'Por favor, quero consultar o meu saldo disponÃ­vel para retirada.',
-    '/carteira': 'Por favor, quero consultar o meu saldo disponÃ­vel para retirada.',
-    '/banco': 'Consultar os meus dados bancÃ¡rios e o banco cadastrado.',
-    '/iban': 'Consultar os meus dados bancÃ¡rios e o banco cadastrado.',
-    '/conta': 'Consultar os meus dados bancÃ¡rios e o banco cadastrado.',
-    '/taxa': 'Qual Ã© a taxa cobrada em cada retirada?',
-    '/taxas': 'Qual Ã© a taxa cobrada em cada retirada?',
-    '/historico': 'Por favor, dÃª-me o histÃ³rico de todas as retiradas.',
-    '/registos': 'Por favor, dÃª-me o histÃ³rico de todas as retiradas.',
-    '/extrato': 'Por favor, dÃª-me o histÃ³rico de todas as retiradas.',
-    'consultar banco': 'Consultar os meus dados bancÃ¡rios e o banco cadastrado.',
-    '/adicionar_banco': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/adicionar-banco': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/adicionar_conta': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/adicionar-conta': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/adicionar_iban': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/adicionar-iban': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/vincular_banco': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/vincular-banco': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/salvar_banco': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/salvar-banco': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/guardar_banco': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/guardar-banco': 'Por favor, desejo adicionar a minha conta bancÃ¡ria.',
-    '/deletar_conta': 'Quero remover a minha conta bancÃ¡ria cadastrada.',
-    '/deletar-conta': 'Quero remover a minha conta bancÃ¡ria cadastrada.',
-    '/remover_conta': 'Quero remover a minha conta bancÃ¡ria cadastrada.',
-    '/remover-conta': 'Quero remover a minha conta bancÃ¡ria cadastrada.'
+    '/retirar': 'Quero solicitar o levantamento para a minha conta bancária.',
+    '/sacar': 'Quero solicitar o levantamento para a minha conta bancária.',
+    '/retirada': 'Quero solicitar o levantamento para a minha conta bancária.',
+    '/saque': 'Quero solicitar o levantamento para a minha conta bancária.',
+    '/saldo': 'Por favor, quero consultar o meu saldo disponível para retirada.',
+    '/carteira': 'Por favor, quero consultar o meu saldo disponível para retirada.',
+    '/banco': 'Consultar os meus dados bancários e o banco cadastrado.',
+    '/iban': 'Consultar os meus dados bancários e o banco cadastrado.',
+    '/conta': 'Consultar os meus dados bancários e o banco cadastrado.',
+    '/taxa': 'Qual é a taxa cobrada em cada retirada?',
+    '/taxas': 'Qual é a taxa cobrada em cada retirada?',
+    '/historico': 'Por favor, dê-me o histórico de todas as retiradas.',
+    '/registos': 'Por favor, dê-me o histórico de todas as retiradas.',
+    '/extrato': 'Por favor, dê-me o histórico de todas as retiradas.',
+    'consultar banco': 'Consultar os meus dados bancários e o banco cadastrado.',
+    '/adicionar_banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar-banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar_conta': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar-conta': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar_iban': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/adicionar-iban': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/vincular_banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/vincular-banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/salvar_banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/salvar-banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/guardar_banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/guardar-banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/deletar_conta': 'Quero remover a minha conta bancária cadastrada.',
+    '/deletar-conta': 'Quero remover a minha conta bancária cadastrada.',
+    '/remover_conta': 'Quero remover a minha conta bancária cadastrada.',
+    '/remover-conta': 'Quero remover a minha conta bancária cadastrada.'
   };
 
   return messages[normalized] || input.trim();
@@ -102,14 +102,14 @@ function parseNaturalLanguage(rawInput: string): {
   const lower = clean.toLowerCase();
   const norm = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
-  // AÃ§Ãµes de cadastro bancÃ¡rio devem ser distintas das consultas ao banco.
+  // Ações de cadastro bancário devem ser distintas das consultas ao banco.
   const bankAddCommands = [
     '/adicionar_banco', '/adicionar-banco', '/adicionar_conta', '/adicionar-conta',
     '/adicionar_iban', '/adicionar-iban', '/vincular_banco', '/vincular-banco',
     '/salvar_banco', '/salvar-banco', '/guardar_banco', '/guardar-banco'
   ];
   const bankAddVerbs = ['adicionar', 'vincular', 'inserir', 'gravar', 'salvar', 'guardar', 'cadastrar'];
-  const bankAddTargets = ['banco', 'conta', 'iban', 'numero', 'nÃºmero'];
+  const bankAddTargets = ['banco', 'conta', 'iban', 'numero', 'número'];
   if (
     bankAddCommands.includes(norm.split(/\s+/)[0]) ||
     (bankAddVerbs.some((verb) => norm.includes(verb)) && bankAddTargets.some((target) => norm.includes(target))) ||
@@ -170,7 +170,7 @@ function parseNaturalLanguage(rawInput: string): {
     return { intent: 'withdraw_info' };
   }
 
-  // 4. SaudaÃ§Ãµes conversacionais
+  // 4. Saudações conversacionais
   const greetings = ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'feliz noite', 'opa', 'e ai', 'tudo bem', 'tudo bom', 'como vai', 'como foi o dia', 'como foi teu dia', 'como foi seu dia', 'fala', 'alo'];
   if (greetings.includes(norm) || greetings.some(g => norm.startsWith(g + ' ') || norm.endsWith(' ' + g))) {
     return { intent: 'greeting' };
@@ -190,7 +190,7 @@ function parseNaturalLanguage(rawInput: string): {
     return { intent: 'balance' };
   }
 
-  // 6. HistÃ³rico de retiradas real (consultas conversacionais e comandos)
+  // 6. Histórico de retiradas real (consultas conversacionais e comandos)
   if (
     norm === '/historico' || norm === '/registos' || norm === '/extrato' ||
     norm.includes('historico') || norm.includes('extrato') ||
@@ -205,7 +205,7 @@ function parseNaturalLanguage(rawInput: string): {
     return { intent: 'history' };
   }
 
-  // 7. Dados bancÃ¡rios / Conta
+  // 7. Dados bancários / Conta
   if (
     norm === '/banco' || norm === '/iban' || norm === '/conta' ||
     norm.includes('meu banco') || norm.includes('minha conta') ||
@@ -218,7 +218,7 @@ function parseNaturalLanguage(rawInput: string): {
     return { intent: 'bank' };
   }
 
-  // 8. HorÃ¡rio de funcionamento
+  // 8. Horário de funcionamento
   if (
     norm === '/horario' || norm === '/horarios' ||
     norm.includes('horario') || norm.includes('que horas') ||
@@ -259,11 +259,11 @@ function parseNaturalLanguage(rawInput: string): {
     return { intent: 'withdraw_info' };
   }
 
-  // 11. Saque com extraÃ§Ã£o inteligente de valor
+  // 11. Saque com extração inteligente de valor
   const withdrawTriggers = ['sacar', 'retirar', 'levantar', 'saque', 'retirada', 'quero', 'pedir', 'tirar', 'fazer', 'manda', 'enviar'];
   const hasWithdrawWord = withdrawTriggers.some(w => norm.includes(w)) || norm.startsWith('/retirar') || norm.startsWith('/sacar');
 
-  // Regex para capturar nÃºmeros digitados (ex: 500, 1.000, 2500 kz, sacar 300)
+  // Regex para capturar números digitados (ex: 500, 1.000, 2500 kz, sacar 300)
   const numberMatch = norm.match(/(?:(?:kz|ao|akz)\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?:\s*(?:kz|kwanza|reais|ao|akz))?/i);
   if (numberMatch && (hasWithdrawWord || /^\d+$/.test(clean.replace(/[\s.,]/g, '')))) {
     const rawVal = numberMatch[1].replace(/\./g, '').replace(',', '.');
@@ -301,12 +301,12 @@ const getWithdrawScheduleStatus = (): { isOpen: boolean; text: string } => {
   const hour = now.getHours();
   const isOpen = day >= 1 && day <= 5 && hour >= 9 && hour < 18;
   if (isOpen) {
-    return { isOpen: true, text: 'Aberto agora â€” Seg a Sex, 09:00 Ã s 18:00' };
+    return { isOpen: true, text: 'Aberto agora — Seg a Sex, 09:00 às 18:00' };
   }
-  const dayNames = ['domingo', 'segunda-feira', 'terÃ§a-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sÃ¡bado'];
+  const dayNames = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
   return { 
     isOpen: false, 
-    text: `Fechado agora (${dayNames[day]}, ${String(hour).padStart(2, '0')}h) â€” Retorna Seg a Sex, 09:00 Ã s 18:00` 
+    text: `Fechado agora (${dayNames[day]}, ${String(hour).padStart(2, '0')}h) — Retorna Seg a Sex, 09:00 às 18:00`
   };
 };
 
@@ -370,12 +370,12 @@ export default function wallet() {
   const [showQuickHints, setShowQuickHints] = useState(false);
 
   const quickReplies = [
-    { command: '/adicionar_banco', label: 'Adicionar conta bancÃ¡ria' },
-    { command: '/retirar', label: 'Solicitar levantamento para conta bancÃ¡ria' },
+    { command: '/adicionar_banco', label: 'Adicionar conta bancária' },
+    { command: '/retirar', label: 'Solicitar levantamento para conta bancária' },
     { command: '/saldo', label: 'Consultar saldo' },
-    { command: 'consultar banco', label: 'Consultar dados bancÃ¡rios' },
+    { command: 'consultar banco', label: 'Consultar dados bancários' },
     { command: '/taxa', label: 'Consultar taxa' },
-    { command: '/historico', label: 'Consultar histÃ³rico de retiradas' },
+    { command: '/historico', label: 'Consultar histórico de retiradas' },
     { command: '/deletar_conta', label: 'Deletar conta' },
   ];
 
@@ -426,12 +426,12 @@ export default function wallet() {
         loaded.iban        = d.iban || '';
         loaded.isVerified  = Boolean(d.is_verified);
         loaded.hasPending  = Boolean(d.has_pending);
-        // Lidos diretamente da RPC atualizada (inclui verificaÃ§Ã£o de data_fim > now())
+        // Lidos diretamente da RPC atualizada (inclui verificação de data_fim > now())
         loaded.hasBots          = Boolean(d.has_bots);
         loaded.totalDailyIncome = Number(d.total_daily_income) || 0;
       }
 
-      // Fallback: se RPC ainda nÃ£o devolveu has_bots (versÃ£o antiga), consulta separada
+      // Fallback: se RPC ainda não devolveu has_bots (versão antiga), consulta separada
       if (!loaded.hasBots) {
         try {
           const { data: myBots } = await supabase.rpc('get_my_purchased_products_mcpn');
@@ -446,11 +446,11 @@ export default function wallet() {
             );
           }
         } catch (_) {
-          // silencioso â€” fallback nÃ£o crÃ­tico
+          // silencioso — fallback não crítico
         }
       }
 
-      // Fallback de banco: se get_withdraw_info nÃ£o devolveu conta
+      // Fallback de banco: se get_withdraw_info não devolveu conta
       if (!loaded.hasBank) {
         try {
           const { data: bankAccounts } = await supabase.rpc('get_my_bank_accounts_mcpn');
@@ -525,7 +525,7 @@ export default function wallet() {
           sender: 'bot',
           time: nowTime(),
           type: 'no_bank',
-          text: 'Opa! Antes de prosseguir, vocÃª sÃ³ precisa cadastrar sua conta bancÃ¡ria primeiro ðŸ¦ Ã‰ super rÃ¡pido!',
+          text: 'Opa! Antes de prosseguir, você só precisa cadastrar sua conta bancária primeiro 🏦 É super rápido!',
         }));
         return;
       }
@@ -562,15 +562,15 @@ export default function wallet() {
               time: nowTime(),
               type: 'text',
               text:
-                'Pedido de retirada enviado com sucesso! ðŸŽ‰\n' +
-                'Valor solicitado: ' + formatCurrency(amount, 'KZ') + ' (LÃ­quido: ' + formatCurrency(net, 'KZ') + ', Taxa: ' + formatCurrency(fee, 'KZ') + ').\n' +
+                'Pedido de retirada enviado com sucesso! 🎉\n' +
+                'Valor solicitado: ' + formatCurrency(amount, 'KZ') + ' (Líquido: ' + formatCurrency(net, 'KZ') + ', Taxa: ' + formatCurrency(fee, 'KZ') + ').\n' +
                 'Destino: ' + info.bankName + ' (IBAN: ' + info.iban + ').\n' +
-                'O pagamento serÃ¡ creditado em atÃ© 24 horas Ãºteis.',
+                'O pagamento será creditado em até 24 horas úteis.',
             },
           ]);
           setPendingAmount(null);
         } else {
-          const msg = data?.message || 'NÃ£o foi possÃ­vel concluir a solicitaÃ§Ã£o.';
+          const msg = data?.message || 'Não foi possível concluir a solicitação.';
           showToast(msg, 'error');
           setMessages((prev) => [
             ...prev,
@@ -579,14 +579,14 @@ export default function wallet() {
               sender: 'bot',
               time: nowTime(),
               type: 'text',
-              text: 'Ops! ' + msg + '\n\nQuando quiser tentar novamente, Ã© sÃ³ me enviar /retirar ðŸ˜Š',
+              text: 'Ops! ' + msg + '\n\nQuando quiser tentar novamente, é só me enviar /retirar 😊',
             },
           ]);
           setPendingAmount(null);
         }
       } catch (err: any) {
         setIsTyping(false);
-        const msg = err.message || 'Tivemos uma oscilaÃ§Ã£o na conexÃ£o.';
+        const msg = err.message || 'Tivemos uma oscilação na conexão.';
         showToast(msg, 'error');
         setMessages((prev) => [
           ...prev,
@@ -595,7 +595,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'Ops! Ocorreu um pequeno erro: ' + msg + '\n\nPor favor, tente novamente em instantes ðŸ˜Š',
+            text: 'Ops! Ocorreu um pequeno erro: ' + msg + '\n\nPor favor, tente novamente em instantes 😊',
           },
         ]);
         setPendingAmount(null);
@@ -608,7 +608,7 @@ export default function wallet() {
 
   const fetchRecentHistory = useCallback(async () => {
     try {
-      // 1. Tenta buscar via RPC oficial de retiradas do usuÃ¡rio
+      // 1. Tenta buscar via RPC oficial de retiradas do usuário
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_my_withdrawals_mcpn');
       if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
         return rpcData.slice(0, 10);
@@ -628,7 +628,7 @@ export default function wallet() {
         }
       }
 
-      // 3. Fallback via histÃ³rico geral filtrando apenas 'retiradas'
+      // 3. Fallback via histórico geral filtrando apenas 'retiradas'
       const { data: genData } = await supabase.rpc('get_general_history_mcpn');
       if (Array.isArray(genData)) {
         const filtered = genData.filter((item: any) => item.type === 'retiradas');
@@ -651,13 +651,13 @@ export default function wallet() {
     const itemsText = list.map((item: any) => {
       const amount = Number(item.valor_bruto) || Number(item.amount) || Number(item.valor) || 0;
       const rawStatus = (item.status || 'pendente').toLowerCase();
-      let statusEmoji = 'â³';
+      let statusEmoji = '⏳';
       let statusLabel = 'Pendente';
       if (rawStatus === 'concluido' || rawStatus === 'aprovado' || rawStatus === 'approved') {
-        statusEmoji = 'ðŸŸ¢';
+        statusEmoji = '🟢';
         statusLabel = 'Aprovado';
       } else if (rawStatus === 'rejeitado' || rawStatus === 'cancelado' || rawStatus === 'recusado' || rawStatus === 'failed') {
-        statusEmoji = 'ðŸ”´';
+        statusEmoji = '🔴';
         statusLabel = 'Recusado';
       }
 
@@ -696,7 +696,7 @@ export default function wallet() {
       setMessages((prev) => [...prev, userMsg]);
       if (!textToSend) setInputText('');
 
-      // InterpretaÃ§Ã£o inteligente em linguagem natural e comandos
+      // Interpretação inteligente em linguagem natural e comandos
       const parsed = parseNaturalLanguage(content);
       const previousAssistantMessage = messages
         .slice()
@@ -724,7 +724,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'Sinto muito pela preocupaÃ§Ã£o. Consulta o /historico e contacta o gerente regional Mando pelo canal oficial se a retirada excedeu o prazo. Nunca partilhes palavras-passe ou cÃ³digos.',
+            text: 'Sinto muito pela preocupação. Consulta o /historico e contacta o gerente regional Mando pelo canal oficial se a retirada excedeu o prazo. Nunca partilhes palavras-passe ou códigos.',
           }));
         }
         return;
@@ -738,7 +738,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'A remoÃ§Ã£o da conta bancÃ¡ria foi cancelada.',
+            text: 'A remoção da conta bancária foi cancelada.',
           }));
           return;
         }
@@ -748,7 +748,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'Confirme a remoÃ§Ã£o da conta bancÃ¡ria com â€œConfirmarâ€ ou cancele para manter os dados.',
+            text: 'Confirme a remoção da conta bancária com “Confirmar” ou cancele para manter os dados.',
           }));
           return;
         }
@@ -766,7 +766,7 @@ export default function wallet() {
               sender: 'bot',
               time: nowTime(),
               type: 'text',
-              text: 'NÃ£o hÃ¡ uma conta bancÃ¡ria cadastrada para remover.',
+              text: 'Não há uma conta bancária cadastrada para remover.',
             }));
             return;
           }
@@ -777,7 +777,7 @@ export default function wallet() {
             ? data as Record<string, unknown>
             : null;
           if (result?.success !== true) {
-            throw new Error(typeof result?.message === 'string' ? result.message : 'NÃ£o foi possÃ­vel remover a conta bancÃ¡ria.');
+            throw new Error(typeof result?.message === 'string' ? result.message : 'Não foi possível remover a conta bancária.');
           }
 
           await fetchData();
@@ -787,17 +787,17 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'A conta bancÃ¡ria cadastrada foi removida com sucesso.',
+            text: 'A conta bancária cadastrada foi removida com sucesso.',
           }));
         } catch (error) {
-          console.error('Erro ao remover conta bancÃ¡ria:', error);
+          console.error('Erro ao remover conta bancária:', error);
           setIsTyping(false);
           botReply(() => ({
             id: 'bot-bank-delete-error-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel remover a conta bancÃ¡ria. Tente novamente.',
+            text: error instanceof Error ? error.message : 'Não foi possível remover a conta bancária. Tente novamente.',
           }));
         }
         return;
@@ -815,7 +815,7 @@ export default function wallet() {
               sender: 'bot',
               time: nowTime(),
               type: 'text',
-              text: 'NÃ£o hÃ¡ uma conta bancÃ¡ria cadastrada para remover.',
+              text: 'Não há uma conta bancária cadastrada para remover.',
             }));
             return;
           }
@@ -825,23 +825,23 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'confirm_delete_bank',
-            text: 'Tem certeza de que deseja remover a conta bancÃ¡ria cadastrada? Esta aÃ§Ã£o nÃ£o pode ser desfeita.',
+            text: 'Tem certeza de que deseja remover a conta bancária cadastrada? Esta ação não pode ser desfeita.',
           }));
         } catch (error) {
-          console.error('Erro ao verificar conta bancÃ¡ria para remoÃ§Ã£o:', error);
+          console.error('Erro ao verificar conta bancária para remoção:', error);
           setIsTyping(false);
           botReply(() => ({
             id: 'bot-bank-delete-check-error-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'NÃ£o foi possÃ­vel verificar a conta bancÃ¡ria. Tente novamente dentro de instantes.',
+            text: 'Não foi possível verificar a conta bancária. Tente novamente dentro de instantes.',
           }));
         }
         return;
       }
 
-      // FLUXO DE CONFIRMAÃ‡ÃƒO PENDENTE DE SAQUE
+      // FLUXO DE CONFIRMAÇÃO PENDENTE DE SAQUE
       if (pendingAmount !== null) {
         if (parsed.intent === 'confirm') {
           processWithdrawal(pendingAmount);
@@ -854,12 +854,12 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'SolicitaÃ§Ã£o de retirada cancelada. Quando quiser realizar um saque, envie /retirar.',
+            text: 'Solicitação de retirada cancelada. Quando quiser realizar um saque, envie /retirar.',
           }));
           return;
         }
 
-        // UsuÃ¡rio digitou um novo valor enquanto havia pedido pendente
+        // Usuário digitou um novo valor enquanto havia pedido pendente
         if (parsed.intent === 'withdraw' && parsed.amount) {
           const newAmt = parsed.amount;
           const fresh = await fetchData();
@@ -871,7 +871,7 @@ export default function wallet() {
               sender: 'bot',
               time: nowTime(),
               type: 'text',
-              text: `Saldo insuficiente. Seu saldo disponÃ­vel Ã© de ${formatCurrency(curBal, 'KZ')}.`,
+              text: `Saldo insuficiente. Seu saldo disponível é de ${formatCurrency(curBal, 'KZ')}.`,
             }));
             return;
           }
@@ -881,7 +881,7 @@ export default function wallet() {
               sender: 'bot',
               time: nowTime(),
               type: 'text',
-              text: `O valor mÃ­nimo para saque Ã© de ${formatCurrency(MIN_WITHDRAW, 'KZ')}.`,
+              text: `O valor mínimo para saque é de ${formatCurrency(MIN_WITHDRAW, 'KZ')}.`,
             }));
             return;
           }
@@ -891,7 +891,7 @@ export default function wallet() {
               sender: 'bot',
               time: nowTime(),
               type: 'text',
-              text: `O limite mÃ¡ximo por retirada Ã© de ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
+              text: `O limite máximo por retirada é de ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
             }));
             return;
           }
@@ -910,7 +910,7 @@ export default function wallet() {
         }
       }
 
-      // 1. INTENT: SAUDAÃ‡ÃƒO CONVERSACIONAL (resposta humana e natural)
+      // 1. INTENT: SAUDAÇÃO CONVERSACIONAL (resposta humana e natural)
       if (parsed.intent === 'greeting') {
         setIsTyping(true);
         try {
@@ -932,7 +932,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'OlÃ¡! Sou Assistente Wallet. Como posso ajudar?',
+            text: 'Olá! Sou Assistente Wallet. Como posso ajudar?',
           }));
         }
         return;
@@ -966,12 +966,12 @@ export default function wallet() {
           sender: 'bot',
           time: nowTime(),
           type: 'text',
-          text: 'Tudo bem! Nenhuma operaÃ§Ã£o pendente.',
+          text: 'Tudo bem! Nenhuma operação pendente.',
         }));
         return;
       }
 
-      // 5. INTENT: ADICIONAR CONTA BANCÃRIA
+      // 5. INTENT: ADICIONAR CONTA BANCÁRIA
       if (parsed.intent === 'add_bank') {
         setIsTyping(true);
         await new Promise((resolve) => window.setTimeout(resolve, 2500));
@@ -985,20 +985,20 @@ export default function wallet() {
               sender: 'bot',
               time: nowTime(),
               type: 'text',
-              text: 'JÃ¡ existe uma conta bancÃ¡ria cadastrada. NÃ£o Ã© possÃ­vel adicionar outra conta.',
+              text: 'Já existe uma conta bancária cadastrada. Não é possível adicionar outra conta.',
             }));
             return;
           }
           setShowAddBankModal(true);
         } catch (error) {
-          console.error('Erro ao verificar conta bancÃ¡ria cadastrada:', error);
+          console.error('Erro ao verificar conta bancária cadastrada:', error);
           setIsTyping(false);
           botReply(() => ({
             id: 'bot-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'NÃ£o foi possÃ­vel verificar os seus dados bancÃ¡rios agora. Tente novamente dentro de instantes.',
+            text: 'Não foi possível verificar os seus dados bancários agora. Tente novamente dentro de instantes.',
           }));
         }
         return;
@@ -1015,12 +1015,12 @@ export default function wallet() {
           sender: 'bot',
           time: nowTime(),
           type: 'text',
-          text: `Seu saldo Ã© de ${formatCurrency(bal, 'KZ')}. Para fazer um saque, envie /retirar ou digite o valor (ex: sacar 500).`,
+          text: `Seu saldo é de ${formatCurrency(bal, 'KZ')}. Para fazer um saque, envie /retirar ou digite o valor (ex: sacar 500).`,
         }));
         return;
       }
 
-      // 6. INTENT: HISTÃ“RICO REAL DE RETIRADA
+      // 6. INTENT: HISTÓRICO REAL DE RETIRADA
       if (parsed.intent === 'history') {
         setIsTyping(true);
         const history = await fetchRecentHistory();
@@ -1035,7 +1035,7 @@ export default function wallet() {
         return;
       }
 
-      // 7. INTENT: DADOS BANCÃRIOS / CONTA (direto)
+      // 7. INTENT: DADOS BANCÁRIOS / CONTA (direto)
       if (parsed.intent === 'bank') {
         setIsTyping(true);
         try {
@@ -1050,7 +1050,7 @@ export default function wallet() {
               sender: 'bot',
               time: nowTime(),
               type: 'no_bank',
-              text: 'VocÃª ainda nÃ£o possui uma conta bancÃ¡ria cadastrada. Cadastre seus dados para poder retirar:',
+              text: 'Você ainda não possui uma conta bancária cadastrada. Cadastre seus dados para poder retirar:',
             }));
           } else {
             botReply(() => ({
@@ -1059,7 +1059,7 @@ export default function wallet() {
               time: nowTime(),
               type: 'bank_details',
               payload: {
-                intro: 'A sua conta cadastrada Ã©, pelo nome de',
+                intro: 'A sua conta cadastrada é, pelo nome de',
                 holderName: account.owner_name,
                 bankName: account.bank_name,
                 iban: String(account.iban || '').replace(/^AO06/i, '').replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim(),
@@ -1067,20 +1067,20 @@ export default function wallet() {
             }));
           }
         } catch (error) {
-          console.error('Erro ao consultar dados bancÃ¡rios cadastrados:', error);
+          console.error('Erro ao consultar dados bancários cadastrados:', error);
           setIsTyping(false);
           botReply(() => ({
             id: 'bot-bank-query-error-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'NÃ£o foi possÃ­vel consultar os dados bancÃ¡rios agora. Tente novamente dentro de instantes.',
+            text: 'Não foi possível consultar os dados bancários agora. Tente novamente dentro de instantes.',
           }));
         }
         return;
       }
 
-      // 8. INTENT: HORÃRIOS DE ATENDIMENTO (direto)
+      // 8. INTENT: HORÁRIOS DE ATENDIMENTO (direto)
       if (parsed.intent === 'schedule') {
         const sched = getWithdrawScheduleStatus();
         setIsTyping(true);
@@ -1103,7 +1103,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: sched.isOpen ? 'O horÃ¡rio de retiradas Ã© de segunda a sexta, das 09:00 Ã s 18:00. Aberto agora.' : sched.text,
+            text: sched.isOpen ? 'O horário de retiradas é de segunda a sexta, das 09:00 às 18:00. Aberto agora.' : sched.text,
           }));
         }
         return;
@@ -1121,7 +1121,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: `${response} O valor mÃ­nimo Ã© ${formatCurrency(MIN_WITHDRAW, 'KZ')} e o mÃ¡ximo Ã© ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
+            text: `${response} O valor mínimo é ${formatCurrency(MIN_WITHDRAW, 'KZ')} e o máximo é ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
           }));
         } catch (error) {
           console.error('Erro ao carregar respostas locais da Wallet:', error);
@@ -1131,7 +1131,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: `A taxa operacional Ã© ${FEE_PERCENT}%. O valor mÃ­nimo Ã© ${formatCurrency(MIN_WITHDRAW, 'KZ')} e o mÃ¡ximo Ã© ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
+            text: `A taxa operacional é ${FEE_PERCENT}%. O valor mínimo é ${formatCurrency(MIN_WITHDRAW, 'KZ')} e o máximo é ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
           }));
         }
         return;
@@ -1158,7 +1158,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'Para solicitar uma retirada, envie /retirar e siga as instruÃ§Ãµes da Wallet.',
+            text: 'Para solicitar uma retirada, envie /retirar e siga as instruções da Wallet.',
           }));
         }
         return;
@@ -1177,19 +1177,19 @@ export default function wallet() {
         const iban        = fresh?.iban        ?? info.iban;
         const hasBots     = fresh?.hasBots     ?? info.hasBots;
 
-        // ValidaÃ§Ã£o 1: Pedido jÃ¡ em anÃ¡lise
+        // Validação 1: Pedido já em análise
         if (hasPending) {
           botReply(() => ({
             id: 'bot-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: 'VocÃª jÃ¡ possui um pedido de retirada em anÃ¡lise. Aguarde a aprovaÃ§Ã£o.',
+            text: 'Você já possui um pedido de retirada em análise. Aguarde a aprovação.',
           }));
           return;
         }
 
-        // ValidaÃ§Ã£o 2: HorÃ¡rio comercial
+        // Validação 2: Horário comercial
         if (!isWithdrawAllowed()) {
           const sched = getWithdrawScheduleStatus();
           botReply(() => ({
@@ -1197,12 +1197,12 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: `Retiradas indisponÃ­veis no momento. ${sched.text}`,
+            text: `Retiradas indisponíveis no momento. ${sched.text}`,
           }));
           return;
         }
 
-        // ValidaÃ§Ã£o 3: Conta bancÃ¡ria cadastrada
+        // Validação 3: Conta bancária cadastrada
         if (!hasBank || !bankId) {
           botReply(() => ({
             id: 'bot-' + Date.now(),
@@ -1214,14 +1214,14 @@ export default function wallet() {
           return;
         }
 
-        // ValidaÃ§Ã£o 4: Bot de rendimento ativo e nÃ£o expirado
+        // Validação 4: Bot de rendimento ativo e não expirado
         if (!hasBots) {
           botReply(() => ({
             id: 'bot-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'no_bots',
-            text: 'Para liberar retiradas, vocÃª precisa ter pelo menos um Bot ativo na plataforma.',
+            text: 'Para liberar retiradas, você precisa ter pelo menos um Bot ativo na plataforma.',
           }));
           return;
         }
@@ -1241,19 +1241,19 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'amount_selector',
-            text: `Seu saldo disponÃ­vel Ã© de ${formatCurrency(currentBal, 'KZ')}. Escolha um valor rÃ¡pido abaixo ou digite quanto quer sacar (mÃ­nimo: ${formatCurrency(MIN_WITHDRAW, 'KZ')}, taxa: ${FEE_PERCENT}%):`,
+            text: `Seu saldo disponível é de ${formatCurrency(currentBal, 'KZ')}. Escolha um valor rápido abaixo ou digite quanto quer sacar (mínimo: ${formatCurrency(MIN_WITHDRAW, 'KZ')}, taxa: ${FEE_PERCENT}%):`,
           }));
           return;
         }
 
-        // ValidaÃ§Ãµes rigorosas de valor antes de prosseguir
+        // Validações rigorosas de valor antes de prosseguir
         if (targetAmount < MIN_WITHDRAW) {
           botReply(() => ({
             id: 'bot-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: `O valor mÃ­nimo para saque Ã© de ${formatCurrency(MIN_WITHDRAW, 'KZ')}.`,
+            text: `O valor mínimo para saque é de ${formatCurrency(MIN_WITHDRAW, 'KZ')}.`,
           }));
           return;
         }
@@ -1264,7 +1264,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: `O valor excede o limite mÃ¡ximo permitido de ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
+            text: `O valor excede o limite máximo permitido de ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
           }));
           return;
         }
@@ -1275,12 +1275,12 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: `Saldo insuficiente. VocÃª solicitou ${formatCurrency(targetAmount, 'KZ')}, mas possui ${formatCurrency(currentBal, 'KZ')}.`,
+            text: `Saldo insuficiente. Você solicitou ${formatCurrency(targetAmount, 'KZ')}, mas possui ${formatCurrency(currentBal, 'KZ')}.`,
           }));
           return;
         }
 
-        // Valor vÃ¡lido! Preparar confirmaÃ§Ã£o
+        // Valor válido! Preparar confirmação
         const fee = Math.round((targetAmount * FEE_PERCENT) / 100);
         const net = targetAmount - fee;
         setPendingAmount(targetAmount);
@@ -1301,7 +1301,7 @@ export default function wallet() {
         return;
       }
 
-      // 11. Resposta conversacional local; o conteÃºdo do assistente nÃ£o depende de RPC.
+      // 11. Resposta conversacional local; o conteúdo do assistente não depende de RPC.
       setIsTyping(true);
       try {
         const { getWalletAssistantResponse } = await import('./walletAssistantCore');
@@ -1322,7 +1322,7 @@ export default function wallet() {
           sender: 'bot',
           time: nowTime(),
           type: 'text',
-          text: 'NÃ£o consegui preparar uma resposta agora. Tente novamente ou escolha uma das opÃ§Ãµes da Wallet.',
+          text: 'Não consegui preparar uma resposta agora. Tente novamente ou escolha uma das opções da Wallet.',
         }));
       }
     },
@@ -1366,7 +1366,7 @@ export default function wallet() {
         time: nowTime(),
         type: 'bank_saved',
         payload: {
-          intro: 'A sua conta bancÃ¡ria foi adicionada com sucesso, pelo nome de',
+          intro: 'A sua conta bancária foi adicionada com sucesso, pelo nome de',
           holderName: account.holderName,
           bankName: account.bankName,
           iban: account.iban.replace(/^AO06/i, '').replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim(),
@@ -1382,7 +1382,7 @@ export default function wallet() {
       sender: 'bot',
       time: nowTime(),
       type: 'text',
-      text: 'JÃ¡ existe uma conta bancÃ¡ria cadastrada. NÃ£o Ã© possÃ­vel adicionar outra conta.',
+      text: 'Já existe uma conta bancária cadastrada. Não é possível adicionar outra conta.',
     }));
   }, [botReply]);
 
@@ -1403,7 +1403,7 @@ export default function wallet() {
       sender: 'bot',
       time: nowTime(),
       type: 'text',
-      text: 'Sem problemas! Cancelei a operaÃ§Ã£o. Quando quiser tentar novamente, Ã© sÃ³ me chamar com /retirar ðŸ˜Š',
+      text: 'Sem problemas! Cancelei a operação. Quando quiser tentar novamente, é só me chamar com /retirar 😊',
     }));
   }, [botReply]);
 
@@ -1454,10 +1454,10 @@ export default function wallet() {
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2372a072' stroke-width='1.2' opacity='0.45'%3E%3Ccircle cx='30' cy='28' r='10'/%3E%3Cpath d='M22 20L19 13L25 19'/%3E%3Cpath d='M38 20L41 13L35 19'/%3E%3Ccircle cx='26' cy='25' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='34' cy='25' r='1.5' fill='%2372a072'/%3E%3Cpath d='M30 31L28 33L30 32L32 33Z'/%3E%3Cpath d='M19 27L24 28'/%3E%3Cpath d='M41 27L36 28'/%3E%3Cpath d='M164 15L167 7L170 15L178 15L172 20L174 28L167 23L160 28L162 20L156 15Z'/%3E%3Cpath d='M95 52C95 44 84 38 84 49C84 58 95 67 95 67C95 67 106 58 106 49C106 38 95 44 95 52Z'/%3E%3Ccircle cx='20' cy='112' r='7'/%3E%3Ccircle cx='10' cy='103' r='3.5'/%3E%3Ccircle cx='30' cy='103' r='3.5'/%3E%3Ccircle cx='14' cy='97' r='3'/%3E%3Ccircle cx='26' cy='97' r='3'/%3E%3Crect x='150' cy='100' width='26' height='19' rx='2'/%3E%3Crect x='148' y='93' width='30' height='9' rx='2'/%3E%3Cline x1='163' y1='93' x2='163' y2='119'/%3E%3Cpath d='M159 93C156 87 163 84 163 93'/%3E%3Cpath d='M167 93C170 87 163 84 163 93'/%3E%3Ccircle cx='163' cy='162' r='10'/%3E%3Cpath d='M155 154L152 146L158 153'/%3E%3Cpath d='M171 154L174 146L168 153'/%3E%3Ccircle cx='159' cy='160' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='167' cy='160' r='1.5' fill='%2372a072'/%3E%3Cpath d='M163 164L161 166L163 165L165 166Z'/%3E%3Cpath d='M152 162L158 163'/%3E%3Cpath d='M174 162L168 163'/%3E%3Cpath d='M57 143C57 138 51 135 51 140C51 145 57 150 57 150C57 150 63 145 63 140C63 135 57 138 57 143Z'/%3E%3Cpath d='M140 44C140 39 134 36 134 41C134 46 140 51 140 51C140 51 146 46 146 41C146 36 140 39 140 44Z'/%3E%3Cpath d='M64 72L66 64L68 72L76 72L70 77L72 85L66 81L60 85L62 77L56 72Z'/%3E%3Cpath d='M127 134L129 126L131 134L139 134L133 139L135 147L129 143L123 147L125 139L119 134Z'/%3E%3Cpath d='M95 110L95 128'/%3E%3Ccircle cx='92' cy='129' r='4'/%3E%3Cpath d='M95 110L106 106L106 120'/%3E%3Ccircle cx='103' cy='121' r='4'/%3E%3C/g%3E%3C/svg%3E")`
       }}
     >
-      {/* â”€â”€ CABEÃ‡ALHO FLUTUANTE â”€â”€ */}
+      {/* ── CABEÇALHO FLUTUANTE ── */}
       <header className="w-full bg-transparent px-3 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
 
-        {/* BotÃ£o Voltar */}
+        {/* Botão Voltar */}
         <button
           onClick={() => navigate(-1)}
           className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
@@ -1468,10 +1468,10 @@ export default function wallet() {
           </svg>
         </button>
 
-        {/* CÃ¡psula central â€” Wallet */}
+        {/* Cápsula central — Wallet */}
         <div className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto">
           <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
-            <img src="/logo_bussiness_messeger.jpg" alt="Wallet" className="w-full h-full object-cover" />
+            <img src="/logo_bussiness_messeger.jpg" alt="Messenger wallet" className="w-full h-full object-cover" />
             <span className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-white rounded-full flex items-center justify-center">
               <span className="w-2.5 h-2.5 bg-[#3390ec] rounded-full flex items-center justify-center">
                 <svg className="w-[7px] h-[7px] text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -1483,7 +1483,7 @@ export default function wallet() {
 
           <div className="flex flex-col min-w-0">
             <h1 className="text-[15px] font-bold text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-              Wallet
+              Messenger wallet
             </h1>
             <span className="mt-0.5 flex items-center gap-1 text-[12px] font-normal leading-[1.15] text-[#25ae60]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#25ae60]" />
@@ -1492,7 +1492,7 @@ export default function wallet() {
           </div>
         </div>
 
-        {/* BotÃ£o Menu */}
+        {/* Botão Menu */}
         <div className="relative pointer-events-auto">
           <button
             onClick={() => setShowHelpModal(true)}
@@ -1557,48 +1557,48 @@ export default function wallet() {
                   {[
                     {
                       command: '/adicionar_banco',
-                      title: 'Adicionar conta bancÃ¡ria',
-                      response: 'ApÃ³s a verificaÃ§Ã£o, abre-se o formulÃ¡rio para cadastrar o titular, o banco e o IBAN. Se jÃ¡ existir uma conta, a Wallet informa no chat.'
+                      title: 'Adicionar conta bancária',
+                      response: 'Após a verificação, abre-se o formulário para cadastrar o titular, o banco e o IBAN. Se já existir uma conta, a Wallet informa no chat.'
                     },
                     {
                       command: '/saldo',
                       title: 'Consultar saldo',
-                      response: 'Por favor, quero consultar o meu saldo disponÃ­vel para retirada. A Wallet apresenta o saldo atualizado.'
+                      response: 'Por favor, quero consultar o meu saldo disponível para retirada. A Wallet apresenta o saldo atualizado.'
                     },
                     {
                       command: '/retirar',
                       title: 'Iniciar retirada',
-                      response: 'Quero solicitar o levantamento para a minha conta bancÃ¡ria. A Wallet verifica os requisitos e orienta a escolha do valor.'
+                      response: 'Quero solicitar o levantamento para a minha conta bancária. A Wallet verifica os requisitos e orienta a escolha do valor.'
                     },
                     {
                       command: 'sacar 500',
-                      title: 'Pedir um valor especÃ­fico',
-                      response: 'Se a retirada estiver disponÃ­vel e cumprir os requisitos, verÃ¡ um resumo com o valor, a taxa, o valor lÃ­quido e a conta bancÃ¡ria antes de confirmar.'
+                      title: 'Pedir um valor específico',
+                      response: 'Se a retirada estiver disponível e cumprir os requisitos, verá um resumo com o valor, a taxa, o valor líquido e a conta bancária antes de confirmar.'
                     },
                     {
                       command: 'consultar banco',
-                      title: 'Ver conta bancÃ¡ria',
-                      response: 'Consultar os meus dados bancÃ¡rios e o banco cadastrado.'
+                      title: 'Ver conta bancária',
+                      response: 'Consultar os meus dados bancários e o banco cadastrado.'
                     },
                     {
                       command: '/historico',
-                      title: 'Consultar histÃ³rico',
-                      response: 'Por favor, dÃª-me o histÃ³rico de todas as retiradas; cada registo aparece numa descriÃ§Ã£o separada, com data, valor e estado.'
+                      title: 'Consultar histórico',
+                      response: 'Por favor, dê-me o histórico de todas as retiradas; cada registo aparece numa descrição separada, com data, valor e estado.'
                     },
                     {
                       command: '/horario',
-                      title: 'Ver horÃ¡rio',
-                      response: 'HorÃ¡rio de retiradas: Segunda a Sexta, das 09:00 Ã s 18:00. O estado aberto/fechado Ã© indicado conforme o horÃ¡rio atual.'
+                      title: 'Ver horário',
+                      response: 'Horário de retiradas: Segunda a Sexta, das 09:00 às 18:00. O estado aberto/fechado é indicado conforme o horário atual.'
                     },
                     {
                       command: '/taxa',
                       title: 'Ver taxas e limites',
-                      response: 'Qual Ã© a taxa cobrada em cada retirada? A taxa atual Ã© de 10%.'
+                      response: 'Qual é a taxa cobrada em cada retirada? A taxa atual é de 10%.'
                     },
                     {
                       command: '/deletar_conta',
                       title: 'Deletar conta',
-                      response: 'A Wallet pede confirmaÃ§Ã£o antes de remover a conta bancÃ¡ria cadastrada.'
+                      response: 'A Wallet pede confirmação antes de remover a conta bancária cadastrada.'
                     }
                   ].map(({ command, title, response }) => (
                     <article key={command} className="px-4 py-3.5 border-b last:border-b-0 border-[#edf0f2] dark:border-white/10 text-[#222] dark:text-[#e6e6e6]">
@@ -1624,7 +1624,7 @@ export default function wallet() {
                   ))}
                 </div>
                 <p className="mt-3 px-1 text-[12px] leading-relaxed text-[#707579] dark:text-[#91a0ae]">
-                  Os valores, estado do horÃ¡rio, dados bancÃ¡rios e histÃ³rico dependem dos dados reais da sua conta. Os exemplos sÃ£o ilustrativos; uma retirada sÃ³ Ã© concluÃ­da apÃ³s a confirmaÃ§Ã£o no chat.
+                  Os valores, estado do horário, dados bancários e histórico dependem dos dados reais da sua conta. Os exemplos são ilustrativos; uma retirada só é concluída após a confirmação no chat.
                 </p>
               </section>
             </div>
@@ -1632,7 +1632,7 @@ export default function wallet() {
         </div>
       )}
 
-      {/* â”€â”€ CORPO DO CHAT â”€â”€ */}
+      {/* ── CORPO DO CHAT ── */}
       <main
         ref={mainChatRef}
         onScroll={handleScroll}
@@ -1669,7 +1669,7 @@ export default function wallet() {
                       <span aria-hidden="true" className="inline-block h-[1px]" style={{ width: '56px' }} />
                       <div className="absolute bottom-[-1px] right-0 flex items-center gap-[2px] select-none text-[12px]">
                         <span className="font-normal leading-none text-[#55864e]">{msg.time}</span>
-                        <span className="text-[#4fae4e] font-bold text-[11px] leading-none">âœ“âœ“</span>
+                        <span className="text-[#4fae4e] font-bold text-[11px] leading-none">✓✓</span>
                       </div>
                     </div>
                   </div>
@@ -1706,14 +1706,14 @@ export default function wallet() {
                   className="bg-white rounded-[16px] rounded-tl-none px-[10px] pt-[8px] pb-[8px] text-gray-900 w-full relative select-text"
                   style={{ boxShadow: '0 1px 2px rgba(16,35,47,0.15)' }}
                 >
-                {/* APRESENTAÃ‡ÃƒO / BOAS-VINDAS */}
+                {/* APRESENTAÇÃO / BOAS-VINDAS */}
                 {msg.type === 'welcome' && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                     {t('wallet.welcome')}
                   </div>
                 )}
 
-                {/* TEXTO BOT PADRÃƒO COM FORMATAÃ‡ÃƒO */}
+                {/* TEXTO BOT PADRÃO COM FORMATAÇÃO */}
                 {msg.type === 'text' && msg.text && (
                   <div className="text-[14px] text-black leading-relaxed font-normal">
                     {renderBotText(msg.text)}
@@ -1723,8 +1723,8 @@ export default function wallet() {
                 {(msg.type === 'bank_saved' || msg.type === 'bank_details') && msg.payload && (
                   <div className="text-[14px] leading-relaxed text-black">
                     {msg.payload.intro}{' '}
-                    <strong className="font-semibold text-[#2481cc]">{msg.payload.holderName}</strong>, entidade bancÃ¡ria{' '}
-                    <strong className="font-semibold text-[#2481cc]">{msg.payload.bankName}</strong>, nÃºmero de referÃªncia{' '}
+                    <strong className="font-semibold text-[#2481cc]">{msg.payload.holderName}</strong>, entidade bancária{' '}
+                    <strong className="font-semibold text-[#2481cc]">{msg.payload.bankName}</strong>, número de referência{' '}
                     <strong className="font-semibold text-[#2481cc]">{msg.payload.iban}</strong>.
                   </div>
                 )}
@@ -1735,36 +1735,36 @@ export default function wallet() {
                   </div>
                 )}
 
-                {/* RESUMO DE CONFIRMAÃ‡ÃƒO DE RETIRADA */}
+                {/* RESUMO DE CONFIRMAÇÃO DE RETIRADA */}
                 {msg.type === 'confirm_withdraw' && msg.payload && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                     <p className="font-bold text-[15px] text-[#2481cc] mb-2">
-                      Perfeito! DÃ¡ uma conferida no seu resumo: ðŸ“‹
+                      Perfeito! Dá uma conferida no seu resumo: 📋
                     </p>
                     <p className="text-[13.5px] text-gray-800">
-                      â€¢ <strong>{t('withdraw.amount')}:</strong> {formatCurrency(msg.payload.amount, 'KZ')}
+                      • <strong>{t('withdraw.amount')}:</strong> {formatCurrency(msg.payload.amount, 'KZ')}
                       <br />
-                      â€¢ <strong>{t('wallet.operational_fee')}:</strong> -{formatCurrency(msg.payload.fee, 'KZ')}
+                      • <strong>{t('wallet.operational_fee')}:</strong> -{formatCurrency(msg.payload.fee, 'KZ')}
                       <br />
-                      â€¢ <strong>{t('withdraw.net_amount')}:</strong>{' '}
+                      • <strong>{t('withdraw.net_amount')}:</strong>{' '}
                       <span className="text-[#25ae60] font-bold">
                         {formatCurrency(msg.payload.net, 'KZ')}
-                      </span> ðŸ’µ
+                      </span> 💵
                       <br />
-                      â€¢ <strong>{t('withdraw.bank_acc')}:</strong> {msg.payload.bankName}
+                      • <strong>{t('withdraw.bank_acc')}:</strong> {msg.payload.bankName}
                       <br />
-                      â€¢ <strong>{t('bank.iban')}:</strong>{' '}
+                      • <strong>{t('bank.iban')}:</strong>{' '}
                       <code className="font-mono text-[12px] text-[#2481cc] bg-gray-50 px-1 rounded">
                         {msg.payload.iban}
                       </code>
                     </p>
                     <p className="mt-2 text-[13px] text-gray-600">
-                      EstÃ¡ tudo certinho? Ã‰ sÃ³ clicar em <strong>{t('common.confirm')}</strong> abaixo! ðŸ˜Š
+                      Está tudo certinho? É só clicar em <strong>{t('common.confirm')}</strong> abaixo! 😊
                     </p>
                   </div>
                 )}
 
-                {/* SELETOR RÃPIDO DE VALORES */}
+                {/* SELETOR RÁPIDO DE VALORES */}
                 {msg.type === 'amount_selector' && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                     {msg.text && renderBotText(msg.text)}
@@ -1805,7 +1805,7 @@ export default function wallet() {
                   </div>
                 )}
 
-                {/* HISTÃ“RICO REAL EM TEXTO NORMAL SEM SUBCARDS */}
+                {/* HISTÓRICO REAL EM TEXTO NORMAL SEM SUBCARDS */}
                 {msg.type === 'history_list' && msg.text && (
                   <div className="text-[14px] text-black leading-relaxed font-normal">
                     {renderBotText(msg.text)}
@@ -1828,14 +1828,14 @@ export default function wallet() {
                       disabled={isProcessing}
                       className="flex-1 bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-2 py-2 text-[13px] font-medium active:bg-opacity-90 transition-colors disabled:opacity-50 flex justify-center items-center gap-1 cursor-pointer"
                     >
-                      {isProcessing ? 'â³ Proc...' : `âœ… ${t('common.confirm')}`}
+                      {isProcessing ? '⏳ Proc...' : `✅ ${t('common.confirm')}`}
                     </button>
                     <button
                       onClick={handleCancelButton}
                       disabled={isProcessing}
                       className="flex-1 bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-2 py-2 text-[13px] font-medium active:bg-opacity-90 transition-colors disabled:opacity-50 flex justify-center items-center gap-1 cursor-pointer"
                     >
-                      âœ• {t('common.cancel')}
+                      ✕ {t('common.cancel')}
                     </button>
                   </div>
                 </div>
@@ -1867,19 +1867,19 @@ export default function wallet() {
                     onClick={() => handleSendMessage('/adicionar_banco')}
                     className="w-full bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-4 py-2 text-[14px] font-medium active:bg-opacity-90 transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
                   >
-                    âž• {t('bank.bind')}
+                    ➕ {t('bank.bind')}
                   </button>
                 </div>
               )}
 
-              {/* BOTÃƒO DE AÃ‡ÃƒO: ATIVAR BOT */}
+              {/* BOTÃO DE AÇÃO: ATIVAR BOT */}
               {msg.type === 'no_bots' && (
                 <div className="w-full max-w-[80%] flex flex-col items-center justify-center gap-1 -mt-1.5 mb-2 pl-2">
                   <button
                     onClick={() => navigate('/botfather')}
                     className="w-full bg-[#6b7b8a] bg-opacity-70 text-white rounded-lg px-4 py-2 text-[14px] font-medium active:bg-opacity-90 transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
                   >
-                    ðŸ¤– Ir para o CatÃ¡logo de Bots
+                    🤖 Ir para o Catálogo de Bots
                   </button>
                 </div>
               )}
@@ -1922,20 +1922,20 @@ export default function wallet() {
         </button>
       )}
 
-      {/* â”€â”€ QUICK HINTS (RESPOSTAS RÃPIDAS / COMANDOS) â”€â”€ */}
+      {/* ── QUICK HINTS (RESPOSTAS RÁPIDAS / COMANDOS) ── */}
       {showQuickHints && (
         <div className="fixed bottom-[65px] left-0 right-0 flex justify-center px-2 sm:px-6 z-40 animate-in slide-in-from-bottom-2">
           <div className="w-full max-w-[650px] bg-white dark:bg-[#182533] rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 space-y-1">
             <div className="flex items-center justify-between px-2 py-1 text-[11.5px] font-semibold text-[#2481cc] uppercase">
               <span className="flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5" /> Comandos RÃ¡pidos (Wallet Bot)
+                <Zap className="w-3.5 h-3.5" /> Comandos Rápidos (Wallet Bot)
               </span>
               <button
                 type="button"
                 onClick={() => setShowQuickHints(false)}
                 className="text-gray-400 hover:text-black dark:hover:text-white"
               >
-                âœ•
+                ✕
               </button>
             </div>
             {quickReplies.map((qr) => (
@@ -1955,21 +1955,21 @@ export default function wallet() {
         </div>
       )}
 
-      {/* â”€â”€ FOOTER FLUTUANTE IDÃŠNTICO AO OFFICIAL CHANNEL â”€â”€ */}
+      {/* ── FOOTER FLUTUANTE IDÊNTICO AO OFFICIAL CHANNEL ── */}
       <footer className="fixed bottom-0 left-0 right-0 p-2 pb-[max(12px,env(safe-area-inset-bottom,12px))] z-40 flex justify-center bg-transparent pointer-events-none">
         <div className="w-full max-w-[650px] flex items-center gap-1.5 sm:gap-2 pointer-events-auto px-1 sm:px-2">
 
-          {/* CÃ¡psula branca flutuante sobre o wallpaper */}
+          {/* Cápsula branca flutuante sobre o wallpaper */}
           <div className="flex-1 min-w-0 bg-white dark:bg-[#182533] rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center px-2.5 sm:px-3 py-1.5 min-h-[48px] border border-black/5 dark:border-white/10 transition-colors">
 
-            {/* âš¡ Comandos RÃ¡pidos */}
+            {/* ⚡ Comandos Rápidos */}
             <button
               type="button"
               onClick={() => setShowQuickHints(!showQuickHints)}
               className={`p-1.5 rounded-full transition-all cursor-pointer shrink-0 mr-1 ${
                 showQuickHints ? 'text-[#2481cc] bg-[#2481cc]/15' : 'text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc]'
               }`}
-              title="Comandos RÃ¡pidos"
+              title="Comandos Rápidos"
             >
               <Zap className="w-5 h-5" />
             </button>
@@ -2003,7 +2003,7 @@ export default function wallet() {
               }}
               placeholder={
                 pendingAmount !== null
-                  ? 'Novo valor ou Sim/NÃ£o...'
+                  ? 'Novo valor ou Sim/Não...'
                   : 'Mensagem...'
               }
               className="flex-1 min-w-0 w-0 px-1 py-1 text-[14.5px] sm:text-[15px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
@@ -2011,7 +2011,7 @@ export default function wallet() {
 
           </div>
 
-          {/* BotÃ£o circular azul Telegram */}
+          {/* Botão circular azul Telegram */}
           <button
             onClick={() => handleSendMessage()}
             className="w-[46px] h-[46px] sm:w-[48px] sm:h-[48px] rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_8px_rgba(36,129,204,0.4)] cursor-pointer"
@@ -2060,4 +2060,3 @@ export default function wallet() {
     </div>
   );
 }
-

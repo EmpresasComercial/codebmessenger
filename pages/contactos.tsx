@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   ChevronLeft, Copy, Share2, Check, 
-  QrCode, X, Link2
+  QrCode, X
 } from 'lucide-react';
 
 export default function ContactsInvite() {
@@ -59,7 +59,7 @@ export default function ContactsInvite() {
         if (appLink) {
           let raw = String(appLink).trim().replace(/\/$/, '');
           if (raw && !/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
-          // Se estiver configurado com o domÃ­nio antigo join-t.me, substitui pelo domÃ­nio oficial telegramas.cc
+          // Replace links using the old join-t.me domain with the official telegramas.cc domain.
           if (raw.includes('join-t.me')) {
             raw = 'https://www.telegramas.cc';
           }
@@ -112,7 +112,7 @@ export default function ContactsInvite() {
   return (
     <div className="w-full min-h-screen bg-white font-sans text-[#222222] antialiased pb-28 select-none">
 
-      {/* CabeÃ§alho simples seguindo o layout da pÃ¡gina About */}
+      {/* Simple header matching the About page layout */}
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-gray-100 bg-white px-4 py-3">
         <button
           type="button"
@@ -126,37 +126,18 @@ export default function ContactsInvite() {
       </header>
 
       <main className="mx-auto w-full max-w-[860px] space-y-8 px-4 pt-8">
-        <video
-          className="block w-full"
-          controls
-          playsInline
-          preload="metadata"
-          aria-label={t('invite.program_video_alt')}
+        <div
+          className="w-full overflow-hidden"
+          style={{ borderRadius: 24 }}
         >
-          <source src="/affiliate-programs-7s.mp4" type="video/mp4" />
-          {t('invite.video_unsupported')}
-        </video>
+          <img
+            className="block h-auto w-full"
+            src="/affiliate-programs-image.png"
+            alt={t('invite.program_image_alt')}
+          />
+        </div>
 
         <section className="mx-auto w-full max-w-[420px] space-y-5 px-1 text-center">
-          <div className="mx-auto flex h-[88px] w-[88px] items-center justify-center rounded-full bg-[#0878ff] text-white">
-            <Link2 className="h-10 w-10 stroke-[2.2]" aria-hidden="true" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-[24px] font-semibold leading-tight text-black">
-              {t('invite.link_label')}
-            </h2>
-            <p className="text-[15px] leading-5 text-[#333333]">
-              {t('invite.link_description')}
-            </p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-[14px] text-[#333333]">{t('invite.rewards_title')}</p>
-            <div className="inline-flex flex-wrap justify-center gap-2 rounded-full bg-[#f1f1f5] px-4 py-2 text-[13px] font-medium text-[#222222]">
-              <span>{t('invite.signup_reward')}</span>
-              <span aria-hidden="true">Â·</span>
-              <span>{t('invite.ten_invite_reward')}</span>
-            </div>
-          </div>
           <div className="space-y-3 pt-1">
             {inviteCode && inviteCode !== '---' && (
               <button
@@ -210,12 +191,6 @@ export default function ContactsInvite() {
             <p>
               {t('invite.program_description')}
             </p>
-            <img
-              src="/affiliate-programs-referral.png"
-              alt={t('invite.program_image_alt')}
-              className="mx-auto block h-auto w-full max-w-[520px] rounded-xl"
-              loading="lazy"
-            />
           </section>
 
           <section id="compartilhando-link-afiliado" className="space-y-3">
@@ -266,7 +241,7 @@ export default function ContactsInvite() {
         </section>
       </main>
 
-      {/* â”€â”€ MODAL QR (FLAT E SIMPLES) â”€â”€ */}
+      {/* ── MODAL QR (FLAT E SIMPLES) ── */}
       {showQrModal && (
         <div
           className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center"
@@ -276,7 +251,7 @@ export default function ContactsInvite() {
             className="w-full sm:max-w-sm bg-white dark:bg-[#17212b] sm:rounded-[16px] rounded-t-[16px] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* CabeÃ§alho do modal */}
+            {/* Modal header */}
             <div className="flex items-center justify-between px-4 h-[52px] border-b border-[#e4e4e4] dark:border-[#1e2c3a]">
               <span className="text-[16px] font-semibold text-black dark:text-white">{t('invite.qr_code')}</span>
               <button
@@ -302,7 +277,7 @@ export default function ContactsInvite() {
               </p>
             </div>
 
-            {/* AcÃ§Ãµes flat */}
+            {/* Modal actions */}
             <div className="border-t border-[#e4e4e4] dark:border-[#1e2c3a] divide-y divide-[#e4e4e4] dark:divide-[#1e2c3a]">
               <button
                 type="button"
@@ -326,4 +301,3 @@ export default function ContactsInvite() {
     </div>
   );
 }
-

@@ -27,10 +27,10 @@ const getDataUrlSize = (url?: string) => {
 };
 
 export const formatFileSize = (bytes?: number) => {
-  if (!Number.isFinite(bytes) || !bytes || bytes < 0) return 'Tamanho indisponÃ­vel';
+  if (!Number.isFinite(bytes) || bytes === undefined || bytes < 0) return 'Tamanho indisponível';
   return bytes >= 1024 * 1024
     ? `${(bytes / (1024 * 1024)).toFixed(2)} MB`
-    : `${Math.max(1, Math.ceil(bytes / 1024))} KB`;
+    : `${bytes === 0 ? 0 : Math.max(1, Math.ceil(bytes / 1024))} KB`;
 };
 
 export default function PdfDownloadCard({
@@ -48,7 +48,7 @@ export default function PdfDownloadCard({
   const [indeterminate, setIndeterminate] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
   const downloadedObjectUrlRef = useRef<string | null>(null);
-  const resolvedSize = sizeBytes || getDataUrlSize(url);
+  const resolvedSize = sizeBytes ?? getDataUrlSize(url);
   const isDownloading = progress !== null && progress < 1;
   const sizeLabel = resolvedSize ? formatFileSize(resolvedSize) : t('pdf.size_unavailable');
   const circleLength = 2 * Math.PI * 26;
@@ -90,7 +90,6 @@ export default function PdfDownloadCard({
     setProgress(0);
     setDownloadedBytes(0);
     setIndeterminate(true);
-    let downloadReady = false;
     try {
       const downloadUrl = resolveUrl ? await resolveUrl() : url!;
       const response = await fetch(downloadUrl);
@@ -142,10 +141,10 @@ export default function PdfDownloadCard({
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      downloadReady = true;
       setDownloaded(true);
       showToast(t('pdf.download_success'), 'success');
-    } catch {
+    } catch (error) {
+      console.error('[PdfDownloadCard] Failed to download PDF:', error);
       showToast(t('pdf.download_failed'), 'error');
     } finally {
       setProgress(null);
@@ -215,4 +214,3 @@ export default function PdfDownloadCard({
     </button>
   );
 }
-

@@ -30,7 +30,7 @@ export default function Navbar() {
         .eq('detalhes->>lida', 'false');
 
       if (error) {
-        console.error('NÃ£o foi possÃ­vel carregar a contagem de mensagens nÃ£o lidas:', error);
+        console.error('Não foi possível carregar a contagem de mensagens não lidas:', error);
         return;
       }
 
@@ -47,7 +47,7 @@ export default function Navbar() {
       )
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error(`Falha na sincronizaÃ§Ã£o de mensagens nÃ£o lidas: ${status}`);
+          console.error(`Falha na sincronização de mensagens não lidas: ${status}`);
         }
       });
 
@@ -70,39 +70,39 @@ export default function Navbar() {
       name: t('nav.home'),
       path: '/conversas',
       aliasPaths: ['/conversas', '/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'],
-      icon: (isActive: boolean) => <MessageCircle className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />,
+      icon: (isActive: boolean) => <MessageCircle className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />,
       badge: unreadMessagesCount
     },
     {
       name: t('nav.invite'),
       path: '/contactos',
       aliasPaths: ['/contactos', '/convite'],
-      icon: (isActive: boolean) => <Users className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
+      icon: (isActive: boolean) => <Users className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     },
     {
       name: t('nav.products'),
       path: '/botfather',
       aliasPaths: ['/botfather', '/bot-pay', '/operacoes'],
-      icon: (isActive: boolean) => <Sparkles className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
+      icon: (isActive: boolean) => <Sparkles className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     },
     {
       name: t('nav.profile'),
       path: '/definicoes',
       aliasPaths: ['/definicoes', '/perfil', '/settings', '/configuracoes-conta'],
-      icon: (isActive: boolean) => <Settings className={`w-[24px] h-[24px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
+      icon: (isActive: boolean) => <Settings className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     }
   ];
 
-  // Mostra o botÃ£o flutuante de lÃ¡pis (FAB Telegram) na lista de chats ou tela inicial
+  // Show the floating compose button on the chat list.
   const showFab = ['/conversas', '/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'].includes(location.pathname);
 
   return (
     <>
-      {/* â”€â”€ BOTÃƒO DE AÃ‡ÃƒO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÃPIS) â”€â”€ */}
+      {/* Floating compose button */}
       {showFab && (
         <button
           onClick={() => navigate('/grupo')}
-          className="fixed bottom-[72px] right-4 sm:right-6 z-40 w-14 h-14 rounded-full bg-[#50a8eb] dark:bg-[#50a8eb] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(80,168,235,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          className="fixed bottom-[72px] right-4 sm:right-6 z-40 w-12 h-12 rounded-full bg-[#50a8eb] dark:bg-[#50a8eb] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(80,168,235,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
           title={t('nav.new_message')}
           aria-label={t('nav.new_message')}
         >
@@ -113,7 +113,7 @@ export default function Navbar() {
         </button>
       )}
 
-      {/* â”€â”€ BARRA DE NAVEGAÃ‡ÃƒO INFERIOR OFICIAL DO TELEGRAM (TRANSPARENTE FULL-WIDTH) â”€â”€ */}
+      {/* Bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 w-full z-50 h-[56px] bg-white dark:bg-[#1c242f] border-t border-black/5 dark:border-[#000000]/30 flex items-center justify-around px-2 select-none shadow-[0_-1px_3px_rgba(0,0,0,0.02)]">
         {navItems.map((item) => {
           const isActive = item.aliasPaths.some(p => location.pathname === p || (p !== '/home' && location.pathname.startsWith(p)));
@@ -150,4 +150,3 @@ export default function Navbar() {
     </>
   );
 }
-

@@ -396,10 +396,9 @@ export function VoiceMessagePlayer({ path, unavailableLabel, isOutgoing = false 
       ) : (
         <span className="flex h-10 items-center gap-2 text-xs text-gray-500 dark:text-gray-300">
           {!failed && <Loader2 className="h-4 w-4 animate-spin" />}
-          {failed ? unavailableLabel : 'â€¦'}
+          {failed ? unavailableLabel : '…'}
         </span>
       )}
     </div>
   );
 }
-
