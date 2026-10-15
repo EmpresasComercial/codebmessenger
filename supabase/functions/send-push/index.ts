@@ -34,7 +34,7 @@ serve(async (req) => {
 
     // 1. Busca todas as inscrições dos dispositivos desse usuário
     const { data: subscriptions, error } = await supabaseAdmin
-      .from("push_subscriptions")
+      .from("pushsend")
       .select("*")
       .eq("user_id", user_id);
 
@@ -46,7 +46,7 @@ serve(async (req) => {
     }
 
     const payload = JSON.stringify({
-      title: title || "Business Messenger",
+      title: title || "Busne Messaging",
       body: body,
       icon: "/logo_bussiness_messeger.jpg",
       badge: "/logo_bussiness_messeger.jpg",
@@ -68,7 +68,7 @@ serve(async (req) => {
       } catch (err: any) {
         // Se a inscrição expirou no celular, remove do banco
         if (err.statusCode === 410 || err.statusCode === 404) {
-          await supabaseAdmin.from("push_subscriptions").delete().eq("id", sub.id);
+          await supabaseAdmin.from("pushsend").delete().eq("id", sub.id);
         }
         return { endpoint: sub.endpoint, status: "failed", error: err.message };
       }

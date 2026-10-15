@@ -393,7 +393,7 @@ export type Database = {
         }
         Relationships: []
       }
-      push_notifications_log: {
+      sacola: {
         Row: {
           body: string
           id: string
@@ -401,6 +401,7 @@ export type Database = {
           sent_at: string
           status: string
           title: string
+          url: string | null
           user_id: string | null
         }
         Insert: {
@@ -410,6 +411,7 @@ export type Database = {
           sent_at?: string
           status?: string
           title: string
+          url?: string | null
           user_id?: string | null
         }
         Update: {
@@ -419,6 +421,40 @@ export type Database = {
           sent_at?: string
           status?: string
           title?: string
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      pushsend: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          keys_auth: string
+          keys_p256dh: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          keys_auth: string
+          keys_p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          keys_auth?: string
+          keys_p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
           user_id?: string | null
         }
         Relationships: []

@@ -83,7 +83,7 @@ export async function subscribeToPushNotifications(): Promise<{ success: boolean
     // 5. Salvar a subscription no Supabase vinculada ao usuário
     const { data: userData } = await supabase.auth.getUser();
     if (userData?.user) {
-      await (supabase.from('push_subscriptions' as any) as any).upsert(
+      await (supabase.from('pushsend' as any) as any).upsert(
         {
           user_id: userData.user.id,
           endpoint,
