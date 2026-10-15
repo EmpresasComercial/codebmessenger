@@ -105,7 +105,7 @@ export default function DevicesPrivacy() {
 
       // 1. Registra a atividade da sessão atual no backend
       try {
-        const { data: actData } = await supabase.rpc('record_device_activity_mcpn', {
+        const { data: actData } = await (supabase.rpc as any)('record_device_activity_mcpn', {
           p_device_id: localDeviceId,
           p_details: {
             os: deviceInfo.os,
@@ -114,15 +114,15 @@ export default function DevicesPrivacy() {
             screen: typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : 'unknown',
           },
         });
-        if (actData?.ip) {
-          setCurrentIp(actData.ip);
+        if ((actData as any)?.ip) {
+          setCurrentIp((actData as any).ip);
         }
       } catch (actErr) {
         logger.warn('DevicesPrivacy', 'Erro ao sincronizar sessão:', actErr);
       }
 
       // 2. Busca dados de dispositivo e sessões via RPC segura
-      const { data, error } = await supabase.rpc('get_my_devices_sessions_mcpn');
+      const { data, error } = await (supabase.rpc as any)('get_my_devices_sessions_mcpn');
 
       if (!error && Array.isArray(data) && data.length > 0) {
         const row = data[0];
@@ -135,12 +135,13 @@ export default function DevicesPrivacy() {
         // Fallback: consulta direta caso a RPC retorne vazio
         const { data: userAcc } = await supabase
           .from('sys_t500')
-          .select('device_id, telefone')
+          .select('metadados, telefone')
           .eq('id', user.id)
           .maybeSingle();
 
         if (userAcc) {
-          setDbDeviceId(userAcc.device_id || localDeviceId);
+          const meta = userAcc.metadados as Record<string, any> | null;
+          setDbDeviceId(meta?.device_id || localDeviceId);
           setPhone(userAcc.telefone || '');
         }
 
@@ -188,7 +189,7 @@ export default function DevicesPrivacy() {
     setTerminating(true);
     try {
       // 1. Invoca encerramento de outras sessões no banco
-      const { data, error } = await supabase.rpc('terminate_other_sessions_mcpn', {
+      const { data, error } = await (supabase.rpc as any)('terminate_other_sessions_mcpn', {
         p_current_device_id: dbDeviceId || localDeviceId,
       });
 
@@ -203,7 +204,7 @@ export default function DevicesPrivacy() {
         logger.warn('DevicesPrivacy', 'signOut others scope fallback:', authErr);
       }
 
-      showToast(data?.message || 'Todas as outras sessões foram encerradas com sucesso!', 'success');
+      showToast((data as any)?.message || 'Todas as outras sessões foram encerradas com sucesso!', 'success');
       setShowConfirmModal(false);
       await fetchDeviceData(true);
     } catch (err: any) {

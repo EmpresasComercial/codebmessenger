@@ -77,7 +77,7 @@ export type Database = {
         }
         Relationships: []
       }
-      bancos_arrecadacao_mcpn: {
+      pasta: {
         Row: {
           contas: Json
           id: string
@@ -423,7 +423,7 @@ export type Database = {
         }
         Relationships: []
       }
-      recargas_mcpn: {
+      paymentbot: {
         Row: {
           created_at: string
           detalhes_transacao: Json | null

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
@@ -72,7 +73,7 @@ serve(async (req) => {
         totalRecharges = Number((accRes.data[0] as any).total_recarregado ?? 0);
       } else {
         const { data: recData } = await adminClient
-          .from("recargas_mcpn")
+          .from("paymentbot")
           .select("valor, status")
           .eq("user_id", user.id);
         if (recData) {
@@ -124,7 +125,7 @@ serve(async (req) => {
       if (!rechargeId) {
         // Fallback seguro via adminClient atribuído ao user.id verificado
         const { data: inserted, error: insertError } = await adminClient
-          .from("recargas_mcpn")
+          .from("paymentbot")
           .insert({
             user_id: user.id,
             valor: numAmount,
@@ -160,7 +161,7 @@ serve(async (req) => {
       }
 
       const { data: cancelledRecharge, error: cancelError } = await adminClient
-        .from("recargas_mcpn")
+        .from("paymentbot")
         .update({ status: "cancelado" })
         .eq("id", rechargeId)
         .eq("user_id", user.id)
@@ -204,7 +205,7 @@ serve(async (req) => {
       if (confirmError) {
         // Fallback update
         await adminClient
-          .from("recargas_mcpn")
+          .from("paymentbot")
           .update({
             comprovativo_url: image_path,
             banco_origem: bank_name,
@@ -231,7 +232,7 @@ serve(async (req) => {
       }
 
       const { data: tableData } = await adminClient
-        .from("recargas_mcpn")
+        .from("paymentbot")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
