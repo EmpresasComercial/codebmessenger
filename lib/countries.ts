@@ -1735,6 +1735,10 @@ export interface PhoneValidationResult {
   fullNumber: string;
 }
 
+export function getPhoneNumberErrorMessage(country: Country): string {
+  return `Número inválido (${country.name}).`;
+}
+
 /**
  * Validates a national number against the selected country, then combines it
  * with that country's calling code before checking the complete international number.

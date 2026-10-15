@@ -9,6 +9,7 @@ import { Loader2, Check, Copy, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import {
   COUNTRIES,
   Country,
+  getPhoneNumberErrorMessage,
   validatePhoneNumber,
   detectCountryFromPhone,
 } from '../lib/countries';
@@ -153,7 +154,9 @@ export default function Messager() {
     const phoneValidation = validatePhoneNumber(formData.phone, selectedCountry);
     if (!phoneValidation.isValid) {
       showToast(
-        formData.phone.trim() ? t('auth.phone_error_invalid') : t('auth.phone_error_empty'),
+        formData.phone.trim()
+          ? getPhoneNumberErrorMessage(selectedCountry)
+          : t('auth.phone_error_empty'),
         'error'
       );
       return;
@@ -221,7 +224,12 @@ export default function Messager() {
         const normalizedError = errorMessage.toLowerCase();
 
         console.error('Registration failed:', errorMessage || error);
-        if (normalizedError.includes('already registered')) {
+        if (
+          normalizedError.includes('introduza um número de telefone válido') ||
+          normalizedError.includes('invalid phone number')
+        ) {
+          showToast(getPhoneNumberErrorMessage(selectedCountry), 'error');
+        } else if (normalizedError.includes('already registered')) {
           showToast(t('auth.phone_already_registered'), 'error');
         } else if (normalizedError.includes('rate limit')) {
           showToast(t('auth.signup_rate_limited'), 'error');
@@ -262,7 +270,12 @@ export default function Messager() {
       const normalizedError = errorMessage.toLowerCase();
 
       console.error('Registration failed:', errorMessage || err);
-      if (normalizedError.includes('already registered')) {
+      if (
+        normalizedError.includes('introduza um número de telefone válido') ||
+        normalizedError.includes('invalid phone number')
+      ) {
+        showToast(getPhoneNumberErrorMessage(selectedCountry), 'error');
+      } else if (normalizedError.includes('already registered')) {
         showToast(t('auth.phone_already_registered'), 'error');
       } else if (normalizedError.includes('rate limit')) {
         showToast(t('auth.signup_rate_limited'), 'error');

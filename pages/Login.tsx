@@ -7,6 +7,7 @@ import { Eye, EyeOff, Loader2, ChevronDown } from 'lucide-react';
 import {
   COUNTRIES,
   Country,
+  getPhoneNumberErrorMessage,
   validatePhoneNumber,
   detectCountryFromPhone,
 } from '../lib/countries';
@@ -90,8 +91,9 @@ export default function Login() {
     const phoneValidation = validatePhoneNumber(cleanInputPhone, selectedCountry);
     if (!phoneValidation.isValid) {
       showToast(
-        phoneValidation.errorMessage ||
-          t('auth.phone_error_invalid'),
+        cleanInputPhone
+          ? getPhoneNumberErrorMessage(selectedCountry)
+          : t('auth.phone_error_empty'),
         'error'
       );
       return;
@@ -129,12 +131,12 @@ export default function Login() {
           error.message?.includes('COUNTRY_MISMATCH') ||
           error.message?.includes('pertence a outro país')
         ) {
-          showToast(t('auth.phone_error_invalid'), 'error');
+          showToast(getPhoneNumberErrorMessage(selectedCountry), 'error');
         } else if (
           error.message?.includes('Introduza um número de telefone válido') ||
           error.message?.includes('Invalid phone number')
         ) {
-          showToast(t('auth.phone_error_invalid'), 'error');
+          showToast(getPhoneNumberErrorMessage(selectedCountry), 'error');
         } else if (error.message?.includes('Invalid login credentials')) {
           showToast(t('auth.password_error_wrong'), 'error');
         } else {
