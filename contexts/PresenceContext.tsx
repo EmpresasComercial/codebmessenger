@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 import { useAuth } from './AuthContext';
 
 interface PresenceContextType {
@@ -40,10 +41,10 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           online_at: new Date().toISOString(),
         });
         if (status !== 'ok') {
-          console.error('[Presence] Could not publish online status:', status);
+          logger.error('Presence', 'Could not publish online status:', status);
         }
       } catch (error) {
-        console.error('[Presence] Could not publish online status:', error);
+        logger.error('Presence', 'Could not publish online status:', error);
       }
     };
 
@@ -51,10 +52,10 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         const status = await channel.untrack();
         if (status !== 'ok') {
-          console.error('[Presence] Could not clear online status:', status);
+          logger.error('Presence', 'Could not clear online status:', status);
         }
       } catch (error) {
-        console.error('[Presence] Could not clear online status:', error);
+        logger.error('Presence', 'Could not clear online status:', error);
       }
     };
 
@@ -101,9 +102,9 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       void supabase.removeChannel(channel).then((status) => {
-        if (status !== 'ok') console.error('[Presence] Could not remove presence channel:', status);
+        if (status !== 'ok') logger.error('Presence', 'Could not remove presence channel:', status);
       }).catch((error: unknown) => {
-        console.error('[Presence] Could not remove presence channel:', error);
+        logger.error('Presence', 'Could not remove presence channel:', error);
       });
     };
   }, [user?.id]);

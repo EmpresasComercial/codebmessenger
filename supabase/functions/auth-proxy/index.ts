@@ -65,7 +65,8 @@ serve(async (req) => {
       }
     }
 
-    // A "gambiarra" invisível no backend: transformamos o phone em email falso
+    // Normalização: o Supabase Auth exige email, então usamos o telefone
+    // normalizado como identificador único no formato de email.
     const fakeEmail = `${cleanPhone}@user.com`;
 
     let result;

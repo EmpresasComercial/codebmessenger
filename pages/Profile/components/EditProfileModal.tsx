@@ -1,7 +1,8 @@
-﻿import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Phone, AtSign, ArrowDownCircle, ArrowUpCircle, Check, ImagePlus, Save, Users } from "lucide-react";
 import { formatCurrency } from "../../../lib/currency";
 import { supabase } from "../../../lib/supabase";
+import { logger } from "../../../lib/logger";
 import { useToast } from "../../../components/Toast";
 import { useLanguage } from "../../../contexts/LanguageContext";
 
@@ -97,7 +98,7 @@ export default function EditProfileModal({
           const { data: { publicUrl } } = supabase.storage.from("user-avatars").getPublicUrl(path);
           finalAvatarUrl = publicUrl;
         } else {
-          console.error("Erro no upload do avatar:", upErr);
+          logger.error('EditProfileModal', 'Erro no upload do avatar:', upErr);
           showToast(t("profile.avatar_upload_failed"), "error");
         }
       }

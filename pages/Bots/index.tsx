@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MoreVertical,
@@ -11,6 +11,7 @@ import {
   RotateCcw
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { logger } from "../../lib/logger";
 import { useToast } from "../../components/Toast";
 import { formatCurrency } from "../../lib/currency";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -245,7 +246,7 @@ export default function BusinessMessengerBotsChat() {
       try {
         localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
       } catch (e) {
-        console.error("Erro ao salvar histórico do chat no dispositivo:", e);
+        logger.error('Bots', 'Erro ao salvar histórico do chat no dispositivo:', e);
       }
     }
   }, [messages]);
@@ -293,7 +294,7 @@ export default function BusinessMessengerBotsChat() {
           }));
         }
       } catch (e) {
-        console.warn("RPC get_my_purchased_products_mcpn falhou", e);
+        logger.warn('Bots', 'RPC get_my_purchased_products_mcpn falhou', e);
       }
 
       if (cleanPurchased.length === 0) {
@@ -344,7 +345,7 @@ export default function BusinessMessengerBotsChat() {
 
       return { cleanProducts, cleanPurchased };
     } catch (err) {
-      console.error("Erro ao carregar dados do gestor de bots:", err);
+      logger.error('Bots', 'Erro ao carregar dados do gestor de bots:', err);
       return { cleanProducts: [], cleanPurchased: [] };
     } finally {
       setLoading(false);
@@ -369,7 +370,7 @@ export default function BusinessMessengerBotsChat() {
           }
         }
       } catch (e) {
-        console.error("Erro ao restaurar histórico salvo:", e);
+        logger.error('Bots', 'Erro ao restaurar histórico salvo:', e);
       }
 
       setIsTyping(true);
@@ -403,7 +404,7 @@ export default function BusinessMessengerBotsChat() {
     try {
       localStorage.removeItem(CHAT_STORAGE_KEY);
     } catch (error) {
-      console.error("Não foi possível limpar o histórico do gestor de bots:", error);
+      logger.error('Bots', 'Não foi possível limpar o histórico do gestor de bots:', error);
       showToast("Não foi possível limpar o histórico da conversa.", "error");
       return;
     }

@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react';
+import { logger } from '../lib/logger';
 
 const MAX_TRANSLATION_CACHE = 250;
 const translationCache = new Map<string, string>();
@@ -48,7 +49,7 @@ export function translateText(text: string, language: string): Promise<string> {
     await new Promise((resolve) => window.setTimeout(resolve, 60));
     return translated;
   }).catch((error: unknown) => {
-    console.warn('[AutoTranslatedText] Translation failed; showing the original message.', error);
+    logger.warn('AutoTranslatedText', 'Translation failed; showing the original message.', error);
     return text;
   });
 

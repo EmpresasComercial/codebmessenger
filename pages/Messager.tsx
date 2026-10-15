@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 import { getDeviceId } from '../lib/device';
 import { subscribeToPushNotifications } from '../lib/pushNotifications';
 import { Loader2, Check, Copy, Eye, EyeOff, ChevronDown } from 'lucide-react';
@@ -223,7 +224,7 @@ export default function Messager() {
         const errorMessage = await getRegistrationErrorMessage(error);
         const normalizedError = errorMessage.toLowerCase();
 
-        console.error('Registration failed:', errorMessage || error);
+        logger.error('Messager', 'Registration failed:', errorMessage || error);
         if (
           normalizedError.includes('introduza um número de telefone válido') ||
           normalizedError.includes('invalid phone number')
@@ -241,7 +242,7 @@ export default function Messager() {
       }
 
       if (!data?.user) {
-        console.error('Registration response did not include a user:', data);
+        logger.error('Messager', 'Registration response did not include a user:', data);
         showToast(t('auth.signup_failed'), 'error');
         setIsSubmitting(false);
         return;
@@ -269,7 +270,7 @@ export default function Messager() {
       const errorMessage = await getRegistrationErrorMessage(err);
       const normalizedError = errorMessage.toLowerCase();
 
-      console.error('Registration failed:', errorMessage || err);
+      logger.error('Messager', 'Registration failed:', errorMessage || err);
       if (
         normalizedError.includes('introduza um número de telefone válido') ||
         normalizedError.includes('invalid phone number')

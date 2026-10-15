@@ -1,6 +1,7 @@
 ﻿import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Loader2, Mic, Pause, Play, Send, Square, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 import { useToast } from './Toast';
 
 const MAX_RECORDING_SECONDS = 180;
@@ -173,7 +174,7 @@ export const VoiceMessageComposer = forwardRef<VoiceMessageComposerHandle, Voice
       recorder.start(250);
       startTimer(recorder);
     } catch (error) {
-      console.error('[VoiceMessage] Could not start microphone recording:', error);
+      logger.error('VoiceMessage', 'Could not start microphone recording:', error);
       stopTracks();
       setRecording(false);
       setPaused(false);
@@ -202,7 +203,7 @@ export const VoiceMessageComposer = forwardRef<VoiceMessageComposerHandle, Voice
       await onSend(recorded.blob, recorded.durationSeconds);
       clearPreview();
     } catch (error) {
-      console.error('[VoiceMessage] Could not send recording:', error);
+      logger.error('VoiceMessage', 'Could not send recording:', error);
       const isStorageConfigIssue = error instanceof Error && /bucket|storage.*configured|not configured|Bucket not found/i.test(error.message);
       showToast(isStorageConfigIssue ? labels.storageUnavailable : labels.sendFailed, 'error');
     } finally {
@@ -362,7 +363,7 @@ export function VoiceMessagePlayer({ path, unavailableLabel, isOutgoing = false 
       if (attempts < 4) {
         retryTimer = window.setTimeout(loadAudio, attempts * 700);
       } else {
-        console.error('[VoiceMessage] Could not load audio:', error);
+        logger.error('VoiceMessage', 'Could not load audio:', error);
         setFailed(true);
       }
     };

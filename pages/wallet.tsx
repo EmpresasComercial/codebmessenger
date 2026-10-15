@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   MoreVertical, 
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
 import AddBank from './AddBank';
@@ -717,7 +718,7 @@ export default function wallet() {
             text: response,
           }));
         } catch (error) {
-          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          logger.error('wallet', 'Erro ao carregar respostas locais da Wallet:', error);
           setIsTyping(false);
           botReply(() => ({
             id: 'bot-support-error-' + Date.now(),
@@ -925,7 +926,7 @@ export default function wallet() {
             text: response,
           }));
         } catch (error) {
-          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          logger.error('wallet', 'Erro ao carregar respostas locais da Wallet:', error);
           setIsTyping(false);
           botReply(() => ({
             id: 'bot-' + Date.now(),
@@ -1096,7 +1097,7 @@ export default function wallet() {
             text: `${response} ${sched.isOpen ? 'Aberto agora.' : sched.text}`,
           }));
         } catch (error) {
-          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          logger.error('wallet', 'Erro ao carregar respostas locais da Wallet:', error);
           setIsTyping(false);
           botReply(() => ({
             id: 'bot-' + Date.now(),
@@ -1124,7 +1125,7 @@ export default function wallet() {
             text: `${response} O valor mínimo é ${formatCurrency(MIN_WITHDRAW, 'KZ')} e o máximo é ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
           }));
         } catch (error) {
-          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          logger.error('wallet', 'Erro ao carregar respostas locais da Wallet:', error);
           setIsTyping(false);
           botReply(() => ({
             id: 'bot-' + Date.now(),
@@ -1151,7 +1152,7 @@ export default function wallet() {
             text: response,
           }));
         } catch (error) {
-          console.error('Erro ao carregar respostas locais da Wallet:', error);
+          logger.error('wallet', 'Erro ao carregar respostas locais da Wallet:', error);
           setIsTyping(false);
           botReply(() => ({
             id: 'bot-' + Date.now(),

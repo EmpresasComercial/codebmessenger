@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 import { Session } from '@supabase/supabase-js';
 import { useToast } from '../components/Toast';
 
@@ -32,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let currentSession = data.session;
         // Se o token salvo no localStorage ainda for o token antigo pesado (>5KB com base64)
         if (currentSession?.access_token && currentSession.access_token.length > 5000) {
-          console.warn("Token antigo detectado com metadados pesados. Renovando sessão automaticamente...");
+          logger.warn('Auth', 'Token antigo detectado com metadados pesados. Renovando sessão automaticamente...');
           const { data: refData, error: refErr } = await supabase.auth.refreshSession();
           if (!refErr && refData?.session) {
             currentSession = refData.session;
@@ -48,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       })
       .catch(err => {
-        console.error("Erro ao carregar sessão:", err);
+        logger.error('Auth', 'Erro ao carregar sessão:', err);
       })
       .finally(() => {
         if (active) setReady(true);

@@ -1,10 +1,11 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle, Users, Bot, Settings, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 
 export default function Navbar() {
   const location = useLocation();
@@ -30,7 +31,7 @@ export default function Navbar() {
         .eq('detalhes->>lida', 'false');
 
       if (error) {
-        console.error('Não foi possível carregar a contagem de mensagens não lidas:', error);
+        logger.error('Navbar', 'Não foi possível carregar a contagem de mensagens não lidas:', error);
         return;
       }
 
@@ -47,7 +48,7 @@ export default function Navbar() {
       )
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error(`Falha na sincronização de mensagens não lidas: ${status}`);
+          logger.error('Navbar', `Falha na sincronização de mensagens não lidas: ${status}`);
         }
       });
 

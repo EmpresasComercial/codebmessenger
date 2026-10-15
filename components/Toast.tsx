@@ -72,9 +72,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
             style={{
               position: 'fixed',
-              top: 18,
+              top: '50%',
               left: '50%',
-              transform: 'translateX(-50%)',
+              transform: 'translate(-50%, -50%)',
               zIndex: 9999,
               pointerEvents: 'none',
             }}
@@ -89,12 +89,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               <div
                 style={{
                   maxWidth: 'min(85vw, 420px)',
-                  padding: '10px 16px',
-                  borderRadius: 999,
+                  padding: '12px 18px',
+                  borderRadius: 6,
                   backgroundColor: '#ffffff',
                   color: '#111111',
-                  border: '1px solid rgba(0, 0, 0, 0.05)',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+                  border: '1px solid #d9d9d9',
                   userSelect: 'none',
                   textAlign: 'center',
                 }}

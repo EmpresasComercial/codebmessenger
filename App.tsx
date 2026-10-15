@@ -28,7 +28,7 @@ const Profile          = lazy(() => import('./pages/Profile'));
 const Settings         = lazy(() => import('./pages/Settings'));
 const AddBank          = lazy(() => import('./pages/AddBank'));
 const ChangePassword   = lazy(() => import('./pages/ChangePassword'));
-const Playmentbot      = lazy(() => import('./pages/playmentbot'));
+const Playmentbot      = lazy(() => import('./pages/paymentbot'));
 const Wallet           = lazy(() => import('./pages/wallet'));
 const AboutUs          = lazy(() => import('./pages/About'));
 const HelpFAQ          = lazy(() => import('./pages/HelpFAQ'));
@@ -213,7 +213,6 @@ export default function App() {
 
                   <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                     {/* Rotas Simplificadas Oficiais */}
-                    <Route path="Sobre font-normal"       element={<AboutUs />} />
                     <Route path="Sobre"                  element={<AboutUs />} />
                     <Route path="Banco"                  element={<AddBank />} />
                     <Route path="Senha"                  element={<ChangePassword />} />

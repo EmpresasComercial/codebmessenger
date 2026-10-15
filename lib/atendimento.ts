@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { logger } from './logger';
 
 export interface AtendimentoLinks {
   telegram?: string;
@@ -31,7 +32,7 @@ export async function getAtendimentoLinks(): Promise<AtendimentoLinks | null> {
       .maybeSingle();
 
     if (error) {
-      console.error('Erro ao consultar atendimento_links:', error);
+      logger.error('atendimento', 'Erro ao consultar atendimento_links:', error);
       return cachedLinks;
     }
 
@@ -41,7 +42,7 @@ export async function getAtendimentoLinks(): Promise<AtendimentoLinks | null> {
       return cachedLinks;
     }
   } catch (err) {
-    console.error('Falha na requisição de atendimento_links:', err);
+    logger.error('atendimento', 'Falha na requisição de atendimento_links:', err);
   }
 
   return cachedLinks;
@@ -64,7 +65,7 @@ export async function openWhatsAppAtendimento(): Promise<{ success: boolean; url
 
     return { success: false, message: 'Link do WhatsApp não configurado no banco de dados.' };
   } catch (err: any) {
-    console.error('Erro ao abrir WhatsApp do atendimento:', err);
+    logger.error('atendimento', 'Erro ao abrir WhatsApp do atendimento:', err);
     return { success: false, message: err.message || 'Erro ao conectar ao WhatsApp.' };
   }
 }

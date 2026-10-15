@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MoreVertical,
@@ -386,7 +386,7 @@ const BotFormattedText = React.memo(function BotFormattedText({
   );
 });
 
-export default function playmentbot() {
+export default function PaymentBot() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { t } = useLanguage();

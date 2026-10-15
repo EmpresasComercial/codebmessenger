@@ -2,6 +2,7 @@
 import { Download } from 'lucide-react';
 import { useToast } from './Toast';
 import { useLanguage } from '../contexts/LanguageContext';
+import { logger } from '../lib/logger';
 
 interface PdfDownloadCardProps {
   name: string;
@@ -144,7 +145,7 @@ export default function PdfDownloadCard({
       setDownloaded(true);
       showToast(t('pdf.download_success'), 'success');
     } catch (error) {
-      console.error('[PdfDownloadCard] Failed to download PDF:', error);
+      logger.error('PdfDownloadCard', 'Failed to download PDF:', error);
       showToast(t('pdf.download_failed'), 'error');
     } finally {
       setProgress(null);

@@ -1,8 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, ShieldAlert } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function ChangePassword() {
@@ -67,7 +68,7 @@ export default function ChangePassword() {
         if (updateError.message.includes('New password should be different')) {
           throw new Error(t('password.must_differ'));
         }
-        console.error('Password update failed:', updateError);
+        logger.error('ChangePassword', 'Password update failed:', updateError);
         throw new Error(t('password.update_failed'));
       }
 
@@ -83,7 +84,7 @@ export default function ChangePassword() {
         t('password.must_differ'),
         t('password.update_failed'),
       ].includes(message)) {
-        console.error('Password update failed:', err);
+        logger.error('ChangePassword', 'Password update failed:', err);
         showToast(t('password.update_failed'), 'error');
         return;
       }

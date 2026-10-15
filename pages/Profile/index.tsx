@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Wallet,
@@ -22,6 +22,7 @@ import {
   Moon,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { logger } from "../../lib/logger";
 import { type Language, supportedLanguages, useLanguage } from "../../contexts/LanguageContext";
 import { formatCurrency } from "../../lib/currency";
 import { useToast } from "../../components/Toast";
@@ -174,7 +175,7 @@ export default function Profile() {
     }
     if (Notification.permission === 'default') {
       void Notification.requestPermission().catch((error: unknown) => {
-        console.error('[Profile] Failed to request notification permission.', error);
+        logger.error('Profile', 'Failed to request notification permission.', error);
         showToast(t('chat.notifications_error'), 'error');
       });
     }

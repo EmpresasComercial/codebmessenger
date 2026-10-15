@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -18,6 +18,7 @@ import AutoTranslatedText from '../components/AutoTranslatedText';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 
 // URL da Edge Function (não acessa banco diretamente)
 const EDGE_FN_URL = 'https://ptvmqurxtciyqxdpsuen.supabase.co/functions/v1/canal-proofs';
@@ -146,7 +147,7 @@ export default function AndrewNicolan() {
         }
       }
     } catch (e) {
-      console.warn('Erro ao ler posts locais:', e);
+      logger.warn('AndrewNicolán', 'Erro ao ler posts locais:', e);
     }
 
     // Carrega provas via Edge Function (não acessa o banco diretamente)
@@ -164,7 +165,7 @@ export default function AndrewNicolan() {
         });
 
         if (!res.ok) {
-          console.warn('Edge function erro:', res.status);
+          logger.warn('AndrewNicolán', 'Edge function erro:', res.status);
           return;
         }
 
@@ -193,7 +194,7 @@ export default function AndrewNicolan() {
 
         setPosts(() => deduplicatePosts([...localSaved, ...dbPosts]));
       } catch (err) {
-        console.warn('Erro ao carregar provas via edge function:', err);
+        logger.warn('AndrewNicolán', 'Erro ao carregar provas via edge function:', err);
       }
     };
 
@@ -246,7 +247,7 @@ export default function AndrewNicolan() {
     try {
       localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(updated));
     } catch (e) {
-      console.warn('Erro ao salvar posts localmente:', e);
+      logger.warn('AndrewNicolán', 'Erro ao salvar posts localmente:', e);
     }
   };
 
@@ -347,7 +348,7 @@ export default function AndrewNicolan() {
           finalImageUrl = supabase.storage.from('provas-sociais').getPublicUrl(fileName).data.publicUrl;
         }
       } catch (uploadErr) {
-        console.warn('Upload bucket fallback para base64:', uploadErr);
+        logger.warn('AndrewNicolán', 'Upload bucket fallback para base64:', uploadErr);
       }
 
       // 2. Inserção via Edge Function (não acessa banco diretamente)
@@ -383,7 +384,7 @@ export default function AndrewNicolan() {
           });
           if ((data as any)?.id) realId = (data as any).id;
         } catch (rpcErr) {
-          console.warn('RPC submit_social_proof_mcpn fallback:', rpcErr);
+          logger.warn('AndrewNicolán', 'RPC submit_social_proof_mcpn fallback:', rpcErr);
         }
       }
 
@@ -432,7 +433,7 @@ export default function AndrewNicolan() {
       }, 100);
 
     } catch (err: any) {
-      console.error('Erro ao enviar comprovativo:', err);
+      logger.error('AndrewNicolán', 'Erro ao enviar comprovativo:', err);
       showToast(err.message || 'Erro ao enviar comprovativo.', 'error');
     } finally {
       setIsSubmittingProof(false);

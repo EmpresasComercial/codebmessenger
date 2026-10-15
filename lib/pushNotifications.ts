@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { logger } from './logger';
 
 export const VAPID_PUBLIC_KEY = 'BB7OI7jz-WDgr7twGzs8Yl5q4YnY_efjp2jCAt47VFDxQ3xiJNFaItqKYcTkRKoBxWEiwVutuEumUaxzQSrA7C4';
 
@@ -32,7 +33,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     await navigator.serviceWorker.ready;
     return registration;
   } catch (error) {
-    console.error('Erro ao registrar Service Worker:', error);
+    logger.error('pushNotifications', 'Erro ao registrar Service Worker:', error);
     return null;
   }
 }
@@ -97,7 +98,7 @@ export async function subscribeToPushNotifications(): Promise<{ success: boolean
 
     return { success: true, message: 'Notificações ativadas com sucesso!' };
   } catch (error: any) {
-    console.error('Erro ao inscrever notificações push:', error);
+    logger.error('pushNotifications', 'Erro ao inscrever notificações push:', error);
     return { success: false, message: error.message || 'Erro ao ativar notificações.' };
   }
 }
@@ -145,7 +146,7 @@ export async function setAppBadge(count?: number): Promise<void> {
       }
     }
   } catch (err) {
-    console.debug('Badging API não suportada ou não permitida:', err);
+    logger.debug('pushNotifications', 'Badging API não suportada ou não permitida:', err);
   }
 }
 
@@ -158,6 +159,6 @@ export async function clearAppBadge(): Promise<void> {
       await (navigator as any).clearAppBadge();
     }
   } catch (err) {
-    console.debug('Erro ao limpar badge:', err);
+    logger.debug('pushNotifications', 'Erro ao limpar badge:', err);
   }
 }
