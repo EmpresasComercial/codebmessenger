@@ -22,16 +22,13 @@ import {
   Info,
   Wallet,
   PlusCircle,
-  Lightbulb,
   Download,
   CreditCard,
   Globe,
   Bell,
   MessagesSquare,
-  HelpCircle,
   ShieldAlert,
   Smartphone,
-  LogOut,
   Moon,
   Sun
 } from 'lucide-react';
@@ -1445,7 +1442,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 </button>
               </div>
               {[
-                { label: t('invite.title'), path: "/contactos", icon: UserRoundPlus },
+                { label: t('chat.wallet'), path: "/carteira", icon: Wallet },
+                { label: t('chat.payment_wallet'), path: "/sand-pay", icon: PlusCircle },
+                { label: t('chat.bank_wallet'), path: "/carteira?intent=add-bank", icon: CreditCard },
               ].map(({ label, path, icon: Icon }) => (
                 <button
                   key={label}
@@ -1454,60 +1453,34 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     setIsNavigationDrawerOpen(false);
                     navigate(path);
                   }}
-                  className={`flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[20px] transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
-                    label === "Botfather" ? "text-[#2481cc] dark:text-[#2481cc]" : "text-[#222] dark:text-white"
-                  }`}
-                >
-                  <Icon className={`h-5 w-5 ${
-                    label === "Botfather" ? "text-[#2481cc]" : "text-[#707579] dark:text-[#9eaab6]"
-                  }`} />
-                  {label}
-                </button>
-              ))}
-              <div className="my-2 shrink-0 border-t border-gray-100 dark:border-[#202b36]" />
-              {[
-                { label: t('chat.wallet'), path: "/carteira", icon: Wallet },
-                { label: t('chat.payment_wallet'), path: "/sand-pay", icon: PlusCircle },
-                { label: t('chat.introduction'), path: "/sobre-business", icon: Lightbulb },
-                { label: t('chat.download_apk'), path: "/android?setln=pt", icon: Download },
-                { label: t('chat.bank_wallet'), path: "/carteira?intent=add-bank", icon: CreditCard },
-                { label: t('chat.faq'), path: "/help-faq", icon: HelpCircle },
-                { label: t('chat.reset_password'), path: "/alterar-senha", icon: ShieldAlert },
-                { label: t('chat.settings'), path: "/definicoes", icon: Settings },
-                { label: t('settings.language'), path: "/definicoes", icon: Globe, state: { openLanguage: true } },
-                { label: t('chat.terms_privacy'), path: "/privacidade", icon: Smartphone },
-              ].map(({ label, path, icon: Icon, state }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => {
-                    setIsNavigationDrawerOpen(false);
-                    if (path) navigate(path, state ? { state } : undefined);
-                  }}
-                  className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[20px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
+                  className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[16px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
                 >
                   <Icon className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" />
                   {label}
                 </button>
               ))}
               <div className="my-2 shrink-0 border-t border-gray-100 dark:border-[#202b36]" />
-              <button
-                type="button"
-                onClick={async () => {
-                  setIsNavigationDrawerOpen(false);
-                  const { error } = await supabase.auth.signOut();
-                  if (error) {
-                    showToast(t('chat.logout_failed'), "error");
-                    return;
-                  }
-                  showToast(t('chat.logout_success'), "success");
-                  navigate("/login");
-                }}
-                className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[20px] text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
-              >
-                <LogOut className="h-5 w-5" />
-                {t('chat.logout')}
-              </button>
+              {[
+                { label: t('invite.title'), path: "/contactos", icon: UserRoundPlus },
+                { label: t('chat.download_apk'), path: "/android?setln=pt", icon: Download },
+                { label: t('settings.language'), path: "/definicoes", icon: Globe, state: { openLanguage: true } },
+                { label: t('chat.reset_password'), path: "/alterar-senha", icon: ShieldAlert },
+                { label: t('chat.terms_privacy'), path: "/privacidade", icon: Smartphone },
+                { label: t('chat.settings'), path: "/definicoes", icon: Settings },
+              ].map(({ label, path, icon: Icon, state }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    setIsNavigationDrawerOpen(false);
+                    navigate(path, state ? { state } : undefined);
+                  }}
+                  className={`${label === t('invite.title') ? 'mt-1' : ''} flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[16px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5`}
+                >
+                  <Icon className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" />
+                  {label}
+                </button>
+              ))}
             </nav>
           </div>
         )}

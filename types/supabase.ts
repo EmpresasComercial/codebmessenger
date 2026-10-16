@@ -19,6 +19,7 @@ export type Database = {
           codigo_convite_ref: string | null
           codigo_meu_refferal: string | null
           id: string
+          avatar_url: string | null
           metadados: Json | null
           nome_exibicao: string | null
           saldo_disponivel: number
@@ -32,6 +33,7 @@ export type Database = {
           codigo_convite_ref?: string | null
           codigo_meu_refferal?: string | null
           id: string
+          avatar_url?: string | null
           metadados?: Json | null
           nome_exibicao?: string | null
           saldo_disponivel?: number
@@ -45,6 +47,7 @@ export type Database = {
           codigo_convite_ref?: string | null
           codigo_meu_refferal?: string | null
           id?: string
+          avatar_url?: string | null
           metadados?: Json | null
           nome_exibicao?: string | null
           saldo_disponivel?: number

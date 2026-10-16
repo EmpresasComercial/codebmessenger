@@ -99,7 +99,7 @@ html, body, * {
    ══════════════════════════════════════════════════════════════════ */
 
 /* 1. Botões a nível global (sem arredondamento) */
-button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn):not(.gallery-photo-button),
+button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn):not(.gallery-photo-button):not(.profile-save-button),
 [role="button"]:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn),
 input[type="button"],
 input[type="submit"],
@@ -179,6 +179,10 @@ div[class*="rounded-[24px]"]:not(.tg-bubble) {
 
 .gallery-photo-button {
   border-radius: 16px !important;
+}
+
+.profile-save-button {
+  border-radius: 22px !important;
 }
 
 .botfather-commands-overlay .botfather-commands-dialog {
