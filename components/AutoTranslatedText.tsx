@@ -63,11 +63,22 @@ export function translateText(text: string, language: string): Promise<string> {
   return translation;
 }
 
+function translateTextPreservingUrls(text: string, language: string): Promise<string> {
+  return Promise.all(
+    text.split(/(https?:\/\/[^\s]+|www\.[^\s]+)/gi).map((part) =>
+      !part.trim() || /^(https?:\/\/|www\.)/i.test(part)
+        ? Promise.resolve(part)
+        : translateText(part, language)
+    )
+  ).then((parts) => parts.join(''));
+}
+
 interface AutoTranslatedTextProps {
   text: string;
   language: string;
   enabled: boolean;
   renderFormatted?: (text: string) => React.ReactNode;
+  preserveUrls?: boolean;
 }
 
 export default React.memo(function AutoTranslatedText({
@@ -75,6 +86,7 @@ export default React.memo(function AutoTranslatedText({
   language,
   enabled,
   renderFormatted,
+  preserveUrls = false,
 }: AutoTranslatedTextProps) {
   const [translated, setTranslated] = useState(text);
 
@@ -83,15 +95,18 @@ export default React.memo(function AutoTranslatedText({
     setTranslated(text);
     if (!enabled || !text.trim()) return () => { isMounted = false; };
 
-    translateText(text, language).then((result) => {
+    const translation = preserveUrls
+      ? translateTextPreservingUrls(text, language)
+      : translateText(text, language);
+
+    translation.then((result) => {
       if (isMounted) setTranslated(result);
     });
 
     return () => {
       isMounted = false;
     };
-  }, [enabled, language, text]);
+  }, [enabled, language, preserveUrls, text]);
 
   return <>{renderFormatted ? renderFormatted(translated) : translated}</>;
 });
-

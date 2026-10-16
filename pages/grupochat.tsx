@@ -41,7 +41,7 @@ import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { COUNTRIES } from "../lib/countries";
 import { isVerifiedManagerPhone } from "../lib/verifiedManager";
 import VerifiedBadge from "../components/VerifiedBadge";
-import { AllowedMessageLink } from "../lib/allowedMessageLinks";
+import { AllowedMessageLink, normalizeAllowedMessageUrl } from "../lib/allowedMessageLinks";
 
 const FORBIDDEN_WORDS = Array.from(new Set([
   "burla", "burlas", "fraude", "fraudes", "scam", "scams", "golpe", "golpes", 
@@ -108,23 +108,6 @@ const ALL_KEYWORDS_SORTED = Object.keys(KEYWORD_TO_PATH).sort((a, b) => b.length
 const SMART_CONTEXT_REGEX = new RegExp(`(${ALL_KEYWORDS_SORTED.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
 
 const URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
-
-const isAllowedUrl = (rawUrl: string): boolean => {
-  if (!rawUrl) return false;
-  try {
-    const cleanUrl = rawUrl.trim().replace(/[.,;!?)]+$/, '');
-    const formatted = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')
-      ? cleanUrl
-      : `https://${cleanUrl}`;
-    const parsed = new URL(formatted);
-    const host = parsed.hostname.toLowerCase();
-
-    return parsed.protocol === 'https:' &&
-      (host === 'telegramas.cc' || host === 'www.telegramas.cc');
-  } catch {
-    return false;
-  }
-};
 
 const USER_COLORS = [
   "#229ED9", "#E56555", "#8E44AD", "#27AE60", "#D35400", "#16A085", "#C0392B", "#2980B9"
@@ -1023,10 +1006,8 @@ export default function grupochat() {
     e.stopPropagation();
     try {
       const cleanUrl = url.trim().replace(/[.,;!?)]+$/, '');
-      const targetUrl = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')
-        ? cleanUrl
-        : `https://${cleanUrl}`;
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      const targetUrl = normalizeAllowedMessageUrl(cleanUrl);
+      if (targetUrl) window.open(targetUrl, '_blank', 'noopener,noreferrer');
     } catch {}
   }, []);
 
@@ -1044,16 +1025,14 @@ export default function grupochat() {
         const candidateUrl = match ? match[1] : part;
         const trailing = match ? match[2] : '';
 
-        if (isAllowedUrl(candidateUrl)) {
-          const targetUrl = candidateUrl.startsWith('http://') || candidateUrl.startsWith('https://')
-            ? candidateUrl
-            : `https://${candidateUrl}`;
+        const targetUrl = normalizeAllowedMessageUrl(candidateUrl);
+        if (targetUrl) {
 
           return (
             <React.Fragment key={`url-${partIdx}`}>
               <AllowedMessageLink
                 href={targetUrl}
-                label={candidateUrl}
+                label={targetUrl === candidateUrl ? candidateUrl : targetUrl}
                 host={new URL(targetUrl).hostname.toLowerCase()}
                 isOutgoing={isOutgoing}
                 shouldSuppressOpen={shouldSuppressOpen}
@@ -1475,7 +1454,7 @@ export default function grupochat() {
     if (FORBIDDEN_REGEX.test(text)) return "Por favor, evite termos ofensivos.";
     const matches = text.match(URL_REGEX);
     if (matches) {
-      if (matches.some(m => !isAllowedUrl(m))) {
+      if (matches.some((match) => !normalizeAllowedMessageUrl(match))) {
         return "Não são permitidos links externos.";
       }
     }
@@ -1989,7 +1968,7 @@ export default function grupochat() {
           aria-label="Abrir detalhes do grupo"
         >
           <span className="w-full truncate text-[16px] font-semibold leading-tight text-[#111111] dark:text-white">
-            Chat da comunidade
+            Grupo de discursão
           </span>
           <span className={`mt-0.5 w-full truncate text-[13px] font-normal leading-tight ${
             statusText || typingUsers.size > 0
@@ -2439,7 +2418,7 @@ export default function grupochat() {
                   <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
                 </div>
                 <h1 className="text-[18px] font-bold text-[#111] text-center leading-tight">
-                  Chat Messenger
+                  Grupo de discursão
                 </h1>
                 <p className="text-[13px] mt-1" style={{ color: '#8e8e93' }}>
                   {registeredUserCount === null

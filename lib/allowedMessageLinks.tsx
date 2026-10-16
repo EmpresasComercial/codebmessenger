@@ -1,18 +1,25 @@
 import React from 'react';
 import type { MouseEvent } from 'react';
+import MessageLinkPreview from '../components/MessageLinkPreview';
 
-const MESSAGE_URL_PATTERN = /https?:\/\/[^\s]+|www\.[^\s]+/gi;
+const MESSAGE_URL_PATTERN = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
 const TRAILING_URL_PUNCTUATION = /[.,;!?)}\]"']+$/;
 
-function isAllowedMessageUrl(value: string): boolean {
+export function normalizeAllowedMessageUrl(value: string): string | null {
   const cleanValue = value.trim().replace(TRAILING_URL_PUNCTUATION, '');
-  const target = cleanValue.startsWith('www.') ? `https://${cleanValue}` : cleanValue;
+  const target = (cleanValue.startsWith('www.') ? `https://${cleanValue}` : cleanValue)
+    .replace(/^https:\/\/telegramas\.ccsignup(?=\/|\?|$)/i, 'https://telegramas.cc/signup');
   try {
     const url = new URL(target);
-    return url.protocol === 'https:' &&
-      (url.hostname.toLowerCase() === 'telegramas.cc' || url.hostname.toLowerCase() === 'www.telegramas.cc');
+    if (
+      url.protocol === 'https:' &&
+      (url.hostname.toLowerCase() === 'telegramas.cc' || url.hostname.toLowerCase() === 'www.telegramas.cc')
+    ) {
+      return url.href;
+    }
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -33,7 +40,6 @@ export function AllowedMessageLink({
   shouldSuppressOpen,
   onOpen,
 }: AllowedMessageLinkProps) {
-  const linkColor = isOutgoing ? 'text-white' : 'text-[#2481cc] dark:text-[#52a6eb]';
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     event.stopPropagation();
     if (shouldSuppressOpen()) {
@@ -48,32 +54,20 @@ export function AllowedMessageLink({
 
   return (
     <span className="my-1 inline-flex max-w-full flex-col align-top">
+      <MessageLinkPreview
+        href={href}
+        host={host}
+        isOutgoing={isOutgoing}
+        onClick={handleClick}
+      />
       <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleClick}
-        className={`max-w-full rounded-lg border-l-[3px] px-2.5 py-1.5 no-underline ${
-          isOutgoing
-            ? 'border-white/70 bg-black/10 text-white'
-            : 'border-[#2481cc] bg-black/5 text-[#202020] dark:bg-white/5 dark:text-white'
+        className={`pointer-events-auto mt-1 break-all underline ${
+          isOutgoing ? 'text-white' : 'text-[#2481cc] dark:text-[#52a6eb]'
         }`}
-      >
-        <span className="block truncate text-[14px] font-semibold">Business Messenger</span>
-        <span className={`flex min-w-0 items-center gap-1 text-[13px] ${linkColor}`}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-            <path d="M14 11a5 5 0 0 0-7.07 0l-3 3A5 5 0 0 0 9 21.07l1.71-1.71" />
-          </svg>
-          <span className="truncate">{host}</span>
-        </span>
-      </a>
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={handleClick}
-        className={`mt-1 break-all underline ${linkColor}`}
       >
         {label}
       </a>
@@ -93,15 +87,15 @@ export function renderMessageWithAllowedLinks(
     const trailingMatch = part.match(new RegExp(`^(.+?)(${TRAILING_URL_PUNCTUATION.source})$`));
     const candidate = trailingMatch?.[1] ?? part;
     const trailing = trailingMatch?.[2] ?? '';
-    if (!isAllowedMessageUrl(candidate)) return <React.Fragment key={index}>{part}</React.Fragment>;
+    const href = normalizeAllowedMessageUrl(candidate);
+    if (!href) return <React.Fragment key={index}>{part}</React.Fragment>;
 
-    const href = candidate.startsWith('www.') ? `https://${candidate}` : candidate;
     const host = new URL(href).hostname.toLowerCase();
     return (
       <React.Fragment key={index}>
         <AllowedMessageLink
           href={href}
-          label={candidate}
+          label={href === candidate ? candidate : href}
           host={host}
           isOutgoing={isOutgoing}
           shouldSuppressOpen={shouldSuppressOpen}

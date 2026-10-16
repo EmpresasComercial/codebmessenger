@@ -1181,14 +1181,14 @@ export default function PrivateChat() {
                           unavailableLabel={t('chat.voice_unavailable')}
                           isOutgoing={isMe}
                         />
-                        <div className="flex justify-end items-center gap-[2px] select-none text-[12px]" style={{ color: isMe ? '#55864e' : '#8e8e93' }}>
+                        <div className="flex justify-end items-center gap-[2px] select-none text-[12px]" style={{ color: isMe ? '#ffffff' : '#8e8e93' }}>
                           <span className="font-normal leading-none">{formatTime(m.created_at)}</span>
                           {isMe && (
                             m.status === 'sending'
-                              ? <Clock className="w-[14px] h-[14px] text-[#8e8e93] stroke-[2] ml-[2px]" />
+                              ? <Clock className="w-[14px] h-[14px] text-white stroke-[2] ml-[2px]" />
                               : m.status === 'failed'
                               ? <span className="text-[12px] text-[#e53e3e] font-bold ml-[2px] leading-none">!</span>
-                              : <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
+                              : <CheckCheck className="w-[14px] h-[14px] text-white stroke-[2.5] ml-[2px]" />
                           )}
                         </div>
                       </>
@@ -1236,6 +1236,7 @@ export default function PrivateChat() {
                             text={m.mensagem}
                             language={language}
                             enabled={translateFullChats}
+                            preserveUrls
                             renderFormatted={(text) => renderMessageWithAllowedLinks(
                               text,
                               isMe,
@@ -1258,17 +1259,17 @@ export default function PrivateChat() {
 
                       <div 
                         className="absolute bottom-[-1px] right-0 flex items-center gap-[2px] select-none text-[12px]"
-                        style={{ color: isMe ? '#55864e' : '#8e8e93' }}
+                        style={{ color: isMe ? '#ffffff' : '#8e8e93' }}
                       >
                         <span className="font-normal leading-none mt-[1px]">
                           {formatTime(m.created_at)}
                         </span>
                         {isMe && (
                           m.status === 'sending'
-                            ? <Clock className="w-[14px] h-[14px] text-[#8e8e93] stroke-[2] ml-[2px]" />
+                            ? <Clock className="w-[14px] h-[14px] text-white stroke-[2] ml-[2px]" />
                             : m.status === 'failed'
                             ? <span className="text-[12px] text-[#e53e3e] font-bold ml-[2px] leading-none">!</span>
-                            : <CheckCheck className="w-[14px] h-[14px] text-[#4fae4e] stroke-[2.5] ml-[2px]" />
+                            : <CheckCheck className="w-[14px] h-[14px] text-white stroke-[2.5] ml-[2px]" />
                         )}
                       </div>
                       {isMe && m.status === 'failed' && (

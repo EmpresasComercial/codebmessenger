@@ -955,7 +955,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       {
         id: 'community-chat',
         folder: 'groups' as ChatFolder,
-        name: 'Chat da comunidade',
+        name: 'Grupo de discursão',
         isVerified: true,
         lastMessage: communityLastMessage.text,
         senderPrefix: communityLastMessage.sender ? `${communityLastMessage.sender}: ` : null,
@@ -971,7 +971,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         nivel: null,
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs shrink-0">
-            <img src={COMMUNITY_CHAT_AVATAR} alt="Chat da comunidade" className="w-full h-full object-cover" />
+            <img src={COMMUNITY_CHAT_AVATAR} alt="Grupo de discursão" className="w-full h-full object-cover" />
           </div>
         ),
         onClick: () => navigate('/web')

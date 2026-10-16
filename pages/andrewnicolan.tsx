@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import AutoTranslatedText from '../components/AutoTranslatedText';
+import { renderMessageWithAllowedLinks } from '../lib/allowedMessageLinks';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -635,6 +636,7 @@ export default function AndrewNicolan() {
                       text={displayedContent}
                       language={language}
                       enabled={translateFullChats}
+                      renderFormatted={(text) => renderMessageWithAllowedLinks(text)}
                     />
                   </p>
                 )}
