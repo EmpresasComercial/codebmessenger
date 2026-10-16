@@ -22,10 +22,12 @@ import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { fetchPayParams } from './paymentAssistantCore';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedManager';
+import { recordChatActivity } from '../lib/chatActivity';
 
 const MIN_RECHARGE = 3000;
 const MAX_RECHARGE = 500000;
@@ -397,6 +399,7 @@ export default function PaymentBot() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { t } = useLanguage();
+  const { session } = useAuth();
 
   const [userBalance, setUserBalance] = useState<number>(0);
   const [totalRecharges, setTotalRecharges] = useState<number>(0);
@@ -747,6 +750,7 @@ export default function PaymentBot() {
       } : {}),
       type: 'text',
     };
+    recordChatActivity(session?.user.id, 'deposit-bot');
     setMessages((prev) => [...prev, userImgMsg]);
 
     setIsUploading(true);
@@ -953,6 +957,7 @@ export default function PaymentBot() {
         type: 'text',
       };
 
+      recordChatActivity(session?.user.id, 'deposit-bot');
       setMessages((prev) => [...prev, userMsg]);
       if (!textToSend) setInputText('');
 
@@ -1193,6 +1198,7 @@ export default function PaymentBot() {
       awaitingProof,
       cancelActiveRecharge,
       t,
+      session?.user.id,
     ]
   );
 

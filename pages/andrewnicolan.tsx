@@ -20,6 +20,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
+import { recordChatActivity } from '../lib/chatActivity';
 
 // URL da Edge Function (não acessa banco diretamente)
 const EDGE_FN_URL = 'https://ptvmqurxtciyqxdpsuen.supabase.co/functions/v1/canal-proofs';
@@ -301,6 +302,7 @@ export default function AndrewNicolan() {
         if (directErr) throw directErr;
       }
 
+      recordChatActivity(session?.user.id, 'business-community');
       setInputText('');
       showToast('Comunicado publicado no Canal Oficial!', 'success');
 
@@ -438,6 +440,7 @@ export default function AndrewNicolan() {
         time: timeStr,
       };
 
+      recordChatActivity(session?.user.id, 'business-community');
       setPosts(prev => deduplicatePosts([...prev, newProofPost]));
 
       showToast(t('social.proof_submitted_unverified'), 'info');

@@ -20,6 +20,8 @@ import { formatCurrency } from "../../lib/currency";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { clearLegacyAssistantChatHistory } from "../../lib/legacyAssistantChatHistory";
 import ChangePasswordForm from "../../components/ChangePasswordForm";
+import { useAuth } from "../../contexts/AuthContext";
+import { recordChatActivity } from "../../lib/chatActivity";
 
 /* ─── SVG Doodle Background (Telegram BotFather style) ─────────── */
 const DOODLE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2372a072' stroke-width='1.2' opacity='0.45'%3E%3Ccircle cx='30' cy='28' r='10'/%3E%3Cpath d='M22 20L19 13L25 19'/%3E%3Cpath d='M38 20L41 13L35 19'/%3E%3Ccircle cx='26' cy='25' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='34' cy='25' r='1.5' fill='%2372a072'/%3E%3Cpath d='M30 31L28 33L30 32L32 33Z'/%3E%3Cpath d='M19 27L24 28'/%3E%3Cpath d='M41 27L36 28'/%3E%3Cpath d='M164 15L167 7L170 15L178 15L172 20L174 28L167 23L160 28L162 20L156 15Z'/%3E%3Cpath d='M95 52C95 44 84 38 84 49C84 58 95 67 95 67C95 67 106 58 106 49C106 38 95 44 95 52Z'/%3E%3Ccircle cx='20' cy='112' r='7'/%3E%3Ccircle cx='10' cy='103' r='3.5'/%3E%3Ccircle cx='30' cy='103' r='3.5'/%3E%3Ccircle cx='14' cy='97' r='3'/%3E%3Ccircle cx='26' cy='97' r='3'/%3E%3Crect x='150' cy='100' width='26' height='19' rx='2'/%3E%3Crect x='148' y='93' width='30' height='9' rx='2'/%3E%3Cline x1='163' y1='93' x2='163' y2='119'/%3E%3Cpath d='M159 93C156 87 163 84 163 93'/%3E%3Cpath d='M167 93C170 87 163 84 163 93'/%3E%3Ccircle cx='163' cy='162' r='10'/%3E%3Cpath d='M155 154L152 146L158 153'/%3E%3Cpath d='M171 154L174 146L168 153'/%3E%3Ccircle cx='159' cy='160' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='167' cy='160' r='1.5' fill='%2372a072'/%3E%3Cpath d='M163 164L161 166L163 165L165 166Z'/%3E%3Cpath d='M152 162L158 163'/%3E%3Cpath d='M174 162L168 163'/%3E%3Cpath d='M57 143C57 138 51 135 51 140C51 145 57 150 57 150C57 150 63 145 63 140C63 135 57 138 57 143Z'/%3E%3Cpath d='M140 44C140 39 134 36 134 41C134 46 140 51 140 51C140 51 146 46 146 41C146 36 140 39 140 44Z'/%3E%3Cpath d='M64 72L66 64L68 72L76 72L70 77L72 85L66 81L60 85L62 77L56 72Z'/%3E%3Cpath d='M127 134L129 126L131 134L139 134L133 139L135 147L129 143L123 147L125 139L119 134Z'/%3E%3Cpath d='M95 110L95 128'/%3E%3Ccircle cx='92' cy='129' r='4'/%3E%3Cpath d='M95 110L106 106L106 120'/%3E%3Ccircle cx='103' cy='121' r='4'/%3E%3C/g%3E%3C/svg%3E")`;
@@ -208,6 +210,7 @@ export default function BusinessMessengerBotsChat() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
   const { t } = useLanguage();
+  const { session } = useAuth();
 
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [purchasedBots, setPurchasedBots] = useState<PurchasedBotItem[]>([]);
@@ -439,6 +442,7 @@ export default function BusinessMessengerBotsChat() {
         type: "text"
       };
 
+      recordChatActivity(session?.user.id, 'business-bot-manager');
       setMessages((prev) => [...prev, userMsg]);
       if (!textToSend) setInputText("");
 
@@ -597,7 +601,7 @@ export default function BusinessMessengerBotsChat() {
         text: `Unrecognized command. Say what?`
       }));
     },
-    [inputText, products, purchasedBots, userBalance, simulateBotReply, loadData, restartConversation, t]
+    [inputText, products, purchasedBots, userBalance, simulateBotReply, loadData, restartConversation, session?.user.id, t]
   );
 
   useEffect(() => {

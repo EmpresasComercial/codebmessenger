@@ -36,6 +36,7 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import { useLanguage } from '../contexts/LanguageContext';
 import { isVerifiedManagerPhone } from '../lib/verifiedManager';
 import VerifiedBadge from '../components/VerifiedBadge';
+import { renderMessageWithAllowedLinks } from '../lib/allowedMessageLinks';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
@@ -1232,6 +1233,15 @@ export default function PrivateChat() {
                             text={m.mensagem}
                             language={language}
                             enabled={translateFullChats && !isMe}
+                            renderFormatted={(text) => renderMessageWithAllowedLinks(
+                              text,
+                              isMe,
+                              () => {
+                                const shouldSuppressOpen = isLongPressTriggeredRef.current;
+                                isLongPressTriggeredRef.current = false;
+                                return shouldSuppressOpen;
+                              },
+                            )}
                           />
                         </span>
                       )}

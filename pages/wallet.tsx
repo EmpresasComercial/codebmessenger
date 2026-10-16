@@ -26,11 +26,13 @@ import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { parseNaturalLanguage } from '../lib/walletIntentParser';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedManager';
 import AddBank from './AddBank';
 import { fetchWalletParams } from './walletAssistantCore';
+import { recordChatActivity } from '../lib/chatActivity';
 
 const MIN_WITHDRAW = 3000;
 const MAX_WITHDRAW = 500000;
@@ -159,6 +161,7 @@ export default function wallet() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
   const { t } = useLanguage();
+  const { session } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const [info, setInfo] = useState<WithdrawInfo>({
@@ -491,6 +494,7 @@ export default function wallet() {
         type: 'text',
       };
 
+      recordChatActivity(session?.user.id, 'withdrawal-bot');
       setMessages((prev) => [...prev, userMsg]);
       if (!textToSend) setInputText('');
 
@@ -1123,7 +1127,7 @@ export default function wallet() {
         }));
       }
     },
-    [inputText, info, messages, pendingAmount, pendingBankDeletion, processWithdrawal, botReply, showToast, fetchRecentHistory, formatHistoryAsText, fetchData, t]
+    [inputText, info, messages, pendingAmount, pendingBankDeletion, processWithdrawal, botReply, showToast, fetchRecentHistory, formatHistoryAsText, fetchData, session?.user.id, t]
   );
 
   useEffect(() => {
@@ -1135,6 +1139,7 @@ export default function wallet() {
 
   const handleConfirmButton = useCallback(() => {
     if (pendingAmount == null) return;
+    recordChatActivity(session?.user.id, 'withdrawal-bot');
     setMessages((prev) => [
       ...prev,
       {
@@ -1146,7 +1151,7 @@ export default function wallet() {
       },
     ]);
     processWithdrawal(pendingAmount);
-  }, [pendingAmount, processWithdrawal]);
+  }, [pendingAmount, processWithdrawal, session?.user.id]);
 
   const handleBankSaved = useCallback(async (account: { holderName: string; bankName: string; iban: string }) => {
     await new Promise((resolve) => window.setTimeout(resolve, 1000));
@@ -1185,6 +1190,7 @@ export default function wallet() {
 
   const handleCancelButton = useCallback(() => {
     setPendingAmount(null);
+    recordChatActivity(session?.user.id, 'withdrawal-bot');
     setMessages((prev) => [
       ...prev,
       {
@@ -1202,7 +1208,7 @@ export default function wallet() {
       type: 'text',
       text: 'Sem problemas! Cancelei a operação. Quando quiser tentar novamente, é só me chamar com /retirar 😊',
     }));
-  }, [botReply]);
+  }, [botReply, session?.user.id]);
 
   const renderBotText = (text: string) => {
     return text.split('\n').map((line, lIdx, arr) => {

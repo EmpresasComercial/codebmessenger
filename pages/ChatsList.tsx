@@ -42,6 +42,7 @@ import { COUNTRIES, detectCountryFromPhone } from '../lib/countries';
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js/max';
 import { isVerifiedManagerPhone } from '../lib/verifiedManager';
 import VerifiedBadge from '../components/VerifiedBadge';
+import { CHAT_ACTIVITY_EVENT, loadChatActivities, type ChatActivity } from '../lib/chatActivity';
 
 const getMessageDetails = (message: any) => {
   let details = message?.detalhes;
@@ -201,6 +202,13 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [isMessageSearchLoading, setIsMessageSearchLoading] = useState(false);
+  const [messageSearchHits, setMessageSearchHits] = useState<Record<string, { text: string; timestamp: number }>>({});
+  const [messageSearchProfiles, setMessageSearchProfiles] = useState<Record<string, any>>({});
+  const [unreadContactIds, setUnreadContactIds] = useState<Set<string>>(() => new Set());
+  const [chatActivities, setChatActivities] = useState<Record<string, ChatActivity>>(
+    () => loadChatActivities(user?.id),
+  );
   const [isNavigationDrawerOpen, setIsNavigationDrawerOpen] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<{
     src: string | null;
@@ -312,9 +320,10 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       timestamp: 0
     };
   });
+  const [channelLastPost, setChannelLastPost] = useState<{ text: string; timestamp: number } | null>(null);
   
   // Abas oficiais conforme especificação da Fase 1:
-  // Conversas | Grupos | Canais | Bots | Mensagens lidas
+  // Conversas | Grupos | Canais | Bots | Mensagens não lidas
   type ChatFolder = 'all' | 'groups' | 'channels' | 'bots' | 'unread';
   const [activeFilter, setActiveFilter] = useState<ChatFolder>('all');
 
@@ -537,6 +546,39 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   }, [user]);
 
   useEffect(() => {
+    let active = true;
+    const fetchLatestChannelPost = async () => {
+      const { data, error } = await (supabase as any)
+        .from('canal_posts')
+        .select('titulo,conteudo,created_at')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        console.error('Não foi possível carregar a atividade recente do canal:', error);
+        return;
+      }
+      if (!active || !data) return;
+      setChannelLastPost({
+        text: String(data.conteudo || data.titulo || 'Comunicado Oficial'),
+        timestamp: new Date(data.created_at).getTime(),
+      });
+    };
+
+    void fetchLatestChannelPost();
+    const channel = supabase.channel('chatslist_channel_activity')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'canal_posts' }, () => {
+        void fetchLatestChannelPost();
+      })
+      .subscribe();
+
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!user) return;
 
     const fetchContacts = async () => {
@@ -678,6 +720,18 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           }
         }
 
+        const { data: unreadMessages, error: unreadError } = await (supabase as any)
+          .from('sys_t110')
+          .select('remetente_id')
+          .eq('destinatario_id', user.id)
+          .neq('remetente_id', user.id)
+          .eq('detalhes->>lida', 'false');
+        if (unreadError) {
+          console.error('Não foi possível carregar as mensagens não lidas:', unreadError);
+        } else {
+          setUnreadContactIds(new Set((unreadMessages || []).map((message: any) => String(message.remetente_id))));
+        }
+
         const sorted = Array.from(uniqueContacts.values()).sort((a: any, b: any) => {
           const timeA = a.lastMessageTimestamp ? Number(a.lastMessageTimestamp) : 0;
           const timeB = b.lastMessageTimestamp ? Number(b.lastMessageTimestamp) : 0;
@@ -788,13 +842,102 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   const queryClean = searchQuery.toLowerCase().trim();
   const queryDigits = queryClean.replace(/\D/g, '');
 
+  useEffect(() => {
+    if (!user || !queryClean) {
+      setMessageSearchHits({});
+      setMessageSearchProfiles({});
+      setIsMessageSearchLoading(false);
+      return;
+    }
+
+    let active = true;
+    setMessageSearchHits({});
+    setMessageSearchProfiles({});
+    setIsMessageSearchLoading(true);
+
+    const timer = setTimeout(async () => {
+      const escapedQuery = queryClean.replace(/[\\%_]/g, '\\$&');
+      const pattern = `%${escapedQuery}%`;
+
+      try {
+        const [privateResult, communityResult] = await Promise.all([
+          (supabase as any)
+            .from('sys_t110')
+            .select('id,mensagem,remetente_id,destinatario_id,created_at')
+            .or(`remetente_id.eq.${user.id},destinatario_id.eq.${user.id}`)
+            .ilike('mensagem', pattern)
+            .order('created_at', { ascending: false })
+            .limit(100),
+          supabase
+            .from('chat_gruop')
+            .select('id,mensagem,data_registrada')
+            .ilike('mensagem', pattern)
+            .order('data_registrada', { ascending: false })
+            .limit(50),
+        ]);
+
+        if (privateResult.error) throw privateResult.error;
+        if (communityResult.error) throw communityResult.error;
+
+        const hits: Record<string, { text: string; timestamp: number }> = {};
+        const matchedContactIds = new Set<string>();
+        (privateResult.data || []).forEach((message: any) => {
+          const contactId = message.remetente_id === user.id ? message.destinatario_id : message.remetente_id;
+          if (!contactId || matchedContactIds.has(contactId)) return;
+          matchedContactIds.add(contactId);
+          hits[contactId] = {
+            text: String(message.mensagem || ''),
+            timestamp: new Date(message.created_at).getTime(),
+          };
+        });
+        if (communityResult.data?.length) {
+          const message = communityResult.data[0];
+          hits['community-chat'] = {
+            text: String(message.mensagem || ''),
+            timestamp: new Date(message.data_registrada).getTime(),
+          };
+        }
+
+        const knownContactIds = new Set(contacts.map((contact) => String(contact.id)));
+        const missingProfileIds = [...matchedContactIds].filter((id) => !knownContactIds.has(id));
+        let profiles: Record<string, any> = {};
+        if (missingProfileIds.length > 0) {
+          const { data, error } = await supabase
+            .from('sys_t500')
+            .select('*')
+            .in('id', missingProfileIds);
+          if (error) throw error;
+          profiles = Object.fromEntries((data || []).map((profile: any) => [profile.id, profile]));
+        }
+
+        if (active) {
+          setMessageSearchHits(hits);
+          setMessageSearchProfiles(profiles);
+        }
+      } catch (error) {
+        console.error('Não foi possível pesquisar mensagens:', error);
+        if (active) {
+          setMessageSearchHits({});
+          setMessageSearchProfiles({});
+        }
+      } finally {
+        if (active) setIsMessageSearchLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [queryClean, user?.id, contacts]);
+
   const filteredContacts = useMemo(() => {
     if (activeFilter === 'groups' || activeFilter === 'channels' || activeFilter === 'bots') return [];
 
     let list = contacts;
 
     if (activeFilter === 'unread') {
-      list = contacts.filter(c => !c.isMe && Boolean(c.lastMessage));
+      list = contacts.filter(c => unreadContactIds.has(String(c.id)));
     }
 
     if (!queryClean) return list;
@@ -812,21 +955,26 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         (queryDigits.length > 0 && digitsOnly.includes(queryDigits))
       );
     });
-  }, [contacts, queryClean, queryDigits, activeFilter]);
+  }, [contacts, queryClean, queryDigits, activeFilter, unreadContactIds]);
 
-  // Estrutura das abas solicitadas: Conversas | Grupos | Canais | Bots | Mensagens lidas
+  // Estrutura das abas solicitadas: Conversas | Grupos | Canais | Bots | Mensagens não lidas
   const folders: { id: ChatFolder; label: string; count?: number }[] = [
     { id: 'all', label: t('chat.tab_chats'), count: contacts.length + 5 },
     { id: 'groups', label: t('chat.tab_groups'), count: 1 },
     { id: 'channels', label: t('chat.tab_channels'), count: 1 },
     { id: 'bots', label: t('chat.tab_bots'), count: 3 },
-    { id: 'unread', label: t('chat.tab_unread'), count: contacts.filter(c => !c.isMe && Boolean(c.lastMessage)).length },
+    { id: 'unread', label: t('chat.tab_unread'), count: unreadContactIds.size },
   ];
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
   // Lista de conversas com ordenação estrita por data/hora da mensagem mais recente (sem fixação permanente)
   const allConversations = useMemo(() => {
+    const channelActivityTimestamp = Math.max(
+      channelLastPost?.timestamp || 0,
+      chatActivities['business-community']?.timestamp || 0,
+      Date.now() - 1000 * 60 * 60 * 20,
+    );
     // 1. Conversas do Sistema / Oficiais
     const systemChats = [
       {
@@ -858,10 +1006,10 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         folder: 'channels' as ChatFolder,
         name: 'Andrew Nicolan',
         isVerified: true,
-        lastMessage: 'Fundador',
+        lastMessage: channelLastPost?.text || 'Fundador',
         senderPrefix: null,
-        time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 20),
-        timestamp: Date.now() - 1000 * 60 * 60 * 20,
+        time: formatTelegramTime(channelActivityTimestamp),
+        timestamp: channelActivityTimestamp,
         isMe: false,
         avatarUrl: '/Andrew_avatar_1792019295598.jpg',
         avatarLabel: 'B',
@@ -885,8 +1033,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         tag: null,
         lastMessage: 'Recargas e depósitos automáticos via Multicaixa Express e IBAN.',
         senderPrefix: null,
-        time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 36),
-        timestamp: Date.now() - 1000 * 60 * 60 * 36,
+        time: formatTelegramTime(chatActivities['deposit-bot']?.timestamp || Date.now() - 1000 * 60 * 60 * 36),
+        timestamp: chatActivities['deposit-bot']?.timestamp || Date.now() - 1000 * 60 * 60 * 36,
         isMe: false,
         avatarUrl: '/logo_bussiness_messeger.jpg',
         avatarLabel: 'P',
@@ -913,8 +1061,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         tag: null,
         lastMessage: 'Solicitações de saque e levantamentos rápidos para conta bancária.',
         senderPrefix: null,
-        time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 48),
-        timestamp: Date.now() - 1000 * 60 * 60 * 48,
+        time: formatTelegramTime(chatActivities['withdrawal-bot']?.timestamp || Date.now() - 1000 * 60 * 60 * 48),
+        timestamp: chatActivities['withdrawal-bot']?.timestamp || Date.now() - 1000 * 60 * 60 * 48,
         isMe: false,
         avatarUrl: '/logo_bussiness_messeger.jpg',
         avatarLabel: 'W',
@@ -942,8 +1090,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         tag: null,
         lastMessage: 'Gestão de bots do Business Messenger',
         senderPrefix: null,
-        time: formatTelegramTime(Date.now() - 1000 * 60 * 60 * 72),
-        timestamp: Date.now() - 1000 * 60 * 60 * 72,
+        time: formatTelegramTime(chatActivities['business-bot-manager']?.timestamp || Date.now() - 1000 * 60 * 60 * 72),
+        timestamp: chatActivities['business-bot-manager']?.timestamp || Date.now() - 1000 * 60 * 60 * 72,
         isMe: false,
         avatarUrl: '/logo_bussiness_messeger.jpg',
         avatarLabel: 'B',
@@ -973,7 +1121,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       .map(c => {
         const color = getUserColor(c.telefone);
         const label = (c.telefone || '').replace(/\D/g, '').slice(-2) || '?';
-        const isSub = Boolean(c.isSubordinate);
         const nv = c.nivel;
         const ts = c.lastMessageTimestamp ? Number(c.lastMessageTimestamp) : Date.now();
 
@@ -984,7 +1131,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           name: c.nome_exibicao || formatSenderPhone(c.telefone, c.countryCode),
           isVerified: isVerifiedManagerPhone(c.telefone, c.countryCode),
           tag: null,
-          isSubordinate: isSub,
           nivel: nv,
           lastMessage: c.lastMessage,
           senderPrefix: null,
@@ -1011,16 +1157,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   {label}
                 </div>
               )}
-              {isSub && nv && (
-                <div
-                  className={`absolute bottom-0 right-0 w-[18px] h-[18px] rounded-full border-2 border-white dark:border-[#17212b] flex items-center justify-center text-[10px] font-bold text-white shadow-xs ${
-                    nv === 1 ? 'bg-[#10b981]' : nv === 2 ? 'bg-[#3b82f6]' : 'bg-[#8b5cf6]'
-                  }`}
-                  title={`Subordinado de ${nv}º nível`}
-                >
-                  {nv}
-                </div>
-              )}
             </div>
           ),
           onClick: () => navigate(`/chat/${c.id}?t=${encodeURIComponent(c.telefone)}${nv ? `&nv=${nv}` : ''}`)
@@ -1028,37 +1164,115 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       });
 
     // 3. Combina e ordena estritamente por timestamp decrescente (a conversa mais recente sempre em 1º lugar!)
-    return [...systemChats, ...activeContactChats].sort((a, b) => b.timestamp - a.timestamp);
-  }, [communityLastMessage, contacts, navigate]);
+    const knownContactIds = new Set(activeContactChats.map((chat) => String(chat.contactId)));
+    const searchedContactChats = Object.entries(messageSearchHits)
+      .filter(([contactId]) => contactId !== 'community-chat' && !knownContactIds.has(contactId))
+      .map(([contactId, hit]) => {
+        const contact = contacts.find((item) => String(item.id) === contactId) || messageSearchProfiles[contactId];
+        if (!contact) return null;
+        const phone = contact.telefone || '';
+        const color = getUserColor(phone || contactId);
+        const label = phone.replace(/\D/g, '').slice(-2) || '?';
+        const nivel = contact.nivel;
+        const name = contact.nome_exibicao || formatSenderPhone(phone, contact.countryCode);
+        const avatarUrl = getProfileAvatarUrl(contact)         || null;
+
+  useEffect(() => {
+        const userId = user?.id;
+        setChatActivities(loadChatActivities(userId));
+        if (!userId) return;
+
+        const handleChatActivity = (event: Event) => {
+          const detail = (event as CustomEvent<{
+            userId: string;
+            chatId: string;
+            activity: ChatActivity;
+          }>).detail;
+          if (detail?.userId !== userId) return;
+          setChatActivities((previous) => ({ ...previous, [detail.chatId]: detail.activity }));
+        };
+        const handleStorage = (event: StorageEvent) => {
+          if (event.key === `bm_chat_activity_${userId}`) {
+            setChatActivities(loadChatActivities(userId));
+          }
+        };
+
+        window.addEventListener(CHAT_ACTIVITY_EVENT, handleChatActivity);
+        window.addEventListener('storage', handleStorage);
+        return () => {
+          window.removeEventListener(CHAT_ACTIVITY_EVENT, handleChatActivity);
+          window.removeEventListener('storage', handleStorage);
+        };
+  }, [user?.id]);
+
+        return {
+          id: `contact-${contactId}`,
+          contactId,
+          folder: 'all' as ChatFolder,
+          name,
+          isVerified: isVerifiedManagerPhone(phone, contact.countryCode),
+          tag: null,
+          nivel,
+          lastMessage: hit.text,
+          senderPrefix: null,
+          time: formatTelegramTime(hit.timestamp),
+          timestamp: hit.timestamp,
+          isMe: false,
+          avatarUrl,
+          avatarLabel: label,
+          avatarColor: color,
+          actionBtn: null,
+          avatar: avatarUrl ? (
+            <div className="relative shrink-0">
+              <img src={avatarUrl} alt="" className="h-[52px] w-[52px] rounded-full object-cover" />
+            </div>
+          ) : (
+            <div
+              className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-white text-[17px] font-bold"
+              style={{ backgroundColor: color }}
+            >
+              {label}
+            </div>
+          ),
+          onClick: () => navigate(`/chat/${contactId}?t=${encodeURIComponent(phone)}${nivel ? `&nv=${nivel}` : ''}`)
+        };
+      })
+      .filter((chat): chat is NonNullable<typeof chat> => chat !== null);
+
+    return [...systemChats, ...activeContactChats, ...searchedContactChats].sort((a, b) => b.timestamp - a.timestamp);
+  }, [chatActivities, channelLastPost, communityLastMessage, contacts, messageSearchHits, messageSearchProfiles, navigate]);
 
   const filteredChats = useMemo(() => {
     let list = allConversations;
 
-    if (activeFilter === 'groups') {
-      list = list.filter(c => c.folder === 'groups');
-    } else if (activeFilter === 'channels') {
-      list = list.filter(c => c.folder === 'channels');
-    } else if (activeFilter === 'bots') {
-      list = list.filter(c => c.folder === 'bots');
-    } else if (activeFilter === 'unread') {
-      list = list.filter(c => !c.isMe);
+    if (!queryClean) {
+      if (activeFilter === 'groups') {
+        list = list.filter(c => c.folder === 'groups');
+      } else if (activeFilter === 'channels') {
+        list = list.filter(c => c.folder === 'channels');
+      } else if (activeFilter === 'bots') {
+        list = list.filter(c => c.folder === 'bots');
+      } else if (activeFilter === 'unread') {
+        list = list.filter(c => 'contactId' in c && c.contactId && unreadContactIds.has(String(c.contactId)));
+      }
     }
 
     if (queryClean) {
       list = list.filter(c => {
         const nameMatch = c.name.toLowerCase().includes(queryClean);
         const msgMatch = (c.lastMessage || '').toLowerCase().includes(queryClean);
-        return nameMatch || msgMatch;
+        const contactId = 'contactId' in c && c.contactId ? String(c.contactId) : c.id;
+        return nameMatch || msgMatch || Boolean(messageSearchHits[contactId]);
       });
     }
 
     return list;
-  }, [allConversations, activeFilter, queryClean]);
+  }, [allConversations, activeFilter, messageSearchHits, queryClean, unreadContactIds]);
 
   const idleContacts = useMemo(() => {
-    if (activeFilter !== 'all') return [];
+    if (activeFilter !== 'all' || queryClean) return [];
     return filteredContacts.filter(c => !c.lastMessage);
-  }, [filteredContacts, activeFilter]);
+  }, [filteredContacts, activeFilter, queryClean]);
 
   return (
     <div 
@@ -1092,7 +1306,11 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               </button>
 
               <div className="flex-1 flex items-center bg-[#f1f1f1] dark:bg-[#1c2733] rounded-full px-3.5 py-1.5 mx-1">
-                <Search className="w-4 h-4 text-[#707579] dark:text-[#9eaab6] mr-2 shrink-0" />
+                {isMessageSearchLoading ? (
+                  <Loader2 className="w-4 h-4 text-[#707579] dark:text-[#9eaab6] mr-2 shrink-0 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4 text-[#707579] dark:text-[#9eaab6] mr-2 shrink-0" />
+                )}
                 <input
                   type="text"
                   autoFocus
@@ -1343,8 +1561,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           {filteredChats.map((chat) => {
               const rawId = chat.id.startsWith('contact-') ? chat.id.replace('contact-', '') : null;
               const isOnline = rawId ? isUserOnline(rawId) : false;
-              const isSub = Boolean(chat.isSubordinate);
-              const nv = chat.nivel;
+              const chatContactId = 'contactId' in chat && chat.contactId ? String(chat.contactId) : chat.id;
+              const matchedMessage = messageSearchHits[chatContactId];
 
               return (
                 <div
@@ -1367,6 +1585,12 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     aria-label={`Ver avatar de ${chat.name}`}
                   >
                     {chat.avatar}
+                    {isOnline && (
+                      <span
+                        className="absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-white bg-[#10b981] dark:border-[#17212b]"
+                        title={t('chat.online_now')}
+                      />
+                    )}
                   </button>
 
                   <div className="flex-1 min-w-0 py-0.5">
@@ -1375,9 +1599,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                         <h3 className="text-[15.5px] font-medium text-[#111] dark:text-white truncate leading-tight">
                           {chat.name}
                         </h3>
-                        {isOnline && (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-[#10b981]" title={t('chat.online_now')} />
-                        )}
                         {chat.isVerified && <VerifiedBadge className="ml-1 h-[16px] w-[16px]" />}
                         {chat.tag && (
                           <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-sm bg-[#2481cc] text-white">
@@ -1411,7 +1632,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                                 {chat.senderPrefix && (
                                   <span className="text-[#2481cc] font-medium">{chat.senderPrefix}</span>
                                 )}
-                                {previewText(chat.lastMessage || '')}
+                                {previewText(matchedMessage?.text || chat.lastMessage || '')}
                               </span>
                             )}
                           </p>
@@ -1436,7 +1657,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 {idleContacts.map((contact) => {
                   const color = getUserColor(contact.telefone);
                   const label = (contact.telefone || '').replace(/\D/g, '').slice(-2) || '?';
-                  const isSub = Boolean(contact.isSubordinate);
                   const nv = contact.nivel;
                   const isOnline = isUserOnline(contact.id);
 
@@ -1475,15 +1695,11 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                           </div>
                         )}
 
-                        {isSub && nv && (
-                          <div
-                            className={`absolute bottom-0 right-0 w-[18px] h-[18px] rounded-full border-2 border-white dark:border-[#17212b] flex items-center justify-center text-[10px] font-bold text-white shadow-xs ${
-                              nv === 1 ? 'bg-[#10b981]' : nv === 2 ? 'bg-[#3b82f6]' : 'bg-[#8b5cf6]'
-                            }`}
-                            title={`Subordinado de ${nv}º nível`}
-                          >
-                            {nv}
-                          </div>
+                        {isOnline && (
+                          <span
+                            className="absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-white bg-[#10b981] dark:border-[#17212b]"
+                            title={t('chat.online_now')}
+                          />
                         )}
                       </button>
 
@@ -1493,9 +1709,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                             <h3 className="text-[15px] font-medium text-[#111] dark:text-white truncate leading-tight">
                               {contact.nome_exibicao || formatSenderPhone(contact.telefone, contact.countryCode)}
                             </h3>
-                            {isOnline && (
-                              <span className="h-2 w-2 shrink-0 rounded-full bg-[#10b981]" title={t('chat.online_now')} />
-                            )}
                           </div>
                         </div>
 
@@ -1516,7 +1729,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             )}
 
             {/* Feedback quando a busca não encontra nada */}
-            {searchQuery && filteredChats.length === 0 && idleContacts.length === 0 && (
+            {searchQuery && !isMessageSearchLoading && filteredChats.length === 0 && idleContacts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <p className="text-[#707579] dark:text-[#9eaab6] text-[15px] mb-2">
                   Nenhum resultado encontrado para "<strong>{searchQuery}</strong>"

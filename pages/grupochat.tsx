@@ -41,6 +41,7 @@ import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { COUNTRIES } from "../lib/countries";
 import { isVerifiedManagerPhone } from "../lib/verifiedManager";
 import VerifiedBadge from "../components/VerifiedBadge";
+import { AllowedMessageLink } from "../lib/allowedMessageLinks";
 
 const FORBIDDEN_WORDS = Array.from(new Set([
   "burla", "burlas", "fraude", "fraudes", "scam", "scams", "golpe", "golpes", 
@@ -118,20 +119,8 @@ const isAllowedUrl = (rawUrl: string): boolean => {
     const parsed = new URL(formatted);
     const host = parsed.hostname.toLowerCase();
 
-    if (host === 'telegramas.cc' || host === 'www.telegramas.cc' || host.endsWith('.telegramas.cc')) {
-      return true;
-    }
-
-    if (typeof window !== 'undefined' && window.location?.hostname) {
-      const currentHost = window.location.hostname.toLowerCase();
-      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-        if (host === currentHost || host.endsWith(`.${currentHost}`)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    return parsed.protocol === 'https:' &&
+      (host === 'telegramas.cc' || host === 'www.telegramas.cc');
   } catch {
     return false;
   }
@@ -414,9 +403,10 @@ interface MessageItemProps {
   onSwipeToReply: (message: any) => void;
   onContextMenu: (e: React.MouseEvent, m: any, isMe: boolean) => void;
   onClickBubble: (e: React.MouseEvent) => void;
+  shouldSuppressLinkOpen: () => boolean;
   onToggleReaction: (messageId: number, emoji: string) => void;
   onOpenZoomedImage: (imgUrl: string) => void;
-  renderFormattedMessage: (text: string) => React.ReactNode;
+  renderFormattedMessage: (text: string, isOutgoing: boolean, shouldSuppressOpen: () => boolean) => React.ReactNode;
 }
 
 const MessageItem = React.memo(({
@@ -441,6 +431,7 @@ const MessageItem = React.memo(({
   onSwipeToReply,
   onContextMenu,
   onClickBubble,
+  shouldSuppressLinkOpen,
   onToggleReaction,
   onOpenZoomedImage,
   renderFormattedMessage
@@ -718,7 +709,11 @@ const MessageItem = React.memo(({
                   text={m.mensagem}
                   language={language}
                   enabled={translateFullChats && !isMe}
-                  renderFormatted={renderFormattedMessage}
+                  renderFormatted={(text) => renderFormattedMessage(
+                    text,
+                    isMe,
+                    shouldSuppressLinkOpen,
+                  )}
                 />
               </span>
               
@@ -937,6 +932,12 @@ export default function grupochat() {
     }
   }, []);
 
+  const shouldSuppressLinkOpen = useCallback(() => {
+    const shouldSuppressOpen = isLongPressTriggeredRef.current;
+    isLongPressTriggeredRef.current = false;
+    return shouldSuppressOpen;
+  }, []);
+
   const handleOpenZoomedImage = useCallback((imgUrl: string) => {
     setZoomedImage(imgUrl);
   }, []);
@@ -1049,7 +1050,7 @@ export default function grupochat() {
     } catch {}
   }, []);
 
-  const renderFormattedMessage = useCallback((text: string) => {
+  const renderFormattedMessage = useCallback((text: string, isOutgoing: boolean, shouldSuppressOpen: () => boolean) => {
     if (!text) return null;
 
     const urlParts = text.split(URL_REGEX);
@@ -1070,21 +1071,14 @@ export default function grupochat() {
 
           return (
             <React.Fragment key={`url-${partIdx}`}>
-              <a
+              <AllowedMessageLink
                 href={targetUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  handleOpenAuthorizedLink(e, targetUrl);
-                }}
-                onMouseDown={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-                className="text-[#2481cc] dark:text-[#52a6eb] underline font-medium cursor-pointer hover:opacity-80 transition-opacity break-all select-text"
-              >
-                {candidateUrl}
-              </a>
+                label={candidateUrl}
+                host={new URL(targetUrl).hostname.toLowerCase()}
+                isOutgoing={isOutgoing}
+                shouldSuppressOpen={shouldSuppressOpen}
+                onOpen={handleOpenAuthorizedLink}
+              />
               {trailing}
             </React.Fragment>
           );
@@ -2117,6 +2111,7 @@ export default function grupochat() {
               }}
               onContextMenu={handleContextMenu}
               onClickBubble={handleClickBubble}
+              shouldSuppressLinkOpen={shouldSuppressLinkOpen}
               onToggleReaction={handleToggleReaction}
               onOpenZoomedImage={handleOpenZoomedImage}
               renderFormattedMessage={renderFormattedMessage}
