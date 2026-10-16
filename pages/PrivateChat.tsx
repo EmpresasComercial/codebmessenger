@@ -36,7 +36,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { isVerifiedManagerPhone } from '../lib/verifiedManager';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { renderMessageWithAllowedLinks } from '../lib/allowedMessageLinks';
-import { DEFAULT_PROFILE_AVATAR, getProfileAvatarUrl } from '../lib/utils';
+import { COMMUNITY_CHAT_AVATAR, DEFAULT_PROFILE_AVATAR, getProfileAvatarUrl } from '../lib/utils';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
@@ -843,7 +843,7 @@ export default function PrivateChat() {
           <div className="relative h-11 w-11 shrink-0">
             {isCommunityChat ? (
               <img
-                src="/logo_bussiness_messeger.jpg"
+                src={COMMUNITY_CHAT_AVATAR}
                 alt="Business Messenger"
                 className="h-full w-full rounded-full object-cover"
               />

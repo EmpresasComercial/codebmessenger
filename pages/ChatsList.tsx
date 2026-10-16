@@ -43,7 +43,7 @@ import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js/
 import { isVerifiedManagerPhone } from '../lib/verifiedManager';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { CHAT_ACTIVITY_EVENT, loadChatActivities, type ChatActivity } from '../lib/chatActivity';
-import { DEFAULT_PROFILE_AVATAR, PAYMENT_BOT_AVATAR, WITHDRAWAL_BOT_AVATAR, getProfileAvatarUrl } from '../lib/utils';
+import { COMMUNITY_CHAT_AVATAR, DEFAULT_PROFILE_AVATAR, PAYMENT_BOT_AVATAR, WITHDRAWAL_BOT_AVATAR, getProfileAvatarUrl } from '../lib/utils';
 
 const getMessageDetails = (message: any) => {
   let details = message?.detalhes;
@@ -482,8 +482,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
         await registration.showNotification(senderName, {
           body: body.slice(0, 240),
-          icon: '/logo_bussiness_messeger.jpg',
-          badge: '/logo_bussiness_messeger.jpg',
+          icon: COMMUNITY_CHAT_AVATAR,
+          badge: COMMUNITY_CHAT_AVATAR,
           tag: `community-message-${messageId}`,
           data: { url: '/web' }
         });
@@ -965,7 +965,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: communityLastMessage.time,
         timestamp: communityLastMessage.timestamp,
         isMe: communityLastMessage.isMe,
-        avatarUrl: '/logo_bussiness_messeger.jpg',
+        avatarUrl: COMMUNITY_CHAT_AVATAR,
         avatarLabel: 'T',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -974,7 +974,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         nivel: null,
         avatar: (
           <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs shrink-0">
-            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+            <img src={COMMUNITY_CHAT_AVATAR} alt="Chat da comunidade" className="w-full h-full object-cover" />
           </div>
         ),
         onClick: () => navigate('/web')
