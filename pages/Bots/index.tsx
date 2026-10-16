@@ -1048,7 +1048,7 @@ export default function BusinessMessengerBotsChat() {
                   handleSendMessage();
                 }
               }}
-              placeholder={t("chat.input_placeholder")}
+              placeholder={t("chat.message_placeholder")}
               className="flex-1 min-w-0 w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] font-normal leading-snug"
             />
           </div>

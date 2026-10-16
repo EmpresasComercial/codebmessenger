@@ -1890,7 +1890,7 @@ export default function PaymentBot() {
                     ? 'Envia o comprovativo ou escreve “cancelar pedido”...'
                     : depositAmount !== null && !selectedBank
                     ? 'Nome do banco...'
-                    : t('chat.input_placeholder')
+                    : t('chat.message_placeholder')
                 }
                 className="flex-1 min-w-0 w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
               />
