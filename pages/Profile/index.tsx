@@ -17,6 +17,8 @@ import {
   UserRoundPen,
   Download,
   Moon,
+  Fingerprint,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { logger } from "../../lib/logger";
@@ -60,6 +62,7 @@ export default function Profile() {
 
   const [showLanguage, setShowLanguage] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
   const [isProfileAvatarHidden, setIsProfileAvatarHidden] = useState(false);
   const [showBottomNavMenu, setShowBottomNavMenu] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
@@ -158,6 +161,32 @@ export default function Profile() {
       navigate("/signin");
     } catch {
       navigate("/signin");
+    }
+  };
+
+  const handleRegisterPasskey = async () => {
+    if (!session?.user) {
+      showToast(t('passkey.register_failed'), 'error');
+      return;
+    }
+    if (!window.isSecureContext || !window.PublicKeyCredential) {
+      showToast(t('passkey.unavailable'), 'error');
+      return;
+    }
+
+    setIsRegisteringPasskey(true);
+    try {
+      const { data, error } = await supabase.auth.registerPasskey();
+      if (error) throw error;
+      if (!data) throw new Error(t('passkey.register_failed'));
+
+      showToast(t('passkey.register_success'), 'success');
+    } catch (error: unknown) {
+      logger.error('Profile', 'Failed to register a passkey.', error);
+      const detail = error instanceof Error ? ` ${error.message}` : '';
+      showToast(`${t('passkey.register_failed')}${detail}`, 'error');
+    } finally {
+      setIsRegisteringPasskey(false);
     }
   };
 
@@ -422,6 +451,17 @@ export default function Profile() {
             title={t('chat.reset_password')}
             subtitle={t('profile.password_subtitle')}
             onClick={() => navigate("/alterar-senha")}
+          />
+
+          <SettingsItem
+            icon={<Fingerprint className="w-5 h-5 text-white" />}
+            iconBg="bg-[#46c2ca]"
+            title={t('passkey.title')}
+            subtitle={t('passkey.subtitle')}
+            onClick={isRegisteringPasskey ? undefined : handleRegisterPasskey}
+            trailing={isRegisteringPasskey
+              ? <Loader2 className="w-4 h-4 text-[#2481cc] animate-spin ml-auto" />
+              : undefined}
           />
 
           <SettingsItem

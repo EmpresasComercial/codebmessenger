@@ -4,7 +4,7 @@ import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { AsYouType, validatePhoneNumberLength, type CountryCode } from 'libphonenumber-js/max';
-import { Eye, EyeOff, Loader2, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ChevronDown, Fingerprint } from 'lucide-react';
 import {
   COUNTRIES,
   Country,
@@ -166,6 +166,28 @@ export default function Login() {
     }
   };
 
+  const handlePasskeySignIn = async () => {
+    if (!window.isSecureContext || !window.PublicKeyCredential) {
+      showToast(t('passkey.unavailable'), 'error');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPasskey();
+      if (error) throw error;
+      if (!data.session) throw new Error(t('passkey.signin_failed'));
+
+      showToast(t('auth.welcome_back'), 'success');
+      navigate('/org', { replace: true });
+    } catch (error: unknown) {
+      const detail = error instanceof Error ? ` ${error.message}` : '';
+      showToast(`${t('passkey.signin_failed')}${detail}`, 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const nationalDigits = phone.replace(/\D/g, '');
   const formattedPhone = nationalDigits
     ? new AsYouType(selectedCountry.code as CountryCode).input(nationalDigits)
@@ -296,6 +318,20 @@ export default function Login() {
               ) : (
                 t('auth.login')
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePasskeySignIn}
+              disabled={isSubmitting}
+              className="w-full h-11 rounded-full border border-[#3390ec] bg-white hover:bg-[#f2f8fe] active:scale-[0.98] text-[#2481cc] font-medium text-[15px] transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {isSubmitting ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : (
+                <Fingerprint className="h-5 w-5" />
+              )}
+              {t('passkey.signin')}
             </button>
 
             <button
