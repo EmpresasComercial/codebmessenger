@@ -5,6 +5,7 @@ import {
   Send,
   Loader2,
   Clock,
+  ChevronLeft,
   ChevronDown,
   X,
   Zap,
@@ -16,6 +17,7 @@ import { useToast } from "../../components/Toast";
 import { formatCurrency } from "../../lib/currency";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { clearLegacyAssistantChatHistory } from "../../lib/legacyAssistantChatHistory";
+import ChangePassword from "../ChangePassword";
 
 /* ─── SVG Doodle Background (Telegram BotFather style) ─────────── */
 const DOODLE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2372a072' stroke-width='1.2' opacity='0.45'%3E%3Ccircle cx='30' cy='28' r='10'/%3E%3Cpath d='M22 20L19 13L25 19'/%3E%3Cpath d='M38 20L41 13L35 19'/%3E%3Ccircle cx='26' cy='25' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='34' cy='25' r='1.5' fill='%2372a072'/%3E%3Cpath d='M30 31L28 33L30 32L32 33Z'/%3E%3Cpath d='M19 27L24 28'/%3E%3Cpath d='M41 27L36 28'/%3E%3Cpath d='M164 15L167 7L170 15L178 15L172 20L174 28L167 23L160 28L162 20L156 15Z'/%3E%3Cpath d='M95 52C95 44 84 38 84 49C84 58 95 67 95 67C95 67 106 58 106 49C106 38 95 44 95 52Z'/%3E%3Ccircle cx='20' cy='112' r='7'/%3E%3Ccircle cx='10' cy='103' r='3.5'/%3E%3Ccircle cx='30' cy='103' r='3.5'/%3E%3Ccircle cx='14' cy='97' r='3'/%3E%3Ccircle cx='26' cy='97' r='3'/%3E%3Crect x='150' cy='100' width='26' height='19' rx='2'/%3E%3Crect x='148' y='93' width='30' height='9' rx='2'/%3E%3Cline x1='163' y1='93' x2='163' y2='119'/%3E%3Cpath d='M159 93C156 87 163 84 163 93'/%3E%3Cpath d='M167 93C170 87 163 84 163 93'/%3E%3Ccircle cx='163' cy='162' r='10'/%3E%3Cpath d='M155 154L152 146L158 153'/%3E%3Cpath d='M171 154L174 146L168 153'/%3E%3Ccircle cx='159' cy='160' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='167' cy='160' r='1.5' fill='%2372a072'/%3E%3Cpath d='M163 164L161 166L163 165L165 166Z'/%3E%3Cpath d='M152 162L158 163'/%3E%3Cpath d='M174 162L168 163'/%3E%3Cpath d='M57 143C57 138 51 135 51 140C51 145 57 150 57 150C57 150 63 145 63 140C63 135 57 138 57 143Z'/%3E%3Cpath d='M140 44C140 39 134 36 134 41C134 46 140 51 140 51C140 51 146 46 146 41C146 36 140 39 140 44Z'/%3E%3Cpath d='M64 72L66 64L68 72L76 72L70 77L72 85L66 81L60 85L62 77L56 72Z'/%3E%3Cpath d='M127 134L129 126L131 134L139 134L133 139L135 147L129 143L123 147L125 139L119 134Z'/%3E%3Cpath d='M95 110L95 128'/%3E%3Ccircle cx='92' cy='129' r='4'/%3E%3Cpath d='M95 110L106 106L106 120'/%3E%3Ccircle cx='103' cy='121' r='4'/%3E%3C/g%3E%3C/svg%3E")`;
@@ -62,7 +64,7 @@ const VALID_COMMANDS = new Set([
   "/meusbots", "/mybots", "/ativos", "/compras", "/minhascompras",
   "/saldo", "/carteira", "/rendas", "/historico", "/histórico",
   "/limites", "/limite", "/limpar", "/reset", "/clear",
-  "/cupons", "/cupon", "/coupon", "/codigo", "/código"
+  "/cupons", "/cupon", "/coupon", "/codigo", "/código", "/senha"
 ]);
 
 function isRecognizedCommand(text: string): boolean {
@@ -135,12 +137,12 @@ function BotBubble({ children, time }: { children: React.ReactNode; time: string
           height="20"
           viewBox="0 0 9 20"
           className="absolute"
-          style={{ top: 0, left: -8, fill: "white" }}
+          style={{ top: 0, left: -8, fill: "#f5f5f5" }}
         >
           <path d="M9 0H0C4.5 0 8 4 9 12V0Z" />
         </svg>
         <div
-          className="bg-white rounded-[16px] rounded-tl-none px-3.5 py-2.5 select-text w-full"
+          className="bg-[#f5f5f5] dark:bg-[#182533] rounded-[16px] rounded-tl-none px-3.5 py-2.5 select-text w-full"
           style={{ boxShadow: "0 1px 2px rgba(16,35,47,0.15)" }}
         >
           {children}
@@ -160,15 +162,15 @@ function UserBubble({ text, time }: { text: string; time: string }) {
     <div className="flex justify-end mb-1.5 pr-2">
       <div className="relative max-w-[80%]">
         <div
-          className="bg-[#eeffde] rounded-[16px] rounded-br-none px-3.5 py-2 select-text"
+          className="bg-[#1877f2] text-white dark:bg-[#2b5278] rounded-[16px] rounded-br-none px-3.5 py-2 select-text"
           style={{ boxShadow: "0 1px 2px rgba(16,35,47,0.15)" }}
         >
-          <p className={`text-[15px] leading-snug ${isCmd ? "text-[#1a7ac7] font-medium" : "text-black font-normal"}`}>
+          <p className={`text-[15px] leading-snug ${isCmd ? "text-white font-medium" : "text-white font-normal"}`}>
             {text}
           </p>
           <div className="flex justify-end items-center gap-1 mt-0.5 select-none">
-            <span className="text-[11px] text-[#6a9a6a]">{time}</span>
-            <span className="text-[11px] text-[#4fae4e] font-bold leading-none">✓✓</span>
+            <span className="text-[11px] text-white/80">{time}</span>
+            <span className="text-[11px] text-white font-bold leading-none">✓✓</span>
           </div>
         </div>
         <svg
@@ -176,7 +178,7 @@ function UserBubble({ text, time }: { text: string; time: string }) {
           height="20"
           viewBox="0 0 9 20"
           className="absolute"
-          style={{ bottom: 0, right: -8, fill: "#eeffde" }}
+          style={{ bottom: 0, right: -8, fill: "#1877f2" }}
         >
           <path d="M0 20H9C4.5 20 1 16 0 8V20Z" />
         </svg>
@@ -214,17 +216,24 @@ export default function BusinessMessengerBotsChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [showCommandsModal, setShowCommandsModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const pendingReplyTimeouts = useRef<Set<number>>(new Set());
 
   const quickReplies = [
-    { shortcut: "/bots", text: "Ver catálogo completo de Bots de rendimento" },
-    { shortcut: "/meusbots", text: "Consultar Bots ativos e ganhos diários" },
-    { shortcut: "/saldo", text: "Ver saldo em conta e lucros acumulados" },
-    { shortcut: "/rendas", text: "Consultar rendimentos diários" },
-    { shortcut: "/limites", text: "Ver limites de compra" },
-    { shortcut: "/cupons", text: "Resgatar código promocional ou cupom" },
-    { shortcut: "/ajuda", text: "Instruções de ativação e suporte do gestor de bots" },
-    { shortcut: "/limpar", text: "Limpar conversa" },
+    { shortcut: "/senha", text: t('bots.cmd_password') },
+    { shortcut: "/bots", text: t('bots.cmd_catalog') },
+    { shortcut: "/meusbots", text: t('bots.cmd_my_bots') },
+    { shortcut: "/saldo", text: t('bots.cmd_balance') },
+    { shortcut: "/rendas", text: t('bots.cmd_income') },
+    { shortcut: "/limites", text: t('bots.cmd_limits') },
+    { shortcut: "/cupons", text: t('bots.cmd_coupons') },
+    { shortcut: "/ajuda", text: t('bots.cmd_help') },
+    { shortcut: "/limpar", text: t('bots.cmd_clear') },
+  ];
+  const suggestedReplies = [
+    { shortcut: "/bots", label: t('bots.suggestion_catalog') },
+    { shortcut: "/meusbots", label: t('bots.suggestion_mine') },
+    { shortcut: "/saldo", label: t('chat.suggestion_balance') },
   ];
   const [awaitingCoupon, setAwaitingCoupon] = useState(false);
   const [isRedeemingCoupon, setIsRedeemingCoupon] = useState(false);
@@ -382,6 +391,20 @@ export default function BusinessMessengerBotsChat() {
     showToast("Conversa reiniciada.", "success");
   }, [showToast]);
 
+  const handlePasswordChanged = useCallback(() => {
+    setShowChangePasswordModal(false);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: "bot-password-changed-" + Date.now(),
+        sender: "bot",
+        time: getCurrentTime(),
+        type: "text",
+        text: t('password.success'),
+      },
+    ]);
+  }, [t]);
+
   useEffect(() => () => {
     pendingReplyTimeouts.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
     pendingReplyTimeouts.current.clear();
@@ -420,6 +443,18 @@ export default function BusinessMessengerBotsChat() {
       ) {
         simulateBotReply(() => ({
           id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "welcome"
+        }));
+        return;
+      }
+
+      if (normalized === "senha") {
+        setShowChangePasswordModal(true);
+        simulateBotReply(() => ({
+          id: "bot-password-form-" + Date.now(),
+          sender: "bot",
+          time: getCurrentTime(),
+          type: "text",
+          text: t('bots.password_form_opened'),
         }));
         return;
       }
@@ -668,13 +703,41 @@ export default function BusinessMessengerBotsChat() {
 
   return (
     <div
-      className="w-full h-[100dvh] flex flex-col overflow-hidden select-none relative"
-      style={{
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Roboto', 'Segoe UI', sans-serif",
-        backgroundColor: '#afc8af',
-        backgroundImage: DOODLE_BG
-      }}
+      className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white font-sans select-none transition-colors dark:bg-[#0e1621]"
+      style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Roboto', 'Segoe UI', sans-serif" }}
     >
+      {showChangePasswordModal && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-3"
+          onClick={() => setShowChangePasswordModal(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="botfather-change-password-title"
+            className="flex max-h-[90dvh] w-[92vw] max-w-[480px] flex-col overflow-hidden rounded-xl bg-[#f1f1f2] shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex h-14 shrink-0 items-center justify-between border-b border-black/5 px-4">
+              <h2 id="botfather-change-password-title" className="text-[16px] font-semibold text-[#111827]">
+                {t('password.title')}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowChangePasswordModal(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[#667085] hover:bg-black/5"
+                aria-label={t('common.close')}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+            <div className="overflow-y-auto">
+              <ChangePassword embedded onSuccess={handlePasswordChanged} />
+            </div>
+          </section>
+        </div>
+      )}
+
       {/* ── MODAL DE COMANDOS ── */}
       {showCommandsModal && (
         <div
@@ -690,7 +753,7 @@ export default function BusinessMessengerBotsChat() {
           >
             <div className="mb-3 flex items-center justify-between border-b border-gray-100 px-1 pb-2.5 dark:border-gray-700">
               <span id="botfather-commands-title" className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-                <Zap className="h-4 w-4 text-[#2481cc]" /> Comandos rápidos
+                <Zap className="h-4 w-4 text-[#2481cc]" /> {t('chat.quick_commands')}
               </span>
               <button
                 type="button"
@@ -722,30 +785,28 @@ export default function BusinessMessengerBotsChat() {
       )}
 
       {/* ── CABEÇALHO FLUTUANTE ── */}
-      <header className="w-full bg-transparent px-3 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
+      <header className="sticky top-0 z-40 flex h-[68px] w-full shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-3 select-none pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
 
         {/* Botão Voltar */}
         <button
           onClick={() => navigate(-1)}
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-black dark:text-white pointer-events-auto cursor-pointer"
           aria-label={t("common.back")}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M5 12l7-7M5 12l7 7" />
-          </svg>
+          <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
         </button>
 
         {/* Cápsula central — BotFather */}
         <div
-          className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
+          className="mx-2 flex min-w-0 flex-1 items-center gap-3 pointer-events-auto"
           onClick={() => handleSendMessage("/saldo")}
         >
-          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
             <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
           </div>
-          <div className="flex flex-col min-w-0">
-            <h1 className="text-[15px] font-bold text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-              BusinessFather
+          <div className="flex min-w-0 flex-col">
+            <h1 className="truncate text-[16px] font-semibold leading-[1.15] tracking-tight text-black dark:text-white">
+              BotFather
             </h1>
             <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
               Online
@@ -756,7 +817,7 @@ export default function BusinessMessengerBotsChat() {
         {/* Botão Menu */}
         <button
           onClick={() => setShowCommandsModal(true)}
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
+          className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white pointer-events-auto cursor-pointer"
           aria-label="Mais opções"
         >
           <MoreVertical className="w-[22px] h-[22px]" />
@@ -767,7 +828,7 @@ export default function BusinessMessengerBotsChat() {
       <main
         ref={mainChatRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-2.5 py-3 pb-24 space-y-1 relative select-text"
+        className="flex-1 overflow-y-auto bg-white px-2.5 py-3 pb-40 space-y-3 relative select-text dark:bg-[#0e1621]"
       >
         <div className="flex justify-center my-2 select-none">
           <span className="text-white text-[12px] font-medium px-3.5 py-0.5 rounded-full" style={{ backgroundColor: "rgba(74, 100, 74, 0.72)", backdropFilter: "blur(4px)" }}>
@@ -915,25 +976,41 @@ export default function BusinessMessengerBotsChat() {
       )}
 
       {/* ── FOOTER FLUTUANTE — Input + Botão Enviar ── */}
-      <footer className="fixed bottom-0 left-0 right-0 p-2 pb-[max(12px,env(safe-area-inset-bottom,12px))] z-40 flex justify-center bg-transparent pointer-events-none">
-        <div className="w-full max-w-[650px] flex items-center gap-1.5 sm:gap-2 pointer-events-auto px-1 sm:px-2">
-          <div className="flex-1 min-w-0 bg-white dark:bg-[#182533] rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center px-2.5 sm:px-3 py-1.5 min-h-[48px] border border-black/5 dark:border-white/10 transition-colors">
-            {/* ⚡ Comandos Rápidos */}
-            <button
-              type="button"
-              onClick={() => setShowCommandsModal(!showCommandsModal)}
-              className={`p-1.5 rounded-full transition-all cursor-pointer shrink-0 mr-1 ${
-                showCommandsModal ? "text-[#2481cc] bg-[#2481cc]/15" : "text-[#707579] hover:text-[#2481cc]"
-              }`}
-              title="Comandos Rápidos"
-            >
-              <Zap className="w-5 h-5" />
-            </button>
+      <footer className="fixed bottom-0 left-0 right-0 z-40 flex justify-center border-t border-[#e5e5e5] bg-white px-3 py-2.5 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
+        <div className="flex w-full max-w-[650px] flex-col gap-2 pointer-events-auto">
+          {!messages.some((message) => message.sender === "user") && (
+            <div className="w-full border-b border-[#e5e5e5] pb-4 dark:border-[#27313d]">
+              <p className="mb-4 text-center text-[16px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
+                {t('chat.suggestion_prompt')}
+              </p>
+              <div className="flex justify-center gap-2.5">
+                {suggestedReplies.map((reply) => (
+                  <button
+                    key={reply.shortcut}
+                    type="button"
+                    onClick={() => handleSendMessage(reply.shortcut)}
+                    className="shrink-0 rounded-full border border-[#eeeeee] bg-white px-4 py-2 text-[16px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                  >
+                    {reply.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setShowCommandsModal(true)}
+                  className="shrink-0 rounded-full border border-[#eeeeee] bg-white px-4 py-2 text-[16px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                >
+                  {t('common.help')}
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="flex w-full items-center gap-2 pt-1">
+            <div className="flex min-h-[46px] min-w-0 flex-1 items-center rounded-full bg-[#f1f2f4] px-2.5 dark:bg-[#242f3d]">
 
             <button
               type="button"
               onClick={restartConversation}
-              className="mr-1 shrink-0 rounded-full p-1.5 text-[#707579] transition-colors hover:bg-gray-100 hover:text-[#2481cc] dark:hover:bg-[#242f3d]"
+              className="mr-1 shrink-0 rounded-full p-1.5 text-[#1877f2] transition-colors hover:bg-gray-100 dark:hover:bg-[#242f3d]"
               title="Reiniciar conversa"
               aria-label="Reiniciar conversa"
             >
@@ -951,16 +1028,17 @@ export default function BusinessMessengerBotsChat() {
                 }
               }}
               placeholder={t("chat.input_placeholder")}
-              className="flex-1 min-w-0 w-0 px-1 py-1 text-[14.5px] sm:text-[15px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] font-normal leading-snug"
+              className="flex-1 min-w-0 w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] font-normal leading-snug"
             />
           </div>
           <button
             onClick={() => handleSendMessage()}
-            className="w-[46px] h-[46px] sm:w-[48px] sm:h-[48px] rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_8px_rgba(36,129,204,0.4)] cursor-pointer"
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 cursor-pointer"
             aria-label={t("common.send")}
           >
-            <Send className="w-5 h-5 ml-0.5" />
+            <Send className="h-[25px] w-[25px] fill-current stroke-[1.8]" />
           </button>
+          </div>
         </div>
       </footer>
     </div>

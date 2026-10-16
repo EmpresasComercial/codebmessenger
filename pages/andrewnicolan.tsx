@@ -465,7 +465,7 @@ export default function AndrewNicolan() {
 
   return (
     <div 
-      className="w-full h-[100dvh] font-sans antialiased text-[#111827] select-none tg-chat-no-select flex flex-col items-center overflow-hidden relative tg-wallpaper transition-colors"
+      className="w-full h-[100dvh] bg-white font-sans antialiased text-[#111827] select-none tg-chat-no-select flex flex-col items-center overflow-hidden relative transition-colors dark:bg-[#0e1621] dark:text-white"
       onContextMenu={(e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
@@ -484,18 +484,18 @@ export default function AndrewNicolan() {
       />
 
       {/* ── HEADER FLOATING PILL (IDÊNTICO AO GRUPOCHAT / PRIVATECHAT) ── */}
-      <header className="w-full bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
+      <header className="h-[68px] w-full shrink-0 border-b border-[#e5e5e5] bg-white px-3 sm:px-4 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-black dark:text-white pointer-events-auto cursor-pointer"
           aria-label={t('common.back')}
         >
-          <ArrowLeft className="w-6 h-6 stroke-[2]" />
+          <ArrowLeft className="h-5 w-5 stroke-[2]" />
         </button>
 
-        <div className="flex w-full max-w-[min(72vw,440px)] items-center gap-2.5 bg-white/95 dark:bg-[#1c242f]/95 rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 pointer-events-auto backdrop-blur-[2px]">
-          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
+        <div className="flex min-w-0 flex-1 items-center gap-3 mx-2 pointer-events-auto">
+          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full">
             <img
               src="/Andrew_avatar_1792019295598.jpg"
               alt="Andrew Nicolan"
@@ -518,7 +518,7 @@ export default function AndrewNicolan() {
         <button
           type="button"
           onClick={() => showToast('Este espaço não é um canal oficial de terceiros.', 'info')}
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
+          className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white pointer-events-auto cursor-pointer"
           aria-label="Mais opções"
         >
           <MoreVertical className="w-5 h-5 stroke-[2]" />
@@ -528,7 +528,7 @@ export default function AndrewNicolan() {
       {/* ── FEED DE POSTAGENS DO CANAL (BALÕES NATIVOS FLATS) ── */}
       <main
         ref={scrollRef}
-        className="w-full max-w-[650px] flex-1 overflow-y-auto no-scrollbar px-3 pt-3 pb-24 space-y-3 relative"
+        className="w-full max-w-[650px] flex-1 overflow-y-auto bg-white no-scrollbar px-3 pt-3 pb-24 space-y-3 relative dark:bg-[#0e1621]"
       >
         {posts.map((post) => {
           const isProofPost = post.isProof || !!post.amount || post.id.startsWith('sp-') || post.id.startsWith('proof-');
@@ -649,11 +649,11 @@ export default function AndrewNicolan() {
       </main>
 
       {/* ── BARRA INFERIOR FLUTUANTE FLAT (A JUSTADA PARA TELAS MÓVEIS / SEM CORTAR) ── */}
-      <footer className="fixed bottom-0 left-0 right-0 px-1.5 sm:p-2 pb-3 z-40 flex justify-center bg-transparent pointer-events-none">
-        <div className="w-full max-w-[650px] flex items-center gap-1.5 sm:gap-2 pointer-events-auto px-1 sm:px-2 min-w-0">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 flex justify-center border-t border-[#e5e5e5] bg-white px-3 py-2.5 pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
+        <div className="flex w-full max-w-[650px] min-w-0 items-center gap-2 pointer-events-auto">
           
           {/* Pílula de Input: Texto à esquerda + Clipe de Anexo & Notificação à direita */}
-          <div className="flex-1 bg-white dark:bg-[#182533] rounded-full flex items-center px-2.5 sm:px-3 py-1.5 min-h-[46px] border border-[#e4e4e4] dark:border-[#1e2c3a] transition-colors min-w-0">
+          <div className="flex min-w-0 flex-1 items-center rounded-full bg-[#f1f2f4] px-3 py-1.5 min-h-[46px] transition-colors dark:bg-[#242f3d]">
             <input
               type="text"
               value={inputText}
@@ -662,7 +662,7 @@ export default function AndrewNicolan() {
                 if (e.key === 'Enter') handleSendBroadcast();
               }}
               placeholder="Mensagem"
-              className="flex-1 min-w-0 px-1 py-1 text-[14.5px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
+              className="flex-1 min-w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
             />
 
             {/* Sino de Notificação (🔔) */}
@@ -673,7 +673,7 @@ export default function AndrewNicolan() {
                 showToast(isMuted ? 'Notificações ativadas' : 'Canal silenciado', 'info');
               }}
               className={`p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-0.5 ${
-                isMuted ? 'text-[#e53e3e]' : 'text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc]'
+                isMuted ? 'text-[#e53e3e]' : 'text-[#1877f2]'
               }`}
               title={isMuted ? "Canal silencioso" : "Canal com som"}
             >
@@ -684,7 +684,7 @@ export default function AndrewNicolan() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-0.5"
+              className="shrink-0 rounded-full p-1.5 text-[#1877f2] transition-all hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 cursor-pointer ml-0.5"
               title={t('recharge.proof_label')}
               aria-label={t('recharge.proof_label')}
             >
@@ -692,15 +692,16 @@ export default function AndrewNicolan() {
             </button>
           </div>
 
-          {/* Botão circular para selecionar e enviar um ficheiro */}
+          {/* Botão para publicar a mensagem */}
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 cursor-pointer"
-            title="Enviar ficheiro"
-            aria-label="Enviar ficheiro"
+            onClick={handleSendBroadcast}
+            disabled={isSendingBroadcast || !inputText.trim()}
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 disabled:opacity-40 cursor-pointer"
+            title="Enviar mensagem"
+            aria-label="Enviar mensagem"
           >
-            <Upload className="w-5 h-5 text-white" />
+            <Send className="h-[25px] w-[25px] fill-current stroke-[1.8]" />
           </button>
         </div>
       </footer>

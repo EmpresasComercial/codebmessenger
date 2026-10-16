@@ -55,39 +55,39 @@ export default function DownloadApp() {
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-[17px] font-semibold">Business</h1>
+        <h1 className="text-[17px] font-semibold">{t("download.android_title")}</h1>
       </header>
 
-      <main className="mx-auto max-w-[720px] px-5 pt-4">
+      <main className="mx-auto max-w-[720px] px-3 pt-0">
         <section className="text-center">
           <div
-            className="mx-auto mb-6 mt-0 h-[300px] w-[300px] overflow-hidden"
+            className="mx-auto mb-1 w-full max-w-[520px] overflow-hidden"
             style={{ borderRadius: 24 }}
           >
             <img
               src="/business-android-preview.png"
               alt={t("download.android_alt")}
-              className="h-full w-full object-contain"
+              className="block h-auto w-full"
             />
           </div>
-          <h2 className="mb-3 text-[26px] font-semibold tracking-tight text-[#222]">
+          <h2 className="mb-1.5 text-[26px] font-semibold tracking-tight text-[#222]">
             {t("download.android_title")}
           </h2>
-          <p className="mx-auto max-w-[540px] text-[16px] leading-7 text-[#707579]">
+          <p className="mx-auto max-w-[540px] text-[16px] leading-6 text-[#707579]">
             {t("download.android_description")}
           </p>
           <button
             type="button"
             onClick={handleInstall}
             disabled={isInstalling}
-            className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#3390ec] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#287fcf] disabled:cursor-wait disabled:opacity-70"
+            className="mx-auto mt-3 inline-flex min-h-12 w-full max-w-[520px] items-center justify-center gap-2 rounded-full bg-[#3390ec] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#287fcf] disabled:cursor-wait disabled:opacity-70"
           >
             <Download className="h-5 w-5" />
             {isInstalling ? t("download.installing") : t("download.install_button")}
           </button>
         </section>
 
-        <section className="mt-14 border-t border-gray-100 pt-8">
+        <section className="mt-8 border-t border-gray-100 pt-5">
           <h2 className="mb-3 text-[20px] font-semibold text-[#222]">
             {t("download.how_to_install")}
           </h2>

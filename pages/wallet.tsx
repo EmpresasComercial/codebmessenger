@@ -5,6 +5,7 @@ import {
   Send, 
   Loader2, 
   HelpCircle, 
+  ChevronLeft,
   ChevronDown, 
   ExternalLink,
   PlusCircle,
@@ -19,12 +20,15 @@ import {
   Zap,
   X
 } from 'lucide-react';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
 import { parseNaturalLanguage } from '../lib/walletIntentParser';
+import VerifiedBadge from '../components/VerifiedBadge';
+import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedManager';
 import AddBank from './AddBank';
 import { fetchWalletParams } from './walletAssistantCore';
 
@@ -32,6 +36,8 @@ const MIN_WITHDRAW = 3000;
 const MAX_WITHDRAW = 500000;
 const FEE_PERCENT = 14;
 const NET_FACTOR = 0.86;
+const VERIFIED_MANAGER_DISPLAY_PHONE =
+  parsePhoneNumberFromString(VERIFIED_MANAGER_PHONE)?.formatInternational() || VERIFIED_MANAGER_PHONE;
 
 const VALID_COMMANDS = new Set([
   '/start', '/inicio', '/ajuda', '/help', '/menu', '/oi', '/ola',
@@ -178,13 +184,19 @@ export default function wallet() {
   const [showQuickHints, setShowQuickHints] = useState(false);
 
   const quickReplies = [
-    { command: '/adicionar_banco', label: 'Adicionar conta bancária' },
-    { command: '/retirar', label: 'Solicitar levantamento para conta bancária' },
-    { command: '/saldo', label: 'Consultar saldo' },
-    { command: 'consultar banco', label: 'Consultar dados bancários' },
-    { command: '/taxa', label: 'Consultar taxa' },
-    { command: '/historico', label: 'Consultar histórico de retiradas' },
-    { command: '/deletar_conta', label: 'Deletar conta' },
+    { command: '/adicionar_banco', label: t('wallet.cmd_add_bank') },
+    { command: '/retirar', label: t('wallet.cmd_withdraw') },
+    { command: '/saldo', label: t('wallet.cmd_balance') },
+    { command: 'consultar banco', label: t('wallet.cmd_bank_details') },
+    { command: '/taxa', label: t('wallet.cmd_fees') },
+    { command: '/historico', label: t('wallet.cmd_history') },
+    { command: '/deletar_conta', label: t('wallet.cmd_delete_bank') },
+  ];
+  const suggestedReplies: { command?: string; label: string; opensCommands?: boolean }[] = [
+    { command: '/taxa', label: t('wallet.suggestion_fees') },
+    { command: '/horario', label: t('wallet.suggestion_hours') },
+    { command: '/limites', label: t('wallet.suggestion_limits') },
+    { label: t('common.help'), opensCommands: true },
   ];
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -1232,7 +1244,7 @@ export default function wallet() {
 
   return (
     <div
-      className="w-full h-[100dvh] flex flex-col overflow-hidden select-none relative"
+      className="relative flex h-[100dvh] w-full flex-col overflow-hidden !bg-none !bg-white select-none dark:!bg-[#0e1621]"
       style={{ 
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Roboto', 'Segoe UI', sans-serif",
         backgroundColor: '#afc8af',
@@ -1240,36 +1252,30 @@ export default function wallet() {
       }}
     >
       {/* ── CABEÇALHO FLUTUANTE ── */}
-      <header className="w-full bg-transparent px-3 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
+      <header className="sticky top-0 z-40 flex h-[68px] w-full shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-3 select-none pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
 
         {/* Botão Voltar */}
         <button
           onClick={() => navigate(-1)}
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto cursor-pointer"
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-black dark:text-white pointer-events-auto cursor-pointer"
           aria-label={t('common.back')}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M5 12l7-7M5 12l7 7" />
-          </svg>
+          <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
         </button>
 
         {/* Cápsula central — Wallet */}
-        <div className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto">
-          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
+        <div className="mx-2 flex min-w-0 flex-1 items-center gap-3 pointer-events-auto">
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
             <img src="/logo_bussiness_messeger.jpg" alt="Messenger wallet" className="w-full h-full object-cover" />
-            <span className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-white rounded-full flex items-center justify-center">
-              <span className="w-2.5 h-2.5 bg-[#3390ec] rounded-full flex items-center justify-center">
-                <svg className="w-[7px] h-[7px] text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                </svg>
-              </span>
-            </span>
           </div>
 
           <div className="flex flex-col min-w-0">
-            <h1 className="text-[15px] font-bold text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-              Messenger wallet
-            </h1>
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-[16px] font-semibold text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
+                {VERIFIED_MANAGER_DISPLAY_PHONE}
+              </h1>
+              {isVerifiedManagerPhone(VERIFIED_MANAGER_PHONE) && <VerifiedBadge className="h-4 w-4 mt-0.5" />}
+            </div>
             <span className="mt-0.5 flex items-center gap-1 text-[12px] font-normal leading-[1.15] text-[#25ae60]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#25ae60]" />
               Online
@@ -1281,11 +1287,11 @@ export default function wallet() {
         <div className="relative pointer-events-auto">
           <button
             onClick={() => setShowHelpModal(true)}
-            className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 cursor-pointer"
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white cursor-pointer"
             aria-label={t('withdraw.guide_title')}
             title={t('withdraw.guide_title')}
           >
-            <MoreVertical className="w-[22px] h-[22px]" />
+            <MoreVertical className="h-5 w-5" />
           </button>
           </div>
       </header>
@@ -1421,7 +1427,7 @@ export default function wallet() {
       <main
         ref={mainChatRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-2.5 pt-2 pb-24 space-y-1 relative select-text"
+        className="flex-1 overflow-y-auto bg-white px-2.5 pt-2 pb-40 space-y-3 relative select-text dark:bg-[#0e1621]"
       >
         <div className="flex justify-center my-1 select-none">
           <span
@@ -1441,20 +1447,20 @@ export default function wallet() {
               <div key={msg.id} className="flex flex-col items-end mb-1.5 pr-2">
                 <div className="relative max-w-[80%]">
                   <div
-                    className="bg-[#eeffde] rounded-[16px] rounded-br-none px-[10px] pt-[6px] pb-[6px] select-text relative"
+                    className="bg-[#1877f2] text-white dark:bg-[#2b5278] rounded-[16px] rounded-br-none px-[10px] pt-[6px] pb-[6px] select-text relative"
                     style={{ boxShadow: '0 1px 2px rgba(16,35,47,0.15)' }}
                   >
                     <div className="relative leading-[1.3] pointer-events-none">
                       <span
-                        className={`text-[16px] whitespace-pre-wrap break-words font-normal ${isValid ? 'text-[#1a7ac7]' : 'text-black'}`}
+                        className={`text-[16px] whitespace-pre-wrap break-words font-normal ${isValid ? 'text-white' : 'text-white'}`}
                         style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
                       >
                         {msg.text}
                       </span>
                       <span aria-hidden="true" className="inline-block h-[1px]" style={{ width: '56px' }} />
                       <div className="absolute bottom-[-1px] right-0 flex items-center gap-[2px] select-none text-[12px]">
-                        <span className="font-normal leading-none text-[#55864e]">{msg.time}</span>
-                        <span className="text-[#4fae4e] font-bold text-[11px] leading-none">✓✓</span>
+                        <span className="font-normal leading-none text-white/80">{msg.time}</span>
+                        <span className="text-white font-bold text-[11px] leading-none">✓✓</span>
                       </div>
                     </div>
                   </div>
@@ -1463,7 +1469,7 @@ export default function wallet() {
                     height="20"
                     viewBox="0 0 9 20"
                     className="absolute"
-                    style={{ bottom: 0, right: -8, fill: '#eeffde' }}
+                    style={{ bottom: 0, right: -8, fill: '#1877f2' }}
                   >
                     <path d="M0 20H9C4.5 20 1 16 0 8V20Z" />
                   </svg>
@@ -1483,12 +1489,12 @@ export default function wallet() {
                   height="20"
                   viewBox="0 0 9 20"
                   className="absolute"
-                  style={{ top: 0, left: -8, fill: 'white' }}
+                  style={{ top: 0, left: -8, fill: '#f5f5f5' }}
                 >
                   <path d="M9 0H0C4.5 0 8 4 9 12V0Z" />
                 </svg>
                 <div
-                  className="bg-white rounded-[16px] rounded-tl-none px-[10px] pt-[8px] pb-[8px] text-gray-900 w-full relative select-text"
+                  className="bg-[#f5f5f5] dark:bg-[#182533] rounded-[16px] rounded-tl-none px-[10px] pt-[8px] pb-[8px] text-gray-900 dark:text-gray-100 w-full relative select-text"
                   style={{ boxShadow: '0 1px 2px rgba(16,35,47,0.15)' }}
                 >
                 {/* APRESENTAÇÃO / BOAS-VINDAS */}
@@ -1559,17 +1565,17 @@ export default function wallet() {
                           key={val}
                           disabled={val > info.balance}
                           onClick={() => handleSendMessage(String(val))}
-                          className="px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-[#2481cc] text-[13px] font-semibold hover:bg-blue-50 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                          className="rounded-full border border-gray-200 bg-gray-50 px-3.5 py-1.5 text-[13px] font-semibold text-gray-900 transition-all hover:bg-gray-100 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer dark:border-[#33465a] dark:bg-[#242f3d] dark:text-gray-100 dark:hover:bg-[#2d3a49]"
                         >
-                          {formatCurrency(val, 'KZ')}
+                          {val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </button>
                       ))}
                       {info.balance >= MIN_WITHDRAW && (
                         <button
                           onClick={() => handleSendMessage(String(Math.floor(info.balance)))}
-                          className="px-2.5 py-1.5 rounded-lg bg-[#3390ec]/10 border border-[#3390ec]/30 text-[#2481cc] text-[13px] font-bold hover:bg-[#3390ec]/20 active:scale-95 transition-all cursor-pointer"
+                          className="rounded-full border border-gray-200 bg-gray-50 px-3.5 py-1.5 text-[13px] font-semibold text-gray-900 transition-all hover:bg-gray-100 active:scale-95 cursor-pointer dark:border-[#33465a] dark:bg-[#242f3d] dark:text-gray-100 dark:hover:bg-[#2d3a49]"
                         >
-                          Saldo Total ({formatCurrency(Math.floor(info.balance), 'KZ')})
+                          Saldo Total ({Math.floor(info.balance).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                         </button>
                       )}
                     </div>
@@ -1709,11 +1715,11 @@ export default function wallet() {
 
       {/* ── QUICK HINTS (RESPOSTAS RÁPIDAS / COMANDOS) ── */}
       {showQuickHints && (
-        <div className="fixed bottom-[65px] left-0 right-0 flex justify-center px-2 sm:px-6 z-40 animate-in slide-in-from-bottom-2">
+        <div className="fixed bottom-[135px] left-0 right-0 flex justify-center px-2 sm:px-6 z-40 animate-in slide-in-from-bottom-2">
           <div className="w-full max-w-[650px] bg-white dark:bg-[#182533] rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 space-y-1">
             <div className="flex items-center justify-between px-2 py-1 text-[11.5px] font-semibold text-[#2481cc] uppercase">
               <span className="flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5" /> Comandos Rápidos (Wallet Bot)
+                <Zap className="w-3.5 h-3.5" /> {t('chat.quick_commands')} (Wallet Bot)
               </span>
               <button
                 type="button"
@@ -1741,69 +1747,81 @@ export default function wallet() {
       )}
 
       {/* ── FOOTER FLUTUANTE IDÊNTICO AO OFFICIAL CHANNEL ── */}
-      <footer className="fixed bottom-0 left-0 right-0 p-2 pb-[max(12px,env(safe-area-inset-bottom,12px))] z-40 flex justify-center bg-transparent pointer-events-none">
-        <div className="w-full max-w-[650px] flex items-center gap-1.5 sm:gap-2 pointer-events-auto px-1 sm:px-2">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 flex justify-center bg-white px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:bg-[#17212b]">
+        <div className="flex w-full max-w-[650px] flex-col gap-2 pointer-events-auto">
+          {!messages.some((message) => message.sender === 'user') && pendingAmount === null && !pendingBankDeletion && (
+            <div className="w-full border-b border-[#e5e5e5] pb-4 dark:border-[#27313d]">
+              <p className="mb-4 text-center text-[16px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
+                {t('chat.suggestion_prompt')}
+              </p>
+              <div className="flex justify-center gap-2.5">
+                {suggestedReplies.map((reply) => (
+                  <button
+                    key={reply.label}
+                    type="button"
+                    onClick={() => {
+                      if (reply.opensCommands) {
+                        setShowQuickHints(true);
+                      } else if (reply.command) {
+                        handleSendMessage(reply.command);
+                      }
+                    }}
+                    className="shrink-0 rounded-full border border-[#eeeeee] bg-white px-4 py-2 text-[16px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                  >
+                    {reply.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex w-full items-center gap-2 pt-1">
+            {/* Campo de composição */}
+            <div className="flex min-h-[46px] min-w-0 flex-1 items-center rounded-full bg-[#f1f2f4] px-2.5 dark:bg-[#242f3d]">
+              <button
+                type="button"
+                onClick={() => handleSendMessage('/limpar')}
+                className="p-1.5 rounded-full transition-all cursor-pointer shrink-0 mr-1 text-[#1877f2] active:bg-[#1877f2]/10"
+                title="Reiniciar conversa"
+                aria-label="Limpar e reiniciar conversa"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
 
-          {/* Cápsula branca flutuante sobre o wallpaper */}
-          <div className="flex-1 min-w-0 bg-white dark:bg-[#182533] rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center px-2.5 sm:px-3 py-1.5 min-h-[48px] border border-black/5 dark:border-white/10 transition-colors">
-
-            {/* ⚡ Comandos Rápidos */}
-            <button
-              type="button"
-              onClick={() => setShowQuickHints(!showQuickHints)}
-              className={`p-1.5 rounded-full transition-all cursor-pointer shrink-0 mr-1 ${
-                showQuickHints ? 'text-[#2481cc] bg-[#2481cc]/15' : 'text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc]'
-              }`}
-              title="Comandos Rápidos"
-            >
-              <Zap className="w-5 h-5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSendMessage('/limpar')}
-              className="p-1.5 rounded-full transition-all cursor-pointer shrink-0 mr-1 text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] active:bg-[#2481cc]/10"
-              title="Reiniciar conversa"
-              aria-label="Limpar e reiniciar conversa"
-            >
-              <RotateCcw className="w-5 h-5" />
-            </button>
-
-            {/* Campo de texto */}
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => {
-                if (pendingAmount !== null && /^\d*$/.test(e.target.value)) {
-                  setInputText(e.target.value);
-                } else if (pendingAmount === null) {
-                  setInputText(e.target.value);
+              {/* Campo de texto */}
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => {
+                  if (pendingAmount !== null && /^\d*$/.test(e.target.value)) {
+                    setInputText(e.target.value);
+                  } else if (pendingAmount === null) {
+                    setInputText(e.target.value);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder={
+                  pendingAmount !== null
+                    ? 'Novo valor ou Sim/Não...'
+                    : 'Mensagem...'
                 }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder={
-                pendingAmount !== null
-                  ? 'Novo valor ou Sim/Não...'
-                  : 'Mensagem...'
-              }
-              className="flex-1 min-w-0 w-0 px-1 py-1 text-[14.5px] sm:text-[15px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
-            />
+                className="flex-1 min-w-0 w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
+              />
+            </div>
 
+            {/* Botão circular azul Telegram */}
+            <button
+              onClick={() => handleSendMessage()}
+              className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 cursor-pointer"
+              aria-label={t('common.send')}
+            >
+              <Send className="h-[25px] w-[25px] fill-current stroke-[1.8]" />
+            </button>
           </div>
-
-          {/* Botão circular azul Telegram */}
-          <button
-            onClick={() => handleSendMessage()}
-            className="w-[46px] h-[46px] sm:w-[48px] sm:h-[48px] rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_8px_rgba(36,129,204,0.4)] cursor-pointer"
-            aria-label={t('common.send')}
-          >
-            <Send className="w-5 h-5 ml-0.5" />
-          </button>
         </div>
       </footer>
 

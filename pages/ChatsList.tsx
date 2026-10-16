@@ -937,7 +937,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       {
         id: 'business-bot-manager',
         folder: 'bots' as ChatFolder,
-        name: 'BusinessFather',
+        name: 'BotFather',
         isVerified: true,
         tag: null,
         lastMessage: 'Gestão de bots do Business Messenger',

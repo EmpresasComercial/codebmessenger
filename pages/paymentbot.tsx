@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   MoreVertical,
   Send,
+  ChevronLeft,
   ChevronDown,
   Copy,
   Check,
@@ -22,10 +23,15 @@ import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
 import { fetchPayParams } from './paymentAssistantCore';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
+import VerifiedBadge from '../components/VerifiedBadge';
+import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedManager';
 
 const MIN_RECHARGE = 3000;
 const MAX_RECHARGE = 500000;
 const CHAT_STORAGE_KEY = 'telegram_deposit_bot_v3';
+const VERIFIED_MANAGER_DISPLAY_PHONE =
+  parsePhoneNumberFromString(VERIFIED_MANAGER_PHONE)?.formatInternational() || VERIFIED_MANAGER_PHONE;
 
 const rechargeSession = {
   get: () => {
@@ -406,14 +412,20 @@ export default function PaymentBot() {
   const [showQuickHints, setShowQuickHints] = useState(false);
 
   const quickReplies = [
-    { shortcut: '/depositar', text: 'Iniciar recarga e depósito bancário' },
-    { shortcut: '/saldo', text: 'Consultar saldo da conta e carteira' },
-    { shortcut: '/bancos', text: 'Ver dados bancários e contas disponíveis' },
+    { shortcut: '/depositar', text: t('recharge.cmd_deposit') },
+    { shortcut: '/saldo', text: t('recharge.cmd_balance') },
+    { shortcut: '/bancos', text: t('recharge.cmd_banks') },
     { shortcut: '/historico', text: t('recharge.history_title') },
-    { shortcut: '/limites', text: 'Ver valores mínimo e máximo e as taxas' },
-    { shortcut: '/horarios', text: 'Consultar horário de funcionamento' },
-    { shortcut: '/total_deposito', text: 'Ver relatório e total de depósitos' },
-    { shortcut: '/ajuda', text: 'Instruções e ajuda do Payments Bot' },
+    { shortcut: '/limites', text: t('recharge.cmd_limits') },
+    { shortcut: '/horarios', text: t('recharge.cmd_schedule') },
+    { shortcut: '/total_deposito', text: t('recharge.cmd_total') },
+    { shortcut: '/ajuda', text: t('recharge.cmd_help') },
+  ];
+  const suggestedReplies: { command?: string; label: string; opensCommands?: boolean }[] = [
+    { command: '/saldo', label: t('chat.suggestion_balance') },
+    { command: '/depositar', label: t('chat.suggestion_recharge') },
+    { command: '/bancos', label: t('chat.suggestion_banks') },
+    { label: t('common.help'), opensCommands: true },
   ];
 
   const [depositAmount, setDepositAmount] = useState<number | null>(() => rechargeSession.get().amount);
@@ -1191,7 +1203,7 @@ export default function PaymentBot() {
 
   return (
     <div
-      className="w-full h-[100dvh] flex flex-col overflow-hidden select-none transition-colors"
+      className="w-full h-[100dvh] flex flex-col overflow-hidden select-none transition-colors !bg-none !bg-white dark:!bg-[#0e1621]"
       style={{ 
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Roboto', 'Segoe UI', sans-serif",
         backgroundColor: '#afc8af',
@@ -1208,37 +1220,26 @@ export default function PaymentBot() {
         onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUploadProof(file); e.target.value = ''; }}
       />
 
-      <header className="w-full bg-transparent px-3 sm:px-4 py-3 sticky top-0 z-40 flex items-center justify-between select-none pointer-events-none">
+      <header className="sticky top-0 z-40 flex h-[68px] w-full shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-3 sm:px-4 select-none pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
         <button
           onClick={() => navigate(-1)}
-          className="w-11 h-11 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto"
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-black pointer-events-auto dark:text-white"
           aria-label={t('common.back')}
         >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M19 12H5M5 12l7-7M5 12l7 7" />
-          </svg>
+          <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
         </button>
 
-        <div className="flex w-0 flex-1 items-center gap-2.5 bg-white rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 pointer-events-auto">
-          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
+        <div className="mx-2 flex min-w-0 flex-1 items-center gap-3 pointer-events-auto">
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
             <img src="/logo_bussiness_messeger.jpg" alt="Messenger TopUp" className="w-full h-full object-cover" />
           </div>
 
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="text-[15px] font-bold text-black tracking-tight truncate leading-[1.15] mt-0.5">
-              Messenger TopUp
+              <h1 className="text-[16px] font-semibold text-black tracking-tight truncate leading-[1.15] mt-0.5">
+                {VERIFIED_MANAGER_DISPLAY_PHONE}
               </h1>
-              <span className="w-3.5 h-3.5 rounded-full bg-[#2481cc] text-white flex items-center justify-center text-[8px] font-black shrink-0 mt-0.5">✓</span>
+              {isVerifiedManagerPhone(VERIFIED_MANAGER_PHONE) && <VerifiedBadge className="h-4 w-4 mt-0.5" />}
             </div>
             <span className="mt-0.5 flex items-center gap-1 text-[12px] font-normal leading-[1.15] text-[#25ae60]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#25ae60]" />
@@ -1250,7 +1251,7 @@ export default function PaymentBot() {
         <div className="relative pointer-events-auto">
           <button
             onClick={() => setShowMenuDropdown((prev) => !prev)}
-            className="w-11 h-11 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black hover:bg-gray-50 active:scale-95 transition-transform shrink-0"
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
           >
             <MoreVertical className="w-5 h-5" />
           </button>
@@ -1341,7 +1342,7 @@ export default function PaymentBot() {
         ref={mainChatRef}
         onScroll={handleScroll}
         onClick={() => setShowMenuDropdown(false)}
-        className="flex-1 overflow-y-auto px-2.5 pt-2 pb-24 space-y-1 relative select-text"
+        className="flex-1 overflow-y-auto bg-white px-2.5 pt-2 pb-40 space-y-3 relative select-text dark:bg-[#0e1621]"
       >
         <div className="flex justify-center my-1 select-none">
           <span
@@ -1364,7 +1365,7 @@ export default function PaymentBot() {
               <div key={msg.id} className="flex flex-col items-end mb-1.5 pr-2">
                 <div className="relative max-w-[80%]">
                   <div
-                    className="bg-[#eeffde] rounded-[16px] rounded-br-none px-[10px] pt-[6px] pb-[6px] select-text relative"
+                    className="bg-[#1877f2] text-white dark:bg-[#2b5278] rounded-[16px] rounded-br-none px-[10px] pt-[6px] pb-[6px] select-text relative"
                     style={{ boxShadow: '0 1px 2px rgba(16,35,47,0.15)' }}
                   >
                     {msg.imageUrl && (
@@ -1410,15 +1411,15 @@ export default function PaymentBot() {
                     )}
                     <div className="relative leading-[1.3] pointer-events-none">
                       <span
-                        className={`text-[16px] whitespace-pre-wrap break-words font-normal ${isValid ? 'text-[#1a7ac7]' : 'text-black'}`}
+                        className={`text-[16px] whitespace-pre-wrap break-words font-normal ${isValid ? 'text-white' : 'text-white'}`}
                         style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
                       >
                         {msg.text}
                       </span>
                       <span aria-hidden="true" className="inline-block h-[1px]" style={{ width: '56px' }} />
                       <div className="absolute bottom-[-1px] right-0 flex items-center gap-[2px] select-none text-[12px]">
-                        <span className="font-normal leading-none text-[#55864e]">{msg.time}</span>
-                        <span className="text-[#4fae4e] font-bold text-[11px] leading-none">✓✓</span>
+                        <span className="font-normal leading-none text-white/80">{msg.time}</span>
+                        <span className="text-white font-bold text-[11px] leading-none">✓✓</span>
                       </div>
                     </div>
                   </div>
@@ -1427,7 +1428,7 @@ export default function PaymentBot() {
                     height="20"
                     viewBox="0 0 9 20"
                     className="absolute"
-                    style={{ bottom: 0, right: -8, fill: '#eeffde' }}
+                    style={{ bottom: 0, right: -8, fill: '#1877f2' }}
                   >
                     <path d="M0 20H9C4.5 20 1 16 0 8V20Z" />
                   </svg>
@@ -1449,12 +1450,12 @@ export default function PaymentBot() {
                     height="20"
                     viewBox="0 0 9 20"
                     className="absolute"
-                    style={{ top: 0, left: -8, fill: 'white' }}
+                    style={{ top: 0, left: -8, fill: '#f5f5f5' }}
                   >
                     <path d="M9 0H0C4.5 0 8 4 9 12V0Z" />
                   </svg>
                   <div
-                    className={`bg-white text-gray-900 w-full relative select-text px-3.5 py-2.5 ${hasKeyboard ? 'rounded-tr-[16px] rounded-tl-none rounded-b-none' : 'rounded-[16px] rounded-tl-none'
+                    className={`bg-[#f5f5f5] dark:bg-[#182533] text-gray-900 dark:text-gray-100 w-full relative select-text px-3.5 py-2.5 ${hasKeyboard ? 'rounded-tr-[16px] rounded-tl-none rounded-b-none' : 'rounded-[16px] rounded-tl-none'
                       }`}
                     style={{ boxShadow: '0 1px 2px rgba(16,35,47,0.15)' }}
                   >
@@ -1483,9 +1484,9 @@ export default function PaymentBot() {
                             <button
                               key={val}
                               onClick={() => handleSendMessage(String(val))}
-                              className="px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-[#2481cc] text-[13px] font-semibold hover:bg-blue-50 active:scale-95 transition-all cursor-pointer"
+                              className="rounded-full border border-gray-200 bg-gray-50 px-3.5 py-1.5 text-[13px] font-semibold text-gray-900 transition-all hover:bg-gray-100 active:scale-95 cursor-pointer dark:border-[#33465a] dark:bg-[#242f3d] dark:text-gray-100 dark:hover:bg-[#2d3a49]"
                             >
-                              {formatCurrency(val, 'KZ')}
+                              {val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </button>
                           ))}
                         </div>
@@ -1788,11 +1789,11 @@ export default function PaymentBot() {
 
       {/* ── QUICK HINTS (RESPOSTAS RÁPIDAS / COMANDOS) ── */}
       {showQuickHints && (
-        <div className="fixed bottom-[65px] left-0 right-0 flex justify-center px-2 sm:px-6 z-40 animate-in slide-in-from-bottom-2">
+        <div className="fixed bottom-[135px] left-0 right-0 flex justify-center px-2 sm:px-6 z-40 animate-in slide-in-from-bottom-2">
           <div className="w-full max-w-[650px] bg-white dark:bg-[#17212b] rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 space-y-1">
             <div className="flex items-center justify-between px-2 py-1 text-[11.5px] font-semibold text-[#2481cc] uppercase">
               <span className="flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5" /> Comandos Rápidos (Payments Bot)
+                <Zap className="w-3.5 h-3.5" /> {t('chat.quick_commands')} (Payments Bot)
               </span>
               <button
                 type="button"
@@ -1821,85 +1822,98 @@ export default function PaymentBot() {
       )}
 
       {/* ── FOOTER FLUTUANTE IDÊNTICO AO OFFICIAL CHANNEL ── */}
-      <footer className="fixed bottom-0 left-0 right-0 p-2 pb-[max(12px,env(safe-area-inset-bottom,12px))] z-40 flex justify-center bg-transparent pointer-events-none">
-        <div className="w-full max-w-[650px] flex items-center gap-1.5 sm:gap-2 pointer-events-auto px-1 sm:px-2">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 flex justify-center bg-white px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:bg-[#17212b]">
+        <div className="flex w-full max-w-[650px] flex-col gap-2 pointer-events-auto">
+          {!messages.some((message) => message.sender === 'user') && !awaitingProof && depositAmount === null && (
+            <div className="w-full border-b border-[#e5e5e5] pb-4 dark:border-[#27313d]">
+              <p className="mb-4 text-center text-[16px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
+                {t('chat.suggestion_prompt')}
+              </p>
+              <div className="flex justify-center gap-2.5">
+                {suggestedReplies.map((reply) => (
+                  <button
+                    key={reply.label}
+                    type="button"
+                    onClick={() => {
+                      if (reply.opensCommands) {
+                        setShowQuickHints(true);
+                      } else if (reply.command) {
+                        handleSendMessage(reply.command);
+                      }
+                    }}
+                    className="shrink-0 rounded-full border border-[#eeeeee] bg-white px-4 py-2 text-[16px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                  >
+                    {reply.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex w-full items-center gap-2 pt-1">
+            {/* Campo de composição */}
+            <div className="flex min-h-[46px] min-w-0 flex-1 items-center rounded-full bg-[#f1f2f4] px-2.5 dark:bg-[#242f3d]">
+              <button
+                type="button"
+                onClick={restartConversation}
+                className="shrink-0 p-1 text-[#1877f2] transition-colors"
+                title="Reiniciar conversa"
+                aria-label="Reiniciar conversa"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
 
-          {/* Cápsula branca flutuante sobre o wallpaper */}
-          <div className="flex-1 min-w-0 bg-white dark:bg-[#182533] rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center px-2.5 sm:px-3 py-1.5 min-h-[48px] border border-black/5 dark:border-white/10 transition-colors">
-
-            {/* ⚡ Comandos Rápidos (mantido no lado esquerdo) */}
-            <button
-              type="button"
-              onClick={() => setShowQuickHints(!showQuickHints)}
-              className={`p-1.5 rounded-full transition-all cursor-pointer shrink-0 mr-1.5 ${
-                showQuickHints ? 'text-[#2481cc] bg-[#2481cc]/15' : 'text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc]'
-              }`}
-              title="Comandos Rápidos"
-            >
-              <Zap className="w-5 h-5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={restartConversation}
-              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1 shrink-0 transition-colors"
-              title="Reiniciar conversa"
-              aria-label="Reiniciar conversa"
-            >
-              <RotateCcw className="w-5 h-5" />
-            </button>
-
-            {/* Campo de texto */}
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSendMessage();
+              {/* Campo de texto */}
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder={
+                  awaitingProof
+                    ? 'Envia o comprovativo ou escreve “cancelar pedido”...'
+                    : depositAmount !== null && !selectedBank
+                    ? 'Nome do banco...'
+                    : t('chat.input_placeholder')
                 }
-              }}
-              placeholder={
-                awaitingProof
-                  ? 'Envia o comprovativo ou escreve “cancelar pedido”...'
-                  : depositAmount !== null && !selectedBank
-                  ? 'Nome do banco...'
-                  : t('chat.input_placeholder')
-              }
-              className="flex-1 min-w-0 w-0 px-1 py-1 text-[14.5px] sm:text-[15px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#8e8e93] dark:placeholder:text-gray-400 font-normal leading-snug"
-            />
+                className="flex-1 min-w-0 w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
+              />
 
-            {/* 📎 Ícone de Ficheiros */}
-            <button
-              type="button"
-              onClick={() => fileDocInputRef.current?.click()}
-              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-1"
-              title={t('recharge.proof_label')}
-            >
-              <Paperclip className="w-5 h-5 -rotate-45" />
-            </button>
+              {/* 📎 Ícone de Ficheiros */}
+              <button
+                type="button"
+                onClick={() => fileDocInputRef.current?.click()}
+                className="shrink-0 rounded-full p-1.5 text-[#1877f2] transition-all hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 cursor-pointer ml-1"
+                title={t('recharge.proof_label')}
+              >
+                <Paperclip className="w-5 h-5 -rotate-45" />
+              </button>
 
-            {/* 📷 Ícone de Câmara (Fotos / Galeria no lado direito) */}
+              {/* 📷 Ícone de Câmara (Fotos / Galeria no lado direito) */}
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                className="shrink-0 rounded-full p-1.5 text-[#1877f2] transition-all hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 cursor-pointer ml-0.5"
+                title="Tirar foto ou escolher da galeria"
+              >
+                <Camera className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Botão circular azul Telegram */}
             <button
-              type="button"
-              onClick={() => photoInputRef.current?.click()}
-              className="text-[#707579] dark:text-[#9eaab6] hover:text-[#2481cc] p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-0.5"
-              title="Tirar foto ou escolher da galeria"
+              onClick={() => handleSendMessage()}
+              className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 cursor-pointer"
+              aria-label={t('common.send')}
             >
-              <Camera className="w-5 h-5" />
+              <Send className="h-[25px] w-[25px] fill-current stroke-[1.8]" />
             </button>
           </div>
-
-          {/* Botão circular azul Telegram */}
-          <button
-            onClick={() => handleSendMessage()}
-            className="w-[46px] h-[46px] sm:w-[48px] sm:h-[48px] rounded-full text-white bg-[#2481cc] hover:bg-[#1f72b5] flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-[0_2px_8px_rgba(36,129,204,0.4)] cursor-pointer"
-            aria-label={t('common.send')}
-          >
-            <Send className="w-5 h-5 ml-0.5" />
-          </button>
         </div>
       </footer>
     </div>

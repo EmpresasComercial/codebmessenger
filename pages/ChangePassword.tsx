@@ -6,7 +6,12 @@ import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function ChangePassword() {
+interface ChangePasswordProps {
+  embedded?: boolean;
+  onSuccess?: () => void;
+}
+
+export default function ChangePassword({ embedded = false, onSuccess }: ChangePasswordProps) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { t } = useLanguage();
@@ -73,7 +78,11 @@ export default function ChangePassword() {
       }
 
       showToast(t('password.success'), 'success');
-      setTimeout(() => navigate(-1), 1200);
+      if (embedded) {
+        onSuccess?.();
+      } else {
+        setTimeout(() => navigate(-1), 1200);
+      }
     } catch (err: any) {
       const message = typeof err?.message === 'string' ? err.message : '';
       if (!message || ![
@@ -95,22 +104,22 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#f1f1f2] font-sans text-black pb-10">
+    <div className={`w-full bg-[#f1f1f2] font-sans text-black ${embedded ? 'pb-4' : 'min-h-screen pb-10'}`}>
 
       {/* HEADER */}
-      <div className="flex items-center px-4 pt-5 pb-3 bg-[#f1f1f2] sticky top-0 z-10">
+      {!embedded && <div className="flex items-center px-4 pt-5 pb-3 bg-[#f1f1f2] sticky top-0 z-10">
         <button onClick={() => navigate(-1)} className="mr-4 active:opacity-50 cursor-pointer">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
           </svg>
         </button>
         <span className="text-[18px] font-semibold flex-1">{t('password.title')}</span>
-      </div>
+      </div>}
 
-      <form onSubmit={handleSubmit} id="change-pass-form" className="px-3 flex flex-col gap-4">
+      <form onSubmit={handleSubmit} id="change-pass-form" className={`px-3 flex flex-col gap-4 ${embedded ? 'pt-2' : ''}`}>
 
         {/* Icon header */}
-        <div className="flex flex-col items-center py-6">
+        <div className={`flex flex-col items-center ${embedded ? 'py-2' : 'py-6'}`}>
           <div className="w-[64px] h-[64px] rounded-none bg-[#2481cc] flex items-center justify-center mb-3 shadow-[0_4px_12px_rgba(36,129,204,0.3)]">
             <ShieldAlert className="w-8 h-8 text-white" strokeWidth={1.8} />
           </div>
@@ -120,7 +129,7 @@ export default function ChangePassword() {
         </div>
 
         {/* Fields card */}
-        <div className="bg-white rounded-none overflow-hidden shadow-none">
+        <div className="overflow-hidden rounded-lg bg-white shadow-none">
           {/* Current password */}
           <div className="flex items-center px-4 h-[52px] border-b border-[#e5e5e5]">
             <input
@@ -172,7 +181,7 @@ export default function ChangePassword() {
           type="submit"
           form="change-pass-form"
           disabled={isSubmitting || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
-          className="w-full h-[50px] rounded-none bg-[#2481cc] hover:bg-[#1f73b7] text-white font-semibold text-[16px] flex items-center justify-center disabled:opacity-40 active:scale-[0.99] transition-all shadow-[0_4px_12px_rgba(36,129,204,0.35)] cursor-pointer"
+          className="w-full h-[50px] rounded-lg bg-[#2481cc] hover:bg-[#1f73b7] text-white font-semibold text-[16px] flex items-center justify-center disabled:opacity-40 active:scale-[0.99] transition-all shadow-[0_4px_12px_rgba(36,129,204,0.35)] cursor-pointer"
         >
           {isSubmitting ? <Loader2 className="animate-spin h-5 w-5 text-white" /> : t('password.btn_update')}
         </button>
@@ -181,4 +190,3 @@ export default function ChangePassword() {
     </div>
   );
 }
-

@@ -813,12 +813,12 @@ export default function PrivateChat() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-[#f4f4f5] dark:bg-[#0e1621]">
+    <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-white dark:bg-[#0e1621]">
       <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
         <ChatsList embedded />
       </aside>
       <div 
-      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden tg-wallpaper transition-colors"
+      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden bg-white transition-colors dark:bg-[#0e1621]"
       onContextMenu={(e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
@@ -829,17 +829,17 @@ export default function PrivateChat() {
 
       {/* ── HEADER ── */}
       <div className="h-[68px] shrink-0 md:hidden" aria-hidden="true" />
-      <header className="fixed left-0 right-0 top-0 z-40 flex w-full shrink-0 select-none items-center justify-between bg-transparent px-3 py-3 pointer-events-none sm:px-4 md:sticky md:left-auto md:right-auto md:top-0">
+      <header className="fixed left-0 right-0 top-0 z-40 flex h-[68px] w-full shrink-0 select-none items-center justify-between border-b border-[#e5e5e5] bg-white px-3 pointer-events-none sm:px-4 md:sticky md:left-auto md:right-auto md:top-0 dark:border-[#27313d] dark:bg-[#17212b]">
         <button
           onClick={() => navigate('/org')}
-          className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0 pointer-events-auto md:hidden"
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-black pointer-events-auto md:hidden dark:text-white"
           aria-label={t('chat.back')}
         >
-          <ChevronLeft className="w-6 h-6 stroke-[2]" />
+          <ChevronLeft className="h-5 w-5 stroke-[2]" />
         </button>
 
-        <div className="flex w-0 flex-1 items-center gap-2.5 bg-white dark:bg-[#1c242f] rounded-full p-1.5 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.12)] mx-2 min-w-0 pointer-events-auto">
-          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
+        <div className="flex w-0 flex-1 items-center gap-3 mx-2 min-w-0 pointer-events-auto">
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
             {isCommunityChat ? (
               <img
                 src="/logo_bussiness_messeger.jpg"
@@ -861,7 +861,7 @@ export default function PrivateChat() {
 
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1">
-              <h1 className="text-[15px] font-medium text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
+              <h1 className="text-[16px] font-semibold text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
                 {isCommunityChat ? 'Comunidade Business Messenger' : formatPhoneClean(contactDisplayName)}
               </h1>
             </div>
@@ -898,14 +898,14 @@ export default function PrivateChat() {
         <div className="flex items-center gap-1.5 pointer-events-auto">
           <button
             onClick={() => setShowContactProfile(true)}
-            className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0"
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
             aria-label={t('chat.contact_profile')}
           >
             <Phone className="w-5 h-5" />
           </button>
           <button
             onClick={() => setShowContactProfile(true)}
-            className="w-11 h-11 rounded-full bg-white dark:bg-[#1c242f] shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-black dark:text-white hover:bg-gray-50 active:scale-95 transition-transform shrink-0"
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
             aria-label={t('chat.more_options')}
           >
             <MoreVertical className="w-5 h-5" />
@@ -1031,7 +1031,7 @@ export default function PrivateChat() {
       {/* ── ÁREA DE MENSAGENS TELEGRAM (LARGURA TOTAL FLUIDA) ── */}
       <main
         ref={scrollRef}
-        className="w-full min-h-0 flex-1 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-1.5 relative scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="w-full min-h-0 flex-1 overflow-y-auto bg-white no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-3 relative scroll-smooth dark:bg-[#0e1621] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         onClick={() => contextMenu && closeContextMenu()}
       >
         {isLoading && messages.length === 0 && (
@@ -1113,7 +1113,7 @@ export default function PrivateChat() {
                       }
                     }}
                     className={`tg-bubble max-w-[85%] px-[10px] pt-[6px] pb-[6px] text-[#000000] dark:text-[#f3f4f6] shadow-[0_1px_2px_rgba(16,35,47,0.15)] relative cursor-pointer active:brightness-95 active:scale-[0.985] transition-all select-none ${
-                      isMe ? 'bg-[#eeffde] dark:bg-[#2b5278] is-me' : 'bg-white dark:bg-[#182533] is-other'
+                      isMe ? 'bg-[#1877f2] text-white dark:bg-[#2b5278] is-me' : 'bg-[#f5f5f5] dark:bg-[#182533] is-other'
                     } ${contextMenu?.message.id === m.id ? 'brightness-90 scale-[0.985]' : ''}`}
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
@@ -1128,7 +1128,7 @@ export default function PrivateChat() {
                         stroke="none"
                         color="inherit"
                       >
-                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#eeffde] dark:fill-[#2b5278]" />
+                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#1877f2] dark:fill-[#2b5278]" />
                       </svg>
                     ) : (
                       <svg
@@ -1138,7 +1138,7 @@ export default function PrivateChat() {
                         className="absolute pointer-events-none"
                         style={{ bottom: 0, left: -8, transform: 'scaleX(-1)', fill: 'currentColor' }}
                       >
-                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-white dark:fill-[#182533]" />
+                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#f5f5f5] dark:fill-[#182533]" />
                       </svg>
                     )}
 
@@ -1389,7 +1389,7 @@ export default function PrivateChat() {
 
       {/* ── BARRA DE MENSAGEM FLUTUANTE ── */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-40 flex justify-center"
+        className="absolute bottom-0 left-0 right-0 z-40 flex justify-center border-t border-[#e5e5e5] bg-white dark:border-[#27313d] dark:bg-[#17212b]"
         style={{
           paddingLeft: 'max(12px, env(safe-area-inset-left, 12px))',
           paddingRight: 'max(12px, env(safe-area-inset-right, 12px))',
@@ -1397,13 +1397,13 @@ export default function PrivateChat() {
           paddingTop: '6px',
         }}
       >
-        <div className="w-full max-w-[1000px] flex items-end gap-2">
+        <div className="flex w-full items-end gap-2 px-3 py-2.5">
           {/* Pill flutuante */}
-          <div className={`flex-1 bg-white dark:bg-[#202b36] ${isComposerExpanded ? 'rounded-[24px] items-end' : 'rounded-full items-center'} shadow-[0_4px_20px_rgba(0,0,0,0.18)] flex px-3.5 py-1 min-h-[46px]`}>
+          <div className={`flex min-w-0 flex-1 bg-[#f1f2f4] dark:bg-[#242f3d] ${isComposerExpanded ? 'rounded-[22px] items-end' : 'rounded-full items-center'} flex px-3 py-1.5 min-h-[46px]`}>
             {!voiceComposerActive && <button
               type="button"
               onClick={() => inputRef.current?.focus()}
-              className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0"
+              className="shrink-0 p-1 text-[#1877f2] transition-transform active:scale-90"
             >
               <Smile className="w-5 h-5" />
             </button>}
@@ -1463,7 +1463,7 @@ export default function PrivateChat() {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
               placeholder={replyTo ? t('chat.reply_placeholder') : t('chat.input_placeholder')}
-              className="w-full min-h-[24px] px-2 py-2 text-[15px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-gray-400 font-normal leading-snug"
+              className="w-full min-h-[24px] min-w-0 px-2 py-2 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
               rows={1}
             />}
 
@@ -1486,7 +1486,7 @@ export default function PrivateChat() {
               type="button"
               onClick={() => pdfInputRef.current?.click()}
               disabled={voiceComposerActive}
-              className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0 cursor-pointer"
+              className="shrink-0 cursor-pointer p-1 text-[#1877f2] transition-transform active:scale-90"
               title={t('chat.attach_pdf')}
               aria-label={t('chat.attach_pdf')}
             >
@@ -1496,7 +1496,7 @@ export default function PrivateChat() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={voiceComposerActive}
-              className="text-[#707579] hover:text-[#2481cc] p-1 active:scale-90 transition-transform shrink-0 cursor-pointer"
+              className="shrink-0 cursor-pointer p-1 text-[#1877f2] transition-transform active:scale-90"
               title={t('chat.choose_photo')}
               aria-label={t('chat.choose_photo')}
             >
@@ -1537,7 +1537,7 @@ export default function PrivateChat() {
               }
             }}
             disabled={isSending}
-            className={`w-[46px] h-[46px] shrink-0 self-center rounded-full bg-[#2481cc] text-white shadow-[0_4px_16px_rgba(36,129,204,0.45)] transition-transform hover:bg-[#1f72b5] active:scale-90 disabled:opacity-50 ${isComposerExpanded || voiceComposerActive ? 'self-end' : ''}`}
+            className={`flex h-10 w-10 shrink-0 self-center items-center justify-center text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50 ${isComposerExpanded || voiceComposerActive ? 'self-end' : ''}`}
             aria-label={inputText.trim() || imagePreview || pdfPreview || voiceComposerActive ? t('common.send') : t('chat.voice_record')}
           >
             {(inputText.trim() || imagePreview || pdfPreview || voiceComposerActive)
