@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { MessageCircle, Users, Bot, Settings, Sparkles } from 'lucide-react';
+import { MessageCircle, Users, Bot, Settings, Sparkles, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -107,10 +107,7 @@ export default function Navbar() {
           title={t('nav.new_message')}
           aria-label={t('nav.new_message')}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19.0498 7.41504L16.5847 4.94998C16.3894 4.75471 16.0728 4.75471 15.8776 4.94998L14.4124 6.41517L17.5847 9.58742L19.0498 8.1222C19.2451 7.92694 19.2451 7.61036 19.0498 7.41504Z" />
-            <path d="M16.8776 10.2945L13.7053 7.12228L5.12235 15.7052C4.9818 15.8458 4.88764 16.0279 4.85244 16.2274L4.0152 20.9841C3.96783 21.2533 4.19472 21.4802 4.46393 21.4328L9.22055 20.5956C9.42014 20.5604 9.6022 20.4662 9.74275 20.3257L16.8776 10.2945Z" />
-          </svg>
+          <Plus className="h-6 w-6" strokeWidth={2.2} />
         </button>
       )}
 

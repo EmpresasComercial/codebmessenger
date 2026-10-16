@@ -9,7 +9,7 @@ import {
   CheckCheck, 
   Loader2, 
   X, 
-  Edit3, 
+  Plus,
   Megaphone,
   MoreVertical,
   Bot,
@@ -1726,7 +1726,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
       {!embedded && (
         <>
-          {/* ── BOTÃO DE AÇÃO FLUTUANTE OFICIAL DO TELEGRAM (FAB LÁPIS) ── */}
+          {/* ── BOTÃO DE NOVA CONVERSA ── */}
           <button
             onClick={() => {
               showToast(t('chat.new_conversation'), 'info');
@@ -1736,7 +1736,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             title={t('chat.new_conversation')}
             aria-label={t('chat.new_conversation')}
           >
-            <Edit3 className="h-5 w-5 stroke-[1.8]" />
+            <Plus className="h-6 w-6 stroke-[2.2]" />
           </button>
         </>
       )}

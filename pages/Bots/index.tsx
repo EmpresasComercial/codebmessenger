@@ -18,6 +18,7 @@ import { useToast } from "../../components/Toast";
 import RedeemCouponForm from "../../components/RedeemCouponForm";
 import { formatCurrency } from "../../lib/currency";
 import { useLanguage } from "../../contexts/LanguageContext";
+import AutoTranslatedText from "../../components/AutoTranslatedText";
 import { clearLegacyAssistantChatHistory } from "../../lib/legacyAssistantChatHistory";
 import ChangePasswordForm from "../../components/ChangePasswordForm";
 import { useAuth } from "../../contexts/AuthContext";
@@ -209,7 +210,7 @@ export default function BusinessMessengerBotsChat() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
-  const { t } = useLanguage();
+  const { t, language, translateFullChats } = useLanguage();
   const { session } = useAuth();
 
   const [products, setProducts] = useState<ProductItem[]>([]);
@@ -228,19 +229,19 @@ export default function BusinessMessengerBotsChat() {
   const pendingReplyTimeouts = useRef<Set<number>>(new Set());
 
   const quickReplies = [
-    { shortcut: "/senha", text: t('bots.cmd_password') },
-    { shortcut: "/bots", text: t('bots.cmd_catalog') },
-    { shortcut: "/meusbots", text: t('bots.cmd_my_bots') },
-    { shortcut: "/saldo", text: t('bots.cmd_balance') },
-    { shortcut: "/rendas", text: t('bots.cmd_income') },
-    { shortcut: "/limites", text: t('bots.cmd_limits') },
-    { shortcut: "/cupons", text: t('bots.cmd_coupons') },
-    { shortcut: "/ajuda", text: t('bots.cmd_help') },
-    { shortcut: "/limpar", text: t('bots.cmd_clear') },
+    { shortcut: "/senha", text: t('bots.cmd_password'), shortLabel: t('suggestion.password') },
+    { shortcut: "/bots", text: t('bots.cmd_catalog'), shortLabel: t('suggestion.bots') },
+    { shortcut: "/meusbots", text: t('bots.cmd_my_bots'), shortLabel: t('suggestion.active_bots') },
+    { shortcut: "/saldo", text: t('bots.cmd_balance'), shortLabel: t('suggestion.balance') },
+    { shortcut: "/rendas", text: t('bots.cmd_income'), shortLabel: t('suggestion.income') },
+    { shortcut: "/limites", text: t('bots.cmd_limits'), shortLabel: t('suggestion.limits') },
+    { shortcut: "/cupons", text: t('bots.cmd_coupons'), shortLabel: t('suggestion.coupon') },
+    { shortcut: "/ajuda", text: t('bots.cmd_help'), shortLabel: t('suggestion.help') },
+    { shortcut: "/limpar", text: t('bots.cmd_clear'), shortLabel: t('suggestion.clear') },
   ];
-  const suggestedReplies = quickReplies.map(({ shortcut, text }) => ({
+  const suggestedReplies = quickReplies.map(({ shortcut, shortLabel }) => ({
     shortcut,
-    label: text,
+    label: shortLabel,
   }));
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
@@ -783,7 +784,7 @@ export default function BusinessMessengerBotsChat() {
               </button>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
-              {quickReplies.map(({ shortcut, text }) => (
+              {quickReplies.map(({ shortcut, shortLabel }) => (
                 <button
                   key={shortcut}
                   type="button"
@@ -794,7 +795,7 @@ export default function BusinessMessengerBotsChat() {
                   className="flex min-h-10 w-full items-center justify-between gap-3 px-2 py-2 text-left transition-colors hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-[#202d3b] dark:active:bg-[#2a3949]"
                 >
                   <span className="shrink-0 font-mono text-xs font-semibold text-[#2481cc]">{shortcut}</span>
-                  <span className="min-w-0 truncate text-right text-[11px] text-gray-600 dark:text-gray-300">{text}</span>
+                  <span className="min-w-0 truncate text-right text-[11px] text-gray-600 dark:text-gray-300">{shortLabel}</span>
                 </button>
               ))}
             </div>
@@ -968,7 +969,12 @@ export default function BusinessMessengerBotsChat() {
 
                 {msg.type === "text" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed whitespace-pre-line font-normal">
-                    {renderTextWithLinks(msg.text || "")}
+                    <AutoTranslatedText
+                      text={msg.text || ""}
+                      language={language}
+                      enabled={translateFullChats}
+                      renderFormatted={(translated) => renderTextWithLinks(translated)}
+                    />
                   </div>
                 )}
               </BotBubble>

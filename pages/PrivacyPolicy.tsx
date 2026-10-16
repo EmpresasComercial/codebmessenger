@@ -18,6 +18,7 @@ const sectionKeys = [
 export default function PrivacyPolicy() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const contactEmail = 'contacta@telegramas.cc';
 
   return (
     <div className="flex min-h-[100dvh] w-full flex-col bg-white font-sans text-[#222] dark:bg-[#0e1621] dark:text-[#f5f5f5]">
@@ -43,7 +44,25 @@ export default function PrivacyPolicy() {
                 {t(titleKey)}
               </h2>
               <p className="text-[13px] text-[#666] dark:text-[#a0acb9]">
-                {t(textKey)}
+                {textKey === 'devices.section9_text' ? (() => {
+                  const contactText = t(textKey);
+                  const emailIndex = contactText.indexOf(contactEmail);
+
+                  if (emailIndex < 0) return contactText;
+
+                  return (
+                    <>
+                      {contactText.slice(0, emailIndex)}
+                      <a
+                        href={`mailto:${contactEmail}`}
+                        className="text-blue-600 underline dark:text-blue-400"
+                      >
+                        {contactEmail}
+                      </a>
+                      {contactText.slice(emailIndex + contactEmail.length)}
+                    </>
+                  );
+                })() : t(textKey)}
               </p>
             </section>
           ))}

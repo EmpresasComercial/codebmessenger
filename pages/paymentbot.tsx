@@ -418,18 +418,18 @@ export default function PaymentBot() {
   const [showQuickHints, setShowQuickHints] = useState(false);
 
   const quickReplies = [
-    { shortcut: '/depositar', text: t('recharge.cmd_deposit') },
-    { shortcut: '/saldo', text: t('recharge.cmd_balance') },
-    { shortcut: '/bancos', text: t('recharge.cmd_banks') },
-    { shortcut: '/historico', text: t('recharge.history_title') },
-    { shortcut: '/limites', text: t('recharge.cmd_limits') },
-    { shortcut: '/horarios', text: t('recharge.cmd_schedule') },
-    { shortcut: '/total_deposito', text: t('recharge.cmd_total') },
-    { shortcut: '/ajuda', text: t('recharge.cmd_help') },
+    { shortcut: '/depositar', text: t('recharge.cmd_deposit'), shortLabel: t('suggestion.recharge') },
+    { shortcut: '/saldo', text: t('recharge.cmd_balance'), shortLabel: t('suggestion.balance') },
+    { shortcut: '/bancos', text: t('recharge.cmd_banks'), shortLabel: t('suggestion.banks') },
+    { shortcut: '/historico', text: t('recharge.history_title'), shortLabel: t('suggestion.history') },
+    { shortcut: '/limites', text: t('recharge.cmd_limits'), shortLabel: t('suggestion.fee') },
+    { shortcut: '/horarios', text: t('recharge.cmd_schedule'), shortLabel: t('suggestion.hours') },
+    { shortcut: '/total_deposito', text: t('recharge.cmd_total'), shortLabel: t('suggestion.report') },
+    { shortcut: '/ajuda', text: t('recharge.cmd_help'), shortLabel: t('suggestion.help') },
   ];
-  const suggestedReplies = quickReplies.map(({ shortcut, text }) => ({
+  const suggestedReplies = quickReplies.map(({ shortcut, shortLabel }) => ({
     shortcut,
-    label: text,
+    label: shortLabel,
   }));
 
   const [depositAmount, setDepositAmount] = useState<number | null>(() => rechargeSession.get().amount);
@@ -1489,14 +1489,26 @@ export default function PaymentBot() {
                     {/* TEXTO BOT PADRÃO */}
                     {msg.type === 'text' && msg.text && (
                       <div className="text-[14px] text-black leading-relaxed font-normal">
-                        {renderBotText(msg.text)}
+                        <AutoTranslatedText
+                          text={msg.text}
+                          language={language}
+                          enabled={translateFullChats}
+                          renderFormatted={(translated) => renderBotText(translated)}
+                        />
                       </div>
                     )}
 
                     {/* SELETOR DE VALORES RÁPIDOS */}
                     {msg.type === 'amount_selector' && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
-                        {msg.text && renderBotText(msg.text)}
+                        {msg.text && (
+                          <AutoTranslatedText
+                            text={msg.text}
+                            language={language}
+                            enabled={translateFullChats}
+                            renderFormatted={(translated) => renderBotText(translated)}
+                          />
+                        )}
                         <div className="mt-3 flex flex-wrap gap-1.5 select-none">
                           {[3000, 5000, 10000, 20000, 50000, 100000].map((val) => (
                             <button
@@ -1514,7 +1526,14 @@ export default function PaymentBot() {
                     {/* SELETOR DE BANCOS DISPONÍVEIS */}
                     {msg.type === 'bank_selector' && msg.payload && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
-                        {msg.text && renderBotText(msg.text)}
+                        {msg.text && (
+                          <AutoTranslatedText
+                            text={msg.text}
+                            language={language}
+                            enabled={translateFullChats}
+                            renderFormatted={(translated) => renderBotText(translated)}
+                          />
+                        )}
                         <div className="mt-3 flex flex-col select-none">
                           {msg.payload.banks && msg.payload.banks.length > 0 ? (
                             msg.payload.banks.map((b: CollectionBank) => (
@@ -1714,7 +1733,14 @@ export default function PaymentBot() {
 
                     {msg.type === 'deposit_summary' && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
-                        {msg.text && renderBotText(msg.text)}
+                        {msg.text && (
+                          <AutoTranslatedText
+                            text={msg.text}
+                            language={language}
+                            enabled={translateFullChats}
+                            renderFormatted={(translated) => renderBotText(translated)}
+                          />
+                        )}
                       </div>
                     )}
 
@@ -1832,7 +1858,7 @@ export default function PaymentBot() {
                 className="w-full text-left px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-[#242f3d] rounded-lg transition-colors flex items-center justify-between text-xs cursor-pointer"
               >
                 <span className="font-mono font-bold text-[#2481cc]">{qr.shortcut}</span>
-                <span className="text-gray-600 dark:text-gray-300 truncate max-w-[70%]">{qr.text}</span>
+                <span className="text-gray-600 dark:text-gray-300 truncate max-w-[70%]">{qr.shortLabel}</span>
               </button>
             ))}
           </div>

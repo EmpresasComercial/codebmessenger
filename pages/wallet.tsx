@@ -196,20 +196,20 @@ export default function wallet() {
   const [showQuickHints, setShowQuickHints] = useState(false);
 
   const quickReplies = [
-    { command: '/adicionar_banco', label: t('wallet.cmd_add_bank') },
-    { command: '/sacar', label: t('wallet.cmd_withdraw') },
-    { command: '/saldo', label: t('wallet.cmd_balance') },
-    { command: '/banco', label: t('wallet.cmd_bank_details') },
-    { command: '/taxa', label: t('wallet.cmd_fees') },
-    { command: '/horario', label: t('wallet.suggestion_hours') },
-    { command: '/limites', label: t('wallet.suggestion_limits') },
-    { command: '/historico', label: t('wallet.cmd_history') },
-    { command: '/ajuda', label: t('common.help') },
-    { command: '/deletar', label: t('wallet.cmd_delete_bank') },
+    { command: '/adicionar_banco', label: t('wallet.cmd_add_bank'), shortLabel: t('suggestion.add_bank') },
+    { command: '/sacar', label: t('wallet.cmd_withdraw'), shortLabel: t('suggestion.withdraw') },
+    { command: '/saldo', label: t('wallet.cmd_balance'), shortLabel: t('suggestion.balance') },
+    { command: '/banco', label: t('wallet.cmd_bank_details'), shortLabel: t('suggestion.bank') },
+    { command: '/taxa', label: t('wallet.cmd_fees'), shortLabel: t('suggestion.fee') },
+    { command: '/horario', label: t('wallet.suggestion_hours'), shortLabel: t('suggestion.hours') },
+    { command: '/limites', label: t('wallet.suggestion_limits'), shortLabel: t('suggestion.limits') },
+    { command: '/historico', label: t('wallet.cmd_history'), shortLabel: t('suggestion.history') },
+    { command: '/ajuda', label: t('common.help'), shortLabel: t('suggestion.help') },
+    { command: '/deletar', label: t('wallet.cmd_delete_bank'), shortLabel: t('suggestion.remove') },
   ];
-  const suggestedReplies = quickReplies.map(({ command, label }) => ({
+  const suggestedReplies = quickReplies.map(({ command, shortLabel }) => ({
     command,
-    label,
+    label: shortLabel,
   }));
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -1531,7 +1531,12 @@ export default function wallet() {
                 {/* TEXTO BOT PADRÃO COM FORMATAÇÃO */}
                 {msg.type === 'text' && msg.text && (
                   <div className="text-[14px] text-black leading-relaxed font-normal">
-                    {renderBotText(msg.text)}
+                    <AutoTranslatedText
+                      text={msg.text}
+                      language={language}
+                      enabled={translateFullChats}
+                      renderFormatted={(translated) => renderBotText(translated)}
+                    />
                   </div>
                 )}
 
@@ -1546,7 +1551,12 @@ export default function wallet() {
 
                 {msg.type === 'confirm_delete_bank' && msg.text && (
                   <div className="text-[14px] text-black leading-relaxed font-normal">
-                    {renderBotText(msg.text)}
+                    <AutoTranslatedText
+                      text={msg.text}
+                      language={language}
+                      enabled={translateFullChats}
+                      renderFormatted={(translated) => renderBotText(translated)}
+                    />
                   </div>
                 )}
 
@@ -1582,7 +1592,14 @@ export default function wallet() {
                 {/* SELETOR RÁPIDO DE VALORES */}
                 {msg.type === 'amount_selector' && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
-                    {msg.text && renderBotText(msg.text)}
+                    {msg.text && (
+                      <AutoTranslatedText
+                        text={msg.text}
+                        language={language}
+                        enabled={translateFullChats}
+                        renderFormatted={(translated) => renderBotText(translated)}
+                      />
+                    )}
                     <div className="mt-3 flex flex-wrap gap-1.5 select-none">
                       {[3000, 5000, 10000, 25000, 50000, 100000].map((val) => (
                         <button
@@ -1609,21 +1626,40 @@ export default function wallet() {
                 {/* ALERTA: SEM BANCO VINCULADO */}
                 {msg.type === 'no_bank' && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
-                    {msg.text && renderBotText(msg.text)}
+                    {msg.text && (
+                      <AutoTranslatedText
+                        text={msg.text}
+                        language={language}
+                        enabled={translateFullChats}
+                        renderFormatted={(translated) => renderBotText(translated)}
+                      />
+                    )}
                   </div>
                 )}
 
                 {/* ALERTA: SEM BOTS ATIVOS */}
                 {msg.type === 'no_bots' && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
-                    {msg.text && renderBotText(msg.text)}
+                    {msg.text && (
+                      <AutoTranslatedText
+                        text={msg.text}
+                        language={language}
+                        enabled={translateFullChats}
+                        renderFormatted={(translated) => renderBotText(translated)}
+                      />
+                    )}
                   </div>
                 )}
 
                 {/* HISTÓRICO REAL EM TEXTO NORMAL SEM SUBCARDS */}
                 {msg.type === 'history_list' && msg.text && (
                   <div className="text-[14px] text-black leading-relaxed font-normal">
-                    {renderBotText(msg.text)}
+                    <AutoTranslatedText
+                      text={msg.text}
+                      language={language}
+                      enabled={translateFullChats}
+                      renderFormatted={(translated) => renderBotText(translated)}
+                    />
                   </div>
                 )}
 
@@ -1763,7 +1799,7 @@ export default function wallet() {
                 }}
                 className="w-full text-left px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-[#242f3d] rounded-lg transition-colors text-[13px] text-gray-700 dark:text-gray-200 cursor-pointer"
               >
-                {qr.label}
+                {qr.shortLabel}
               </button>
             ))}
           </div>
