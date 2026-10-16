@@ -1,5 +1,5 @@
 // Service Worker para Business Messenger - Push Notifications & Offline Support
-const CACHE_NAME = 'business-messenger-shell-v5';
+const CACHE_NAME = 'business-messenger-shell-v8';
 
 // Assets fundamentais para o App abrir offline
 const STATIC_ASSETS = [
@@ -7,6 +7,9 @@ const STATIC_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/logo_bussiness_messeger.jpg',
+  '/avatar_padrao_bm.jpg?v=2',
+  '/payment_bot_avatar.jpg?v=1',
+  '/withdrawal_bot_avatar.jpg?v=1',
 ];
 
 self.addEventListener('install', (event) => {
@@ -42,6 +45,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    return;
+  }
+
   // Requisição de navegação de páginas (HTML)
   if (req.mode === 'navigate') {
     event.respondWith(
@@ -61,19 +68,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Arquivos estáticos locais (JS, CSS, Imagens, Fontes): Cache com fallback para rede
+  // Serves updates when online and retains cached assets for offline use.
   event.respondWith(
-    caches.match(req).then((cachedResponse) => {
-      const fetchPromise = fetch(req).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
+    fetch(req)
+      .then((networkResponse) => {
+        if (networkResponse.ok) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, responseToCache));
         }
         return networkResponse;
-      }).catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(async () => {
+        const cachedResponse = await caches.match(req);
+        if (cachedResponse) return cachedResponse;
+        throw new Error(`Offline asset unavailable: ${req.url}`);
+      })
   );
 });
 

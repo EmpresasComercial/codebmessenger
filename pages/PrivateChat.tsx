@@ -13,7 +13,6 @@ import {
   MoreVertical, 
   Paperclip, 
   Camera,
-  Smile, 
   Mic,
   Zap,
   Reply,
@@ -37,6 +36,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { isVerifiedManagerPhone } from '../lib/verifiedManager';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { renderMessageWithAllowedLinks } from '../lib/allowedMessageLinks';
+import { DEFAULT_PROFILE_AVATAR, getProfileAvatarUrl } from '../lib/utils';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
@@ -148,7 +148,7 @@ export default function PrivateChat() {
   const [contactProfile, setContactProfile] = useState<any>({
     name: contactDisplayName || rawContactPhone || t('chat.contact'),
     phone: rawContactPhone || t('common.not_informed'),
-    avatarUrl: '',
+    avatarUrl: DEFAULT_PROFILE_AVATAR,
     hierarchy: contactLevel || 'L1',
     invitedAt: null,
     registeredAt: null,
@@ -471,7 +471,7 @@ export default function PrivateChat() {
         const nextProfile = {
           name: row.nome_exibicao || row.nome || row.display_name || row.telefone || contactDisplayName || rawContactPhone || 'Contato',
           phone: row.telefone || rawContactPhone || 'Não informado',
-          avatarUrl: row.avatar_url || row.foto_url || row.photo_url || row.avatar || row.imagem || '',
+          avatarUrl: getProfileAvatarUrl(row),
           hierarchy: row.nivel || row.level || row.hierarquia || row.hierarchy || contactLevel || 'L1',
           invitedAt: row.data_convite || row.invited_at || row.convidado_em || row.invite_date || null,
           registeredAt: row.data_cadastro || row.registered_at || row.criado_em || row.created_at || row.createdAt || null,
@@ -840,23 +840,26 @@ export default function PrivateChat() {
         </button>
 
         <div className="flex w-0 flex-1 items-center gap-3 mx-2 min-w-0 pointer-events-auto">
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
+          <div className="relative h-11 w-11 shrink-0">
             {isCommunityChat ? (
               <img
                 src="/logo_bussiness_messeger.jpg"
                 alt="Business Messenger"
-                className="w-full h-full object-cover"
+                className="h-full w-full rounded-full object-cover"
               />
             ) : (
-              <div
-                className="w-full h-full flex items-center justify-center text-white font-bold text-sm"
-                style={{ backgroundColor: contactColor }}
-              >
-                {contactDisplayName.slice(0, 2).toUpperCase() || '?'}
-              </div>
+              <img
+                src={contactProfile.avatarUrl || DEFAULT_PROFILE_AVATAR}
+                alt=""
+                className="h-full w-full rounded-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+                }}
+              />
             )}
             {contactIsOnline && !statusText && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white dark:border-[#1c242f]" />
+              <div className="absolute bottom-0 right-0 z-10 h-4 w-4 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-white bg-emerald-400 dark:border-[#1c242f]" />
             )}
           </div>
 
@@ -948,8 +951,8 @@ export default function PrivateChat() {
                     alt={contactProfile.name}
                     className="h-full w-full object-cover"
                     onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = DEFAULT_PROFILE_AVATAR;
                     }}
                   />
                 ) : (
@@ -1410,14 +1413,6 @@ export default function PrivateChat() {
         <div className="flex w-full items-end gap-2 px-3 py-2.5">
           {/* Pill flutuante */}
           <div className={`flex min-w-0 flex-1 bg-[#f1f2f4] dark:bg-[#242f3d] ${isComposerExpanded ? 'rounded-[22px] items-end' : 'rounded-full items-center'} flex px-3 py-1.5 min-h-[46px]`}>
-            {!voiceComposerActive && <button
-              type="button"
-              onClick={() => inputRef.current?.focus()}
-              className="shrink-0 p-1 text-[#1877f2] transition-transform active:scale-90"
-            >
-              <Smile className="w-5 h-5" />
-            </button>}
-
             {/* Thumbnail da imagem selecionada */}
             {!voiceComposerActive && imagePreview && (
               <div className="relative mr-2 ml-1 shrink-0">
@@ -1472,7 +1467,7 @@ export default function PrivateChat() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
-              placeholder={replyTo ? t('chat.reply_placeholder') : t('chat.input_placeholder')}
+              placeholder={replyTo ? t('chat.reply_placeholder') : 'mensagem'}
               className="w-full min-h-[24px] min-w-0 px-2 py-2 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
               rows={1}
             />}

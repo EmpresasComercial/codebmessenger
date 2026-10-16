@@ -26,6 +26,7 @@ import { supabase } from "../../lib/supabase";
 import { logger } from "../../lib/logger";
 import { type Language, supportedLanguages, useLanguage } from "../../contexts/LanguageContext";
 import { formatCurrency } from "../../lib/currency";
+import { DEFAULT_PROFILE_AVATAR, getProfileAvatarUrl } from "../../lib/utils";
 import { useToast } from "../../components/Toast";
 import EditProfileModal from "./components/EditProfileModal";
 
@@ -68,7 +69,7 @@ export default function Profile() {
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
   const [userBio, setUserBio] = useState<string>("");
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>(DEFAULT_PROFILE_AVATAR);
 
   useEffect(() => {
     if (location.state?.openLanguage) {
@@ -106,7 +107,7 @@ export default function Profile() {
         setLastName(lName);
         setUserName([fName, lName].filter(Boolean).join(" "));
         if (meta.bio) setUserBio(meta.bio);
-        if (meta.avatar_url) setAvatarUrl(meta.avatar_url);
+        setAvatarUrl(getProfileAvatarUrl(meta));
       }
 
       const { data, error } = await supabase.rpc("get_my_account_data");
@@ -118,6 +119,7 @@ export default function Profile() {
         setComissaoEquipe(Number(d.total_comissao_equipe ?? 0));
         if (d.telefone) setPhone(d.telefone);
         if (d.nome_exibicao) setUserName(d.nome_exibicao);
+        if (d.avatar_url) setAvatarUrl(d.avatar_url);
         if (d.codigo_meu_refferal) setRefCode(d.codigo_meu_refferal);
       }
     } catch {
@@ -219,7 +221,15 @@ export default function Profile() {
           >
             {isProfileSectionHidden ? (
               avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover ring-2 ring-[#2481cc]/30" />
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="h-8 w-8 rounded-full object-cover ring-2 ring-[#2481cc]/30"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+                  }}
+                />
               ) : (
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#3390ec] text-[14px] font-semibold text-white">
                   {firstName.charAt(0).toUpperCase()}
@@ -235,17 +245,15 @@ export default function Profile() {
       {/* ── AVATAR & PERFIL TELEGRAM WEB ── */}
       <section ref={profileSectionRef} className="bg-white dark:bg-[#17212b] border-b border-gray-100 dark:border-[#202b36] pt-6 pb-5 px-2 flex flex-col items-center">
         <div className="relative mb-3 cursor-pointer" onClick={() => setShowEditProfile(true)}>
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={userName}
-              className="w-[96px] h-[96px] rounded-full object-cover shadow-sm ring-4 ring-[#2481cc]/20"
-            />
-          ) : (
-            <div className="w-[96px] h-[96px] rounded-full bg-gradient-to-br from-[#3390ec] to-[#1e6dc8] flex items-center justify-center shadow-sm ring-4 ring-[#2481cc]/20">
-              <span className="text-[38px] font-bold text-white">{firstName.charAt(0).toUpperCase()}</span>
-            </div>
-          )}
+          <img
+            src={avatarUrl}
+            alt={userName}
+            className="w-[96px] h-[96px] rounded-full object-cover shadow-sm ring-4 ring-[#2481cc]/20"
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+            }}
+          />
           <button
             onClick={(e) => { e.stopPropagation(); setShowEditProfile(true); }}
             className="absolute bottom-0 right-0 w-[34px] h-[34px] bg-[#3390ec] rounded-full flex items-center justify-center border-[2.5px] border-white shadow-sm hover:scale-105 active:scale-95 transition-transform cursor-pointer"

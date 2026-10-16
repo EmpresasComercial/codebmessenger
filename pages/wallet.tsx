@@ -4,7 +4,6 @@ import {
   MoreVertical, 
   Send, 
   Loader2, 
-  HelpCircle, 
   ChevronLeft,
   ChevronDown, 
   ExternalLink,
@@ -33,6 +32,7 @@ import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedM
 import AddBank from './AddBank';
 import { fetchWalletParams } from './walletAssistantCore';
 import { recordChatActivity } from '../lib/chatActivity';
+import { WITHDRAWAL_BOT_AVATAR } from '../lib/utils';
 
 const MIN_WITHDRAW = 3000;
 const MAX_WITHDRAW = 500000;
@@ -49,7 +49,7 @@ const VALID_COMMANDS = new Set([
   '/adicionar_banco', '/adicionar-banco', '/adicionar_conta', '/adicionar-conta',
   '/adicionar_iban', '/adicionar-iban', '/vincular_banco', '/vincular-banco',
   '/salvar_banco', '/salvar-banco', '/guardar_banco', '/guardar-banco',
-  '/deletar_conta', '/deletar-conta', '/remover_conta', '/remover-conta',
+  '/deletar', '/deletar_conta', '/deletar-conta', '/remover_conta', '/remover-conta',
   '/horario', '/horarios',
   '/taxa', '/taxas', '/limites', '/regras',
   '/historico', '/registos', '/extrato',
@@ -79,6 +79,13 @@ function getWalletCommandMessage(input: string): string {
     '/conta': 'Consultar os meus dados bancários e o banco cadastrado.',
     '/taxa': 'Qual é a taxa cobrada em cada retirada?',
     '/taxas': 'Qual é a taxa cobrada em cada retirada?',
+    '/horario': 'Qual é o horário para fazer retiradas?',
+    '/horarios': 'Qual é o horário para fazer retiradas?',
+    '/limites': 'Quais são os limites para fazer retiradas?',
+    '/regras': 'Quais são as regras para fazer retiradas?',
+    '/ajuda': 'Quais são os comandos disponíveis para consultar a carteira e fazer retiradas?',
+    '/help': 'Quais são os comandos disponíveis para consultar a carteira e fazer retiradas?',
+    '/menu': 'Quais são os comandos disponíveis para consultar a carteira e fazer retiradas?',
     '/historico': 'Por favor, dê-me o histórico de todas as retiradas.',
     '/registos': 'Por favor, dê-me o histórico de todas as retiradas.',
     '/extrato': 'Por favor, dê-me o histórico de todas as retiradas.',
@@ -95,6 +102,7 @@ function getWalletCommandMessage(input: string): string {
     '/salvar-banco': 'Por favor, desejo adicionar a minha conta bancária.',
     '/guardar_banco': 'Por favor, desejo adicionar a minha conta bancária.',
     '/guardar-banco': 'Por favor, desejo adicionar a minha conta bancária.',
+    '/deletar': 'Quero remover a minha conta bancária cadastrada.',
     '/deletar_conta': 'Quero remover a minha conta bancária cadastrada.',
     '/deletar-conta': 'Quero remover a minha conta bancária cadastrada.',
     '/remover_conta': 'Quero remover a minha conta bancária cadastrada.',
@@ -188,19 +196,20 @@ export default function wallet() {
 
   const quickReplies = [
     { command: '/adicionar_banco', label: t('wallet.cmd_add_bank') },
-    { command: '/retirar', label: t('wallet.cmd_withdraw') },
+    { command: '/sacar', label: t('wallet.cmd_withdraw') },
     { command: '/saldo', label: t('wallet.cmd_balance') },
-    { command: 'consultar banco', label: t('wallet.cmd_bank_details') },
+    { command: '/banco', label: t('wallet.cmd_bank_details') },
     { command: '/taxa', label: t('wallet.cmd_fees') },
-    { command: '/historico', label: t('wallet.cmd_history') },
-    { command: '/deletar_conta', label: t('wallet.cmd_delete_bank') },
-  ];
-  const suggestedReplies: { command?: string; label: string; opensCommands?: boolean }[] = [
-    { command: '/taxa', label: t('wallet.suggestion_fees') },
     { command: '/horario', label: t('wallet.suggestion_hours') },
     { command: '/limites', label: t('wallet.suggestion_limits') },
-    { label: t('common.help'), opensCommands: true },
+    { command: '/historico', label: t('wallet.cmd_history') },
+    { command: '/ajuda', label: t('common.help') },
+    { command: '/deletar', label: t('wallet.cmd_delete_bank') },
   ];
+  const suggestedReplies = quickReplies.map(({ command }) => ({
+    command,
+    label: command.replace(/^\/+/, ''),
+  }));
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
@@ -1272,7 +1281,7 @@ export default function wallet() {
         {/* Cápsula central — Wallet */}
         <div className="mx-2 flex min-w-0 flex-1 items-center gap-3 pointer-events-auto">
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
-            <img src="/logo_bussiness_messeger.jpg" alt="Messenger wallet" className="w-full h-full object-cover" />
+            <img src={WITHDRAWAL_BOT_AVATAR} alt="Wallet" className="w-full h-full object-cover" />
           </div>
 
           <div className="flex flex-col min-w-0">
@@ -1323,7 +1332,7 @@ export default function wallet() {
                 {t('withdraw.guide_title')}
               </h2>
               <p className="text-[13px] text-white/75">
-                Como consultar e pedir uma retirada
+                {t('wallet.guide_subtitle')}
               </p>
             </div>
           </header>
@@ -1354,48 +1363,48 @@ export default function wallet() {
                   {[
                     {
                       command: '/adicionar_banco',
-                      title: 'Adicionar conta bancária',
-                      response: 'Após a verificação, abre-se o formulário para cadastrar o titular, o banco e o IBAN. Se já existir uma conta, a Wallet informa no chat.'
+                      title: t('wallet.cmd_add_bank'),
+                      response: t('wallet.guide_add_bank_response')
                     },
                     {
                       command: '/saldo',
-                      title: 'Consultar saldo',
-                      response: 'Por favor, quero consultar o meu saldo disponível para retirada. A Wallet apresenta o saldo atualizado.'
+                      title: t('wallet.cmd_balance'),
+                      response: t('wallet.guide_balance_response')
                     },
                     {
                       command: '/retirar',
-                      title: 'Iniciar retirada',
-                      response: 'Quero solicitar o levantamento para a minha conta bancária. A Wallet verifica os requisitos e orienta a escolha do valor.'
+                      title: t('wallet.guide_item_withdraw'),
+                      response: t('wallet.guide_withdraw_response')
                     },
                     {
                       command: 'sacar 500',
-                      title: 'Pedir um valor específico',
-                      response: 'Se a retirada estiver disponível e cumprir os requisitos, verá um resumo com o valor, a taxa, o valor líquido e a conta bancária antes de confirmar.'
+                      title: t('wallet.guide_item_amount'),
+                      response: t('wallet.guide_amount_response')
                     },
                     {
                       command: 'consultar banco',
-                      title: 'Ver conta bancária',
-                      response: 'Consultar os meus dados bancários e o banco cadastrado.'
+                      title: t('wallet.cmd_bank_details'),
+                      response: t('wallet.guide_bank_response')
                     },
                     {
                       command: '/historico',
-                      title: 'Consultar histórico',
-                      response: 'Por favor, dê-me o histórico de todas as retiradas; cada registo aparece numa descrição separada, com data, valor e estado.'
+                      title: t('wallet.cmd_history'),
+                      response: t('wallet.guide_history_response')
                     },
                     {
                       command: '/horario',
-                      title: 'Ver horário',
-                      response: 'Horário de retiradas: Segunda a Sexta, das 09:00 às 18:00. O estado aberto/fechado é indicado conforme o horário atual.'
+                      title: t('wallet.guide_item_hours'),
+                      response: t('wallet.guide_hours_response')
                     },
                     {
                       command: '/taxa',
-                      title: 'Ver taxas e limites',
-                      response: 'Qual é a taxa cobrada em cada retirada? A taxa atual é de 10%.'
+                      title: t('wallet.guide_item_fees'),
+                      response: t('wallet.guide_fees_response')
                     },
                     {
-                      command: '/deletar_conta',
-                      title: 'Deletar conta',
-                      response: 'A Wallet pede confirmação antes de remover a conta bancária cadastrada.'
+                      command: '/deletar',
+                      title: t('wallet.cmd_delete_bank'),
+                      response: t('wallet.guide_delete_bank_response')
                     }
                   ].map(({ command, title, response }) => (
                     <article key={command} className="px-4 py-3.5 border-b last:border-b-0 border-[#edf0f2] dark:border-white/10 text-[#222] dark:text-[#e6e6e6]">
@@ -1411,7 +1420,7 @@ export default function wallet() {
                           }}
                           className="shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium text-[#2481cc] hover:bg-[#2481cc]/10 active:bg-[#2481cc]/15 transition-colors"
                         >
-                          Usar
+                          {t('wallet.guide_use')}
                         </button>
                       </div>
                       <p className="mt-2 text-[13px] leading-relaxed text-[#707579] dark:text-[#aab7c4]">
@@ -1421,7 +1430,7 @@ export default function wallet() {
                   ))}
                 </div>
                 <p className="mt-3 px-1 text-[12px] leading-relaxed text-[#707579] dark:text-[#91a0ae]">
-                  Os valores, estado do horário, dados bancários e histórico dependem dos dados reais da sua conta. Os exemplos são ilustrativos; uma retirada só é concluída após a confirmação no chat.
+                  {t('wallet.guide_footer')}
                 </p>
               </section>
             </div>
@@ -1755,24 +1764,20 @@ export default function wallet() {
       {/* ── FOOTER FLUTUANTE IDÊNTICO AO OFFICIAL CHANNEL ── */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 flex justify-center bg-white px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:bg-[#17212b]">
         <div className="flex w-full max-w-[650px] flex-col gap-2 pointer-events-auto">
-          {!messages.some((message) => message.sender === 'user') && pendingAmount === null && !pendingBankDeletion && (
+          {pendingAmount === null && !pendingBankDeletion && (
             <div className="w-full border-b border-[#e5e5e5] pb-4 dark:border-[#27313d]">
-              <p className="mb-4 text-center text-[16px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
-                {t('chat.suggestion_prompt')}
-              </p>
-              <div className="flex justify-center gap-2.5">
+              {!messages.some((message) => message.sender === 'user') && (
+                <p className="mb-3 text-center text-[14px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
+                  {t('chat.suggestion_prompt')}
+                </p>
+              )}
+              <div className="flex w-full gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {suggestedReplies.map((reply) => (
                   <button
                     key={reply.label}
                     type="button"
-                    onClick={() => {
-                      if (reply.opensCommands) {
-                        setShowQuickHints(true);
-                      } else if (reply.command) {
-                        handleSendMessage(reply.command);
-                      }
-                    }}
-                    className="shrink-0 rounded-full border border-[#eeeeee] bg-white px-4 py-2 text-[16px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                    onClick={() => handleSendMessage(reply.command)}
+                    className="shrink-0 whitespace-nowrap rounded-full border border-[#eeeeee] bg-white px-3 py-1.5 text-[13px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
                   >
                     {reply.label}
                   </button>
@@ -1783,16 +1788,6 @@ export default function wallet() {
           <div className="flex w-full items-center gap-2 pt-1">
             {/* Campo de composição */}
             <div className="flex min-h-[46px] min-w-0 flex-1 items-center rounded-full bg-[#f1f2f4] px-2.5 dark:bg-[#242f3d]">
-              <button
-                type="button"
-                onClick={() => handleSendMessage('/limpar')}
-                className="p-1.5 rounded-full transition-all cursor-pointer shrink-0 mr-1 text-[#1877f2] active:bg-[#1877f2]/10"
-                title="Reiniciar conversa"
-                aria-label="Limpar e reiniciar conversa"
-              >
-                <RotateCcw className="w-5 h-5" />
-              </button>
-
               {/* Campo de texto */}
               <input
                 type="text"
@@ -1817,6 +1812,15 @@ export default function wallet() {
                 }
                 className="flex-1 min-w-0 w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
               />
+              <button
+                type="button"
+                onClick={() => handleSendMessage('/limpar')}
+                className="shrink-0 rounded-full p-1.5 text-[#1877f2] transition-all active:bg-[#1877f2]/10"
+                title="Reiniciar conversa"
+                aria-label="Limpar e reiniciar conversa"
+              >
+                <RotateCcw className="h-5 w-5" />
+              </button>
             </div>
 
             {/* Botão circular azul Telegram */}

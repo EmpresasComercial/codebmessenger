@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   MoreVertical,
   Send,
+  HelpCircle,
   ChevronLeft,
   ChevronDown,
   Copy,
@@ -28,6 +29,7 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedManager';
 import { recordChatActivity } from '../lib/chatActivity';
+import { PAYMENT_BOT_AVATAR } from '../lib/utils';
 
 const MIN_RECHARGE = 3000;
 const MAX_RECHARGE = 500000;
@@ -424,12 +426,10 @@ export default function PaymentBot() {
     { shortcut: '/total_deposito', text: t('recharge.cmd_total') },
     { shortcut: '/ajuda', text: t('recharge.cmd_help') },
   ];
-  const suggestedReplies: { command?: string; label: string; opensCommands?: boolean }[] = [
-    { command: '/saldo', label: t('chat.suggestion_balance') },
-    { command: '/depositar', label: t('chat.suggestion_recharge') },
-    { command: '/bancos', label: t('chat.suggestion_banks') },
-    { label: t('common.help'), opensCommands: true },
-  ];
+  const suggestedReplies = quickReplies.map(({ shortcut }) => ({
+    shortcut,
+    label: shortcut.replace(/^\/+/, ''),
+  }));
 
   const [depositAmount, setDepositAmount] = useState<number | null>(() => rechargeSession.get().amount);
   const [selectedBank, setSelectedBank] = useState<CollectionBank | null>(() => rechargeSession.get().bank);
@@ -1237,7 +1237,7 @@ export default function PaymentBot() {
 
         <div className="mx-2 flex min-w-0 flex-1 items-center gap-3 pointer-events-auto">
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
-            <img src="/logo_bussiness_messeger.jpg" alt="Messenger TopUp" className="w-full h-full object-cover" />
+            <img src={PAYMENT_BOT_AVATAR} alt="Payments Bot" className="w-full h-full object-cover" />
           </div>
 
           <div className="flex flex-col min-w-0">
@@ -1830,24 +1830,20 @@ export default function PaymentBot() {
       {/* ── FOOTER FLUTUANTE IDÊNTICO AO OFFICIAL CHANNEL ── */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 flex justify-center bg-white px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:bg-[#17212b]">
         <div className="flex w-full max-w-[650px] flex-col gap-2 pointer-events-auto">
-          {!messages.some((message) => message.sender === 'user') && !awaitingProof && depositAmount === null && (
+          {!awaitingProof && depositAmount === null && (
             <div className="w-full border-b border-[#e5e5e5] pb-4 dark:border-[#27313d]">
-              <p className="mb-4 text-center text-[16px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
-                {t('chat.suggestion_prompt')}
-              </p>
-              <div className="flex justify-center gap-2.5">
+              {!messages.some((message) => message.sender === 'user') && (
+                <p className="mb-3 text-center text-[14px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
+                  {t('chat.suggestion_prompt')}
+                </p>
+              )}
+              <div className="flex w-full gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {suggestedReplies.map((reply) => (
                   <button
-                    key={reply.label}
+                    key={reply.shortcut}
                     type="button"
-                    onClick={() => {
-                      if (reply.opensCommands) {
-                        setShowQuickHints(true);
-                      } else if (reply.command) {
-                        handleSendMessage(reply.command);
-                      }
-                    }}
-                    className="shrink-0 rounded-full border border-[#eeeeee] bg-white px-4 py-2 text-[16px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                    onClick={() => handleSendMessage(reply.shortcut)}
+                    className="shrink-0 whitespace-nowrap rounded-full border border-[#eeeeee] bg-white px-3 py-1.5 text-[13px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
                   >
                     {reply.label}
                   </button>
@@ -1866,6 +1862,15 @@ export default function PaymentBot() {
                 aria-label="Reiniciar conversa"
               >
                 <RotateCcw className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowQuickHints(true)}
+                className="shrink-0 rounded-full p-1.5 text-[#1877f2] transition-all hover:bg-[#1877f2]/10 active:scale-90"
+                title={t('common.help')}
+                aria-label={t('common.help')}
+              >
+                <HelpCircle className="w-5 h-5" />
               </button>
 
               {/* Campo de texto */}

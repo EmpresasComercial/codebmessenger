@@ -5,8 +5,10 @@ import { supabase } from "../../../lib/supabase";
 import { logger } from "../../../lib/logger";
 import { useToast } from "../../../components/Toast";
 import { useLanguage } from "../../../contexts/LanguageContext";
+import { DEFAULT_PROFILE_AVATAR } from "../../../lib/utils";
 
 const presetAvatars = [
+  DEFAULT_PROFILE_AVATAR,
   "/tg_duck_social.png",
   "/tg_duck_seguro.png",
   "/tg_duck_rapido.png",
@@ -386,4 +388,3 @@ export default function EditProfileModal({
     </div>
   );
 }
-

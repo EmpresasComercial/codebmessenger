@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "../components/Toast";
-import { cn } from "../lib/utils";
+import { cn, DEFAULT_PROFILE_AVATAR, getProfileAvatarUrl } from "../lib/utils";
 import { 
   ChevronLeft, 
   X, 
@@ -141,29 +141,6 @@ type SenderProfile = {
   nome_exibicao: string | null;
   avatarUrl?: string;
   countryCode?: string;
-};
-
-const getProfileAvatarUrl = (profile: any) => {
-  let metadata = profile?.metadados;
-  if (typeof metadata === "string") {
-    try {
-      metadata = JSON.parse(metadata);
-    } catch {
-      metadata = {};
-    }
-  }
-
-  return profile?.avatar_url
-    || profile?.avatarUrl
-    || profile?.foto_url
-    || profile?.photo_url
-    || profile?.avatar
-    || profile?.imagem
-    || metadata?.avatar_url
-    || metadata?.foto_url
-    || metadata?.photo_url
-    || metadata?.picture
-    || "";
 };
 
 const getProfileCountryCode = (metadata: unknown): string | undefined => {
@@ -510,7 +487,10 @@ const MessageItem = React.memo(({
                 src={m.perfil.avatarUrl}
                 alt=""
                 className="absolute inset-0 h-full w-full rounded-full object-cover"
-                onError={(event) => { event.currentTarget.style.display = "none"; }}
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+                }}
               />
             )}
           </div>

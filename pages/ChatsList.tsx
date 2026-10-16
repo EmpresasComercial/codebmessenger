@@ -43,6 +43,7 @@ import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js/
 import { isVerifiedManagerPhone } from '../lib/verifiedManager';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { CHAT_ACTIVITY_EVENT, loadChatActivities, type ChatActivity } from '../lib/chatActivity';
+import { DEFAULT_PROFILE_AVATAR, PAYMENT_BOT_AVATAR, WITHDRAWAL_BOT_AVATAR, getProfileAvatarUrl } from '../lib/utils';
 
 const getMessageDetails = (message: any) => {
   let details = message?.detalhes;
@@ -86,29 +87,6 @@ const getMessagePreview = (message: any) => {
   if (hasImageAttachment(message)) return 'Foto';
   const text = typeof message?.mensagem === 'string' ? message.mensagem.trim() : '';
   return text || 'Enviou uma mensagem';
-};
-
-const getProfileAvatarUrl = (profile: any) => {
-  let metadata = profile?.metadados;
-  if (typeof metadata === 'string') {
-    try {
-      metadata = JSON.parse(metadata);
-    } catch {
-      metadata = {};
-    }
-  }
-
-  return profile?.avatar_url
-    || profile?.avatarUrl
-    || profile?.foto_url
-    || profile?.photo_url
-    || profile?.avatar
-    || profile?.imagem
-    || metadata?.avatar_url
-    || metadata?.foto_url
-    || metadata?.photo_url
-    || metadata?.picture
-    || '';
 };
 
 export default function ChatsList({ embedded = false }: { embedded?: boolean }) {
@@ -228,7 +206,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   const drawerAvatar = user?.user_metadata?.avatar_url
     || user?.user_metadata?.photo_url
     || user?.user_metadata?.picture
-    || "";
+    || DEFAULT_PROFILE_AVATAR;
   useEffect(() => {
     if (!avatarPreview) return;
 
@@ -1036,7 +1014,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: formatTelegramTime(chatActivities['deposit-bot']?.timestamp || Date.now() - 1000 * 60 * 60 * 36),
         timestamp: chatActivities['deposit-bot']?.timestamp || Date.now() - 1000 * 60 * 60 * 36,
         isMe: false,
-        avatarUrl: '/logo_bussiness_messeger.jpg',
+        avatarUrl: PAYMENT_BOT_AVATAR,
         avatarLabel: 'P',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -1045,7 +1023,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         avatar: (
           <div className="w-12 h-12 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
             <img 
-              src="/logo_bussiness_messeger.jpg"
+              src={PAYMENT_BOT_AVATAR}
               alt="+44 7722211733"
               className="w-full h-full object-cover"
             />
@@ -1064,7 +1042,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         time: formatTelegramTime(chatActivities['withdrawal-bot']?.timestamp || Date.now() - 1000 * 60 * 60 * 48),
         timestamp: chatActivities['withdrawal-bot']?.timestamp || Date.now() - 1000 * 60 * 60 * 48,
         isMe: false,
-        avatarUrl: '/logo_bussiness_messeger.jpg',
+        avatarUrl: WITHDRAWAL_BOT_AVATAR,
         avatarLabel: 'W',
         avatarColor: '#2481cc',
         actionBtn: null,
@@ -1073,7 +1051,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         avatar: (
           <div className="w-12 h-12 rounded-full overflow-hidden shadow-xs border border-gray-200/80 bg-white">
             <img 
-              src="/logo_bussiness_messeger.jpg"
+              src={WITHDRAWAL_BOT_AVATAR}
               alt="+44 7721452217"
               className="w-full h-full object-cover"
             />
@@ -1148,6 +1126,10 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   src={c.avatarUrl}
                   alt=""
                   className="h-[52px] w-[52px] rounded-full object-cover"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+                  }}
                 />
               ) : (
                 <div
@@ -1224,7 +1206,15 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           actionBtn: null,
           avatar: avatarUrl ? (
             <div className="relative shrink-0">
-              <img src={avatarUrl} alt="" className="h-[52px] w-[52px] rounded-full object-cover" />
+              <img
+                src={avatarUrl}
+                alt=""
+                className="h-[52px] w-[52px] rounded-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+                }}
+              />
             </div>
           ) : (
             <div
@@ -1409,7 +1399,15 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     aria-label={t('chat.edit_profile')}
                   >
                     {drawerAvatar ? (
-                      <img src={drawerAvatar} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={drawerAvatar}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+                        }}
+                      />
                     ) : (
                       drawerName.trim().charAt(0).toUpperCase()
                     )}
@@ -1685,6 +1683,10 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                             src={contact.avatarUrl}
                             alt=""
                             className="h-[52px] w-[52px] rounded-full object-cover"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+                            }}
                           />
                         ) : (
                           <div
@@ -1773,7 +1775,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               src={avatarPreview.src}
               alt={avatarPreview.name}
               className="h-[min(88vw,80vh)] w-[min(88vw,80vh)] max-h-full max-w-full rounded-full object-contain shadow-2xl"
-              onError={() => setAvatarPreview((current) => current ? { ...current, src: null } : null)}
+              onError={() => setAvatarPreview((current) => current ? { ...current, src: DEFAULT_PROFILE_AVATAR } : null)}
             />
           ) : (
             <span

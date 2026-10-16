@@ -238,11 +238,10 @@ export default function BusinessMessengerBotsChat() {
     { shortcut: "/ajuda", text: t('bots.cmd_help') },
     { shortcut: "/limpar", text: t('bots.cmd_clear') },
   ];
-  const suggestedReplies = [
-    { shortcut: "/bots", label: t('bots.suggestion_catalog') },
-    { shortcut: "/meusbots", label: t('bots.suggestion_mine') },
-    { shortcut: "/saldo", label: t('chat.suggestion_balance') },
-  ];
+  const suggestedReplies = quickReplies.map(({ shortcut }) => ({
+    shortcut,
+    label: shortcut.replace(/^\/+/, ''),
+  }));
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
 
@@ -1000,18 +999,19 @@ export default function BusinessMessengerBotsChat() {
       {/* ── FOOTER FLUTUANTE — Input + Botão Enviar ── */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 flex justify-center border-t border-[#e5e5e5] bg-white px-3 py-2.5 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
         <div className="flex w-full max-w-[650px] flex-col gap-2 pointer-events-auto">
-          {!messages.some((message) => message.sender === "user") && (
-            <div className="w-full border-b border-[#e5e5e5] pb-4 dark:border-[#27313d]">
-              <p className="mb-4 text-center text-[16px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
-                {t('chat.suggestion_prompt')}
-              </p>
-              <div className="flex justify-center gap-2.5">
+          <div className="w-full border-b border-[#e5e5e5] pb-4 dark:border-[#27313d]">
+              {!messages.some((message) => message.sender === "user") && (
+                <p className="mb-3 text-center text-[14px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
+                  {t('chat.suggestion_prompt')}
+                </p>
+              )}
+              <div className="flex w-full gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {suggestedReplies.map((reply) => (
                   <button
                     key={reply.shortcut}
                     type="button"
                     onClick={() => handleSendMessage(reply.shortcut)}
-                    className="shrink-0 rounded-full border border-[#eeeeee] bg-white px-4 py-2 text-[16px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                    className="shrink-0 whitespace-nowrap rounded-full border border-[#eeeeee] bg-white px-3 py-1.5 text-[13px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
                   >
                     {reply.label}
                   </button>
@@ -1019,13 +1019,12 @@ export default function BusinessMessengerBotsChat() {
                 <button
                   type="button"
                   onClick={() => setShowCommandsModal(true)}
-                  className="shrink-0 rounded-full border border-[#eeeeee] bg-white px-4 py-2 text-[16px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                  className="shrink-0 whitespace-nowrap rounded-full border border-[#eeeeee] bg-white px-3 py-1.5 text-[13px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
                 >
                   {t('common.help')}
                 </button>
               </div>
             </div>
-          )}
           <div className="flex w-full items-center gap-2 pt-1">
             <div className="flex min-h-[46px] min-w-0 flex-1 items-center rounded-full bg-[#f1f2f4] px-2.5 dark:bg-[#242f3d]">
 
