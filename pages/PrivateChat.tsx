@@ -1235,7 +1235,7 @@ export default function PrivateChat() {
                           <AutoTranslatedText
                             text={m.mensagem}
                             language={language}
-                            enabled={translateFullChats && !isMe}
+                            enabled={translateFullChats}
                             renderFormatted={(text) => renderMessageWithAllowedLinks(
                               text,
                               isMe,
@@ -1389,7 +1389,7 @@ export default function PrivateChat() {
                 <AutoTranslatedText
                   text={replyTo.mensagem}
                   language={language}
-                  enabled={translateFullChats && replyTo.remetente_id !== user?.id}
+                  enabled={translateFullChats}
                 />
               </p>
             </div>

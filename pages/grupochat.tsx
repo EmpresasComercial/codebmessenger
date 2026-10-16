@@ -688,7 +688,7 @@ const MessageItem = React.memo(({
                 <AutoTranslatedText
                   text={m.mensagem}
                   language={language}
-                  enabled={translateFullChats && !isMe}
+                  enabled={translateFullChats}
                   renderFormatted={(text) => renderFormattedMessage(
                     text,
                     isMe,
