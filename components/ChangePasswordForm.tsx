@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, ShieldAlert } from 'lucide-react';
-import { useToast } from '../components/Toast';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useToast } from './Toast';
 import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { useLanguage } from '../contexts/LanguageContext';
 
-interface ChangePasswordProps {
-  embedded?: boolean;
-  onSuccess?: () => void;
+interface ChangePasswordFormProps {
+  onSuccess: () => void;
 }
 
-export default function ChangePassword({ embedded = false, onSuccess }: ChangePasswordProps) {
-  const navigate = useNavigate();
+export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
   const { showToast } = useToast();
   const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,11 +75,7 @@ export default function ChangePassword({ embedded = false, onSuccess }: ChangePa
       }
 
       showToast(t('password.success'), 'success');
-      if (embedded) {
-        onSuccess?.();
-      } else {
-        setTimeout(() => navigate(-1), 1200);
-      }
+      onSuccess();
     } catch (err: any) {
       const message = typeof err?.message === 'string' ? err.message : '';
       if (!message || ![
@@ -104,74 +97,51 @@ export default function ChangePassword({ embedded = false, onSuccess }: ChangePa
   };
 
   return (
-    <div className={`w-full bg-[#f1f1f2] font-sans text-black ${embedded ? 'pb-4' : 'min-h-screen pb-10'}`}>
-
-      {/* HEADER */}
-      {!embedded && <div className="flex items-center px-4 pt-5 pb-3 bg-[#f1f1f2] sticky top-0 z-10">
-        <button onClick={() => navigate(-1)} className="mr-4 active:opacity-50 cursor-pointer">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
-          </svg>
-        </button>
-        <span className="text-[18px] font-semibold flex-1">{t('password.title')}</span>
-      </div>}
-
-      <form onSubmit={handleSubmit} id="change-pass-form" className={`px-3 flex flex-col gap-4 ${embedded ? 'pt-2' : ''}`}>
-
-        {/* Icon header */}
-        <div className={`flex flex-col items-center ${embedded ? 'py-2' : 'py-6'}`}>
-          <div className="w-[64px] h-[64px] rounded-none bg-[#2481cc] flex items-center justify-center mb-3 shadow-[0_4px_12px_rgba(36,129,204,0.3)]">
-            <ShieldAlert className="w-8 h-8 text-white" strokeWidth={1.8} />
-          </div>
-          <p className="text-[13px] text-[#8e8e93] text-center max-w-[260px] leading-snug">
-            Escolha uma senha forte com pelo menos 6 caracteres.
-          </p>
-        </div>
-
-        {/* Fields card */}
-        <div className="overflow-hidden rounded-lg bg-white shadow-none">
+    <div className="w-full bg-[#f1f1f2] pb-4 font-sans text-black">
+      <form onSubmit={handleSubmit} id="change-pass-form" className="flex flex-col gap-3 px-4 pb-4 pt-3">
+        <div className="overflow-hidden rounded-lg border border-[#e5e5e5] bg-white shadow-none">
           {/* Current password */}
-          <div className="flex items-center px-4 h-[52px] border-b border-[#e5e5e5]">
+          <div className="flex h-11 items-center border-b border-[#e5e5e5] px-3">
             <input
               name="currentPassword"
               type={showCurrentPass ? 'text' : 'password'}
-              className="flex-1 bg-transparent outline-none text-[16px] text-black placeholder:text-[#c7c7cc]"
+              className="min-w-0 flex-1 bg-transparent text-[14px] text-black outline-none placeholder:text-[#c7c7cc]"
               placeholder={t('password.old_label')}
               value={formData.currentPassword}
               onChange={handleChange}
             />
-            <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="ml-2 text-[#c7c7cc] active:opacity-50 cursor-pointer">
-              {showCurrentPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="ml-2 shrink-0 text-[#c7c7cc] active:opacity-50 cursor-pointer" aria-label={showCurrentPass ? t('auth.hide_password') : t('auth.show_password')}>
+              {showCurrentPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
 
           {/* New password */}
-          <div className="flex items-center px-4 h-[52px] border-b border-[#e5e5e5]">
+          <div className="flex h-11 items-center border-b border-[#e5e5e5] px-3">
             <input
               name="newPassword"
               type={showNewPass ? 'text' : 'password'}
-              className="flex-1 bg-transparent outline-none text-[16px] text-black placeholder:text-[#c7c7cc]"
+              className="min-w-0 flex-1 bg-transparent text-[14px] text-black outline-none placeholder:text-[#c7c7cc]"
               placeholder={t('password.new_label')}
               value={formData.newPassword}
               onChange={handleChange}
             />
-            <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="ml-2 text-[#c7c7cc] active:opacity-50 cursor-pointer">
-              {showNewPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="ml-2 shrink-0 text-[#c7c7cc] active:opacity-50 cursor-pointer" aria-label={showNewPass ? t('auth.hide_password') : t('auth.show_password')}>
+              {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
 
           {/* Confirm password */}
-          <div className="flex items-center px-4 h-[52px]">
+          <div className="flex h-11 items-center px-3">
             <input
               name="confirmPassword"
               type={showConfirmPass ? 'text' : 'password'}
-              className="flex-1 bg-transparent outline-none text-[16px] text-black placeholder:text-[#c7c7cc]"
+              className="min-w-0 flex-1 bg-transparent text-[14px] text-black outline-none placeholder:text-[#c7c7cc]"
               placeholder={t('password.confirm_placeholder')}
               value={formData.confirmPassword}
               onChange={handleChange}
             />
-            <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="ml-2 text-[#c7c7cc] active:opacity-50 cursor-pointer">
-              {showConfirmPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="ml-2 shrink-0 text-[#c7c7cc] active:opacity-50 cursor-pointer" aria-label={showConfirmPass ? t('auth.hide_password') : t('auth.show_password')}>
+              {showConfirmPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
         </div>
@@ -181,9 +151,9 @@ export default function ChangePassword({ embedded = false, onSuccess }: ChangePa
           type="submit"
           form="change-pass-form"
           disabled={isSubmitting || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
-          className="w-full h-[50px] rounded-lg bg-[#2481cc] hover:bg-[#1f73b7] text-white font-semibold text-[16px] flex items-center justify-center disabled:opacity-40 active:scale-[0.99] transition-all shadow-[0_4px_12px_rgba(36,129,204,0.35)] cursor-pointer"
+          className="flex h-10 min-w-28 self-end items-center justify-center rounded-lg bg-[#2481cc] px-5 text-[14px] font-semibold text-white transition-all hover:bg-[#1f73b7] active:scale-[0.99] disabled:opacity-40 cursor-pointer"
         >
-          {isSubmitting ? <Loader2 className="animate-spin h-5 w-5 text-white" /> : t('password.btn_update')}
+          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin text-white" /> : t('password.reset_button')}
         </button>
 
       </form>

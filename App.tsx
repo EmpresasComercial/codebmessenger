@@ -26,7 +26,6 @@ const Bots             = lazy(() => import('./pages/Bots'));
 const Invite           = lazy(() => import('./pages/contactos'));
 const Profile          = lazy(() => import('./pages/Profile'));
 const AddBank          = lazy(() => import('./pages/AddBank'));
-const ChangePassword   = lazy(() => import('./pages/ChangePassword'));
 const Playmentbot      = lazy(() => import('./pages/paymentbot'));
 const Wallet           = lazy(() => import('./pages/wallet'));
 const AboutUs          = lazy(() => import('./pages/About'));
@@ -217,7 +216,7 @@ export default function App() {
                     {/* Rotas Simplificadas Oficiais */}
                     <Route path="Sobre"                  element={<AboutUs />} />
                     <Route path="Banco"                  element={<AddBank />} />
-                    <Route path="Senha"                  element={<ChangePassword />} />
+                    <Route path="Senha"                  element={<Navigate to="/botfather?command=%2Fsenha" replace />} />
                     <Route path="conversas"              element={<ChatsHome />} />
                     <Route path="Contactos"              element={<Invite />} />
                     <Route path="Dispositivos"           element={<Navigate to="/sessoes-ativas" replace />} />
@@ -242,7 +241,7 @@ export default function App() {
                     <Route path="settings"                element={<Navigate to="/Definições" replace />} />
                     <Route path="bank"                   element={<AddBank />} />
                     <Route path="adicionar-banco"         element={<Navigate to="/bank" replace />} />
-                    <Route path="alterar-senha"           element={<ChangePassword />} />
+                    <Route path="alterar-senha"           element={<Navigate to="/botfather?command=%2Fsenha" replace />} />
                     <Route path="configuracoes-conta"     element={<Navigate to="/Definições" replace />} />
                     <Route path="sand-pay"                element={<Playmentbot />} />
                     <Route path="recarregar"              element={<Navigate to="/sand-pay" replace />} />

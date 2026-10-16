@@ -195,6 +195,7 @@
   'chat.security': 'الأمان',
   'chat.encrypted': 'مشفّر',
   'coupons.btn': 'استرداد الآن',
+  'coupons.redeem_button': 'استرداد',
   'coupons.error_invalid': 'يرجى إدخال رمز قسيمة صالح.',
   'coupons.hero_sub': 'أدخل الرمز الترويجي الذي زودك به مديرك أو الموجود في المجموعات الرسمية.',
   'coupons.hero_title': 'تفعيل المكافأة',

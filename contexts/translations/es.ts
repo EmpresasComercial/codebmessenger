@@ -157,6 +157,7 @@
   'chat.security': 'Seguridad',
   'chat.encrypted': 'cifrado',
   'coupons.btn': 'Canjear ahora',
+  'coupons.redeem_button': 'Canjear',
   'coupons.error_invalid': 'Por favor ingrese un código de cupón válido.',
   'coupons.hero_sub': 'Ingresa el código promocional proporcionado por tu manager o en grupos oficiales.',
   'coupons.hero_title': 'Activar bonos',

@@ -162,6 +162,7 @@
   'chat.new_conversation': '新对话',
   'chat.back': '返回',
   'coupons.btn': '立即兑换',
+  'coupons.redeem_button': '兑换',
   'coupons.error_invalid': '请输入有效的优惠券代码。',
   'coupons.hero_sub': '输入经理或官方群组提供的促销代码。',
   'coupons.hero_title': '激活奖励',

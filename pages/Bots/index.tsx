@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   MoreVertical,
   Send,
@@ -7,6 +7,7 @@ import {
   Clock,
   ChevronLeft,
   ChevronDown,
+  Check,
   X,
   Zap,
   RotateCcw
@@ -14,10 +15,11 @@ import {
 import { supabase } from "../../lib/supabase";
 import { logger } from "../../lib/logger";
 import { useToast } from "../../components/Toast";
+import RedeemCouponForm from "../../components/RedeemCouponForm";
 import { formatCurrency } from "../../lib/currency";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { clearLegacyAssistantChatHistory } from "../../lib/legacyAssistantChatHistory";
-import ChangePassword from "../ChangePassword";
+import ChangePasswordForm from "../../components/ChangePasswordForm";
 
 /* ─── SVG Doodle Background (Telegram BotFather style) ─────────── */
 const DOODLE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2372a072' stroke-width='1.2' opacity='0.45'%3E%3Ccircle cx='30' cy='28' r='10'/%3E%3Cpath d='M22 20L19 13L25 19'/%3E%3Cpath d='M38 20L41 13L35 19'/%3E%3Ccircle cx='26' cy='25' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='34' cy='25' r='1.5' fill='%2372a072'/%3E%3Cpath d='M30 31L28 33L30 32L32 33Z'/%3E%3Cpath d='M19 27L24 28'/%3E%3Cpath d='M41 27L36 28'/%3E%3Cpath d='M164 15L167 7L170 15L178 15L172 20L174 28L167 23L160 28L162 20L156 15Z'/%3E%3Cpath d='M95 52C95 44 84 38 84 49C84 58 95 67 95 67C95 67 106 58 106 49C106 38 95 44 95 52Z'/%3E%3Ccircle cx='20' cy='112' r='7'/%3E%3Ccircle cx='10' cy='103' r='3.5'/%3E%3Ccircle cx='30' cy='103' r='3.5'/%3E%3Ccircle cx='14' cy='97' r='3'/%3E%3Ccircle cx='26' cy='97' r='3'/%3E%3Crect x='150' cy='100' width='26' height='19' rx='2'/%3E%3Crect x='148' y='93' width='30' height='9' rx='2'/%3E%3Cline x1='163' y1='93' x2='163' y2='119'/%3E%3Cpath d='M159 93C156 87 163 84 163 93'/%3E%3Cpath d='M167 93C170 87 163 84 163 93'/%3E%3Ccircle cx='163' cy='162' r='10'/%3E%3Cpath d='M155 154L152 146L158 153'/%3E%3Cpath d='M171 154L174 146L168 153'/%3E%3Ccircle cx='159' cy='160' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='167' cy='160' r='1.5' fill='%2372a072'/%3E%3Cpath d='M163 164L161 166L163 165L165 166Z'/%3E%3Cpath d='M152 162L158 163'/%3E%3Cpath d='M174 162L168 163'/%3E%3Cpath d='M57 143C57 138 51 135 51 140C51 145 57 150 57 150C57 150 63 145 63 140C63 135 57 138 57 143Z'/%3E%3Cpath d='M140 44C140 39 134 36 134 41C134 46 140 51 140 51C140 51 146 46 146 41C146 36 140 39 140 44Z'/%3E%3Cpath d='M64 72L66 64L68 72L76 72L70 77L72 85L66 81L60 85L62 77L56 72Z'/%3E%3Cpath d='M127 134L129 126L131 134L139 134L133 139L135 147L129 143L123 147L125 139L119 134Z'/%3E%3Cpath d='M95 110L95 128'/%3E%3Ccircle cx='92' cy='129' r='4'/%3E%3Cpath d='M95 110L106 106L106 120'/%3E%3Ccircle cx='103' cy='121' r='4'/%3E%3C/g%3E%3C/svg%3E")`;
@@ -203,6 +205,7 @@ function GrayButton({ children, onClick, disabled }: { children: React.ReactNode
 /* ─── Componente Principal: BotFather Oficial Telegram ───── */
 export default function BusinessMessengerBotsChat() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
   const { t } = useLanguage();
 
@@ -217,6 +220,8 @@ export default function BusinessMessengerBotsChat() {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [showCommandsModal, setShowCommandsModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const consumedPasswordCommand = useRef(false);
   const pendingReplyTimeouts = useRef<Set<number>>(new Set());
 
   const quickReplies = [
@@ -235,9 +240,6 @@ export default function BusinessMessengerBotsChat() {
     { shortcut: "/meusbots", label: t('bots.suggestion_mine') },
     { shortcut: "/saldo", label: t('chat.suggestion_balance') },
   ];
-  const [awaitingCoupon, setAwaitingCoupon] = useState(false);
-  const [isRedeemingCoupon, setIsRedeemingCoupon] = useState(false);
-
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
 
@@ -369,12 +371,13 @@ export default function BusinessMessengerBotsChat() {
     return () => window.clearTimeout(timeout);
   }, [messages.length]);
 
-  const simulateBotReply = useCallback((builder: () => ChatMessage, delay = 650) => {
+  const simulateBotReply = useCallback((builder: () => ChatMessage, delay = 650, onComplete?: () => void) => {
     setIsTyping(true);
     const timeoutId = window.setTimeout(() => {
       pendingReplyTimeouts.current.delete(timeoutId);
       setIsTyping(false);
       setMessages((prev) => [...prev, builder()]);
+      onComplete?.();
     }, delay);
     pendingReplyTimeouts.current.add(timeoutId);
   }, []);
@@ -383,9 +386,9 @@ export default function BusinessMessengerBotsChat() {
     pendingReplyTimeouts.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
     pendingReplyTimeouts.current.clear();
     setIsTyping(false);
-    setAwaitingCoupon(false);
     setInputText("");
     setShowCommandsModal(false);
+    setShowCouponModal(false);
     setShowScrollDown(false);
     setMessages([{ id: "welcome-botfather-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "welcome" }]);
     showToast("Conversa reiniciada.", "success");
@@ -404,6 +407,18 @@ export default function BusinessMessengerBotsChat() {
       },
     ]);
   }, [t]);
+
+  const handleCouponRedeemed = useCallback(async (message: string) => {
+    setShowCouponModal(false);
+    await loadData();
+    setMessages((prev) => [...prev, {
+      id: "bot-coupon-" + Date.now(),
+      sender: "bot",
+      time: getCurrentTime(),
+      type: "text",
+      text: `✅ ${message}\n\n${t('bots.coupon_redeemed')}`,
+    }]);
+  }, [loadData, t]);
 
   useEffect(() => () => {
     pendingReplyTimeouts.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
@@ -448,14 +463,13 @@ export default function BusinessMessengerBotsChat() {
       }
 
       if (normalized === "senha") {
-        setShowChangePasswordModal(true);
         simulateBotReply(() => ({
           id: "bot-password-form-" + Date.now(),
           sender: "bot",
           time: getCurrentTime(),
           type: "text",
           text: t('bots.password_form_opened'),
-        }));
+        }), 650, () => setShowChangePasswordModal(true));
         return;
       }
 
@@ -548,56 +562,10 @@ export default function BusinessMessengerBotsChat() {
 
       // ── CUPONS ──
       if (normalized === "cupons" || normalized === "cupon" || normalized === "coupon" || normalized === "codigo" || normalized === "código") {
-        setAwaitingCoupon(true);
         simulateBotReply(() => ({
           id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-          text: "🎟️ *Resgatar Cupom*\n\nPor favor, cole ou digite o código do seu cupom:\n\nO código é composto por letras maiúsculas e números.\nExemplo: TGRAM2024"
-        }));
-        return;
-      }
-
-      // ── AGUARDANDO CÓDIGO DE CUPOM ──
-      if (awaitingCoupon) {
-        const code = content.toUpperCase().replace(/[^A-Z0-9]/g, "");
-        if (code.length < 5) {
-          simulateBotReply(() => ({
-            id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-            text: "❌ Código inválido. O código deve ter pelo menos 5 caracteres com letras maiúsculas e números. Tente novamente ou envie /cupons para cancelar."
-          }));
-          return;
-        }
-        setAwaitingCoupon(false);
-        setIsRedeemingCoupon(true);
-        setIsTyping(true);
-        try {
-          const { data, error } = await supabase.rpc('redeem_coupon_mcpn', { p_code: code });
-          if (error) throw error;
-          const result = data as { success: boolean; message: string } | null;
-          setIsTyping(false);
-          if (result && result.success) {
-            showToast(result.message, 'success');
-            await loadData();
-            setMessages((prev) => [...prev, {
-              id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-              text: `✅ ${result.message}\n\nSeu saldo foi atualizado! Envie /saldo para confirmar.`
-            }]);
-          } else {
-            setMessages((prev) => [...prev, {
-              id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-              text: `❌ ${result?.message || 'Erro ao resgatar cupom'}\n\nVerifique o código e tente novamente com /cupons.`
-            }]);
-            showToast(result?.message || 'Erro ao resgatar cupom', 'error');
-          }
-        } catch (err: any) {
-          setIsTyping(false);
-          setMessages((prev) => [...prev, {
-            id: "bot-" + Date.now(), sender: "bot", time: getCurrentTime(), type: "text",
-            text: `❌ ${err.message || 'Erro ao resgatar cupom'}\n\nTente novamente com /cupons.`
-          }]);
-          showToast(err.message || 'Erro ao resgatar cupom', 'error');
-        } finally {
-          setIsRedeemingCoupon(false);
-        }
+          text: t('bots.coupon_form_opened'),
+        }), 650, () => setShowCouponModal(true));
         return;
       }
 
@@ -629,8 +597,25 @@ export default function BusinessMessengerBotsChat() {
         text: `Unrecognized command. Say what?`
       }));
     },
-    [inputText, products, purchasedBots, userBalance, simulateBotReply, loadData, awaitingCoupon, restartConversation]
+    [inputText, products, purchasedBots, userBalance, simulateBotReply, loadData, restartConversation, t]
   );
+
+  useEffect(() => {
+    const command = searchParams.get("command");
+    if (!command) {
+      consumedPasswordCommand.current = false;
+      return;
+    }
+    if (command !== "/senha" || consumedPasswordCommand.current) return;
+
+    consumedPasswordCommand.current = true;
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete("command");
+      return next;
+    }, { replace: true });
+    void handleSendMessage(command);
+  }, [handleSendMessage, searchParams, setSearchParams]);
 
   /* ── Ação de Compra de Bot Direto no Chat ── */
   const handleBuyProduct = useCallback(
@@ -715,7 +700,7 @@ export default function BusinessMessengerBotsChat() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="botfather-change-password-title"
-            className="flex max-h-[90dvh] w-[92vw] max-w-[480px] flex-col overflow-hidden rounded-xl bg-[#f1f1f2] shadow-2xl"
+            className="flex max-h-[90dvh] w-[92vw] max-w-[400px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-[#f1f1f2] shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <header className="flex h-14 shrink-0 items-center justify-between border-b border-black/5 px-4">
@@ -732,8 +717,38 @@ export default function BusinessMessengerBotsChat() {
               </button>
             </header>
             <div className="overflow-y-auto">
-              <ChangePassword embedded onSuccess={handlePasswordChanged} />
+              <ChangePasswordForm onSuccess={handlePasswordChanged} />
             </div>
+          </section>
+        </div>
+      )}
+
+      {showCouponModal && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-3"
+          onClick={() => setShowCouponModal(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="botfather-redeem-coupon-title"
+            className="w-[92vw] max-w-[400px] overflow-hidden rounded-xl border border-gray-200 bg-[#f1f1f2] shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex h-14 items-center justify-between border-b border-black/5 px-4">
+              <h2 id="botfather-redeem-coupon-title" className="text-[16px] font-semibold text-[#111827]">
+                {t('coupons.title')}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowCouponModal(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[#667085] hover:bg-black/5"
+                aria-label={t('common.close')}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+            <RedeemCouponForm onRedeemed={handleCouponRedeemed} />
           </section>
         </div>
       )}
@@ -805,10 +820,13 @@ export default function BusinessMessengerBotsChat() {
             <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <h1 className="truncate text-[16px] font-semibold leading-[1.15] tracking-tight text-black dark:text-white">
+            <h1 className="flex items-center gap-1 truncate text-[16px] font-semibold leading-[1.15] tracking-tight text-black dark:text-white">
               BotFather
+              <span className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-full bg-[#2481cc] text-white" aria-hidden="true">
+                <Check className="h-[10px] w-[10px]" strokeWidth={3} />
+              </span>
             </h1>
-            <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
+            <span className="mt-0.5 truncate text-[12.5px] font-normal leading-[1.15] text-[#25ae60]">
               Online
             </span>
           </div>
