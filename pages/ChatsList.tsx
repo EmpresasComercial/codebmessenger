@@ -1531,7 +1531,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           {/* 1. Lista de conversas ativas ordenadas por recência */}
           {filteredChats.map((chat) => {
               const rawId = chat.id.startsWith('contact-') ? chat.id.replace('contact-', '') : null;
-              const isOnline = rawId ? isUserOnline(rawId) : false;
+              const isOnline = rawId
+                ? isUserOnline(rawId)
+                : chat.id === 'deposit-bot' || chat.id === 'withdrawal-bot';
               const chatContactId = 'contactId' in chat && chat.contactId ? String(chat.contactId) : chat.id;
               const matchedMessage = messageSearchHits[chatContactId];
 
@@ -1621,7 +1623,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               <>
                 <div className="px-4 py-2 bg-[#f4f4f5] dark:bg-[#1a2330] border-b border-gray-100/80 dark:border-[#202b36]">
                   <span className="text-[13px] font-medium text-[#2481cc] dark:text-[#6ab3f3]">
-                    Seus contatos no Business Messenger
+                    {t('chat.contacts_in_app')}
                   </span>
                 </div>
 
@@ -1692,7 +1694,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                             <span className="text-[#4dcd5e] font-medium italic">{t('chat.typing')}</span>
                           ) : (
                             <span className="text-[#707579] dark:text-[#9eaab6]">
-                              visto às {timeStr}
+                              {t('chat.seen_at').replace('{time}', timeStr)}
                             </span>
                           )}
                         </p>
@@ -1707,13 +1709,15 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             {searchQuery && !isMessageSearchLoading && filteredChats.length === 0 && idleContacts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <p className="text-[#707579] dark:text-[#9eaab6] text-[15px] mb-2">
-                  Nenhum resultado encontrado para "<strong>{searchQuery}</strong>"
+                  {t('chat.no_search_results').split('{query}')[0]}
+                  <strong>{searchQuery}</strong>
+                  {t('chat.no_search_results').split('{query}')[1]}
                 </p>
                 <button
                   onClick={() => setSearchQuery("")}
                   className="text-[#2481cc] text-[14px] font-semibold cursor-pointer"
                 >
-                  Limpar busca
+                  {t('chat.clear_search')}
                 </button>
               </div>
             )}

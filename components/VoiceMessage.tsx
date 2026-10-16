@@ -3,6 +3,7 @@ import { Loader2, Mic, Pause, Play, Send, Square, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { useToast } from './Toast';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const MAX_RECORDING_SECONDS = 180;
 const MAX_RECORDING_BYTES = 20 * 1024 * 1024;
@@ -45,6 +46,7 @@ export const VoiceMessageComposer = forwardRef<VoiceMessageComposerHandle, Voice
   visible = true
 }: VoiceMessageComposerProps, ref) {
   const { showToast } = useToast();
+  const { t } = useLanguage();
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -340,6 +342,7 @@ interface VoiceMessagePlayerProps {
 }
 
 export function VoiceMessagePlayer({ path, unavailableLabel, isOutgoing = false }: VoiceMessagePlayerProps) {
+  const { t } = useLanguage();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -392,7 +395,7 @@ export function VoiceMessagePlayer({ path, unavailableLabel, isOutgoing = false 
           preload="metadata"
           controlsList="nodownload"
           className={`h-10 w-full ${isOutgoing ? 'accent-[#2481cc]' : 'accent-gray-500'}`}
-          aria-label="Voice message"
+          aria-label={t('chat.voice_message')}
         />
       ) : (
         <span className="flex h-10 items-center gap-2 text-xs text-gray-500 dark:text-gray-300">

@@ -380,15 +380,15 @@ export default function Profile() {
           <SettingsItem
             icon={<Monitor className="w-5 h-5 text-white" />}
             iconBg="bg-[#7c8dff]"
-            title="Controle do menu"
-            subtitle={showBottomNavMenu ? 'Ativado' : 'Desativado'}
+            title={t('settings.menu_control')}
+            subtitle={showBottomNavMenu ? t('settings.enabled') : t('settings.disabled')}
             onClick={toggleBottomNavMenu}
             trailing={(
               <button
                 type="button"
                 role="switch"
                 aria-checked={showBottomNavMenu}
-                aria-label="Controle do menu"
+                aria-label={t('settings.menu_control')}
                 onClick={(event) => {
                   event.stopPropagation();
                   toggleBottomNavMenu();

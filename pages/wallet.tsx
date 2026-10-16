@@ -25,12 +25,13 @@ import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
+import AutoTranslatedText from '../components/AutoTranslatedText';
 import { useAuth } from '../contexts/AuthContext';
 import { parseNaturalLanguage } from '../lib/walletIntentParser';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedManager';
 import AddBank from './AddBank';
-import { fetchWalletParams } from './walletAssistantCore';
+import { fetchWalletParams, getWalletAssistantResponse } from './walletAssistantCore';
 import { recordChatActivity } from '../lib/chatActivity';
 import { WITHDRAWAL_BOT_AVATAR } from '../lib/utils';
 
@@ -168,7 +169,7 @@ export default function wallet() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
-  const { t } = useLanguage();
+  const { t, language, translateFullChats } = useLanguage();
   const { session } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
@@ -206,9 +207,9 @@ export default function wallet() {
     { command: '/ajuda', label: t('common.help') },
     { command: '/deletar', label: t('wallet.cmd_delete_bank') },
   ];
-  const suggestedReplies = quickReplies.map(({ command }) => ({
+  const suggestedReplies = quickReplies.map(({ command, label }) => ({
     command,
-    label: command.replace(/^\/+/, ''),
+    label,
   }));
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -517,7 +518,6 @@ export default function wallet() {
       if (parsed.intent === 'support') {
         setIsTyping(true);
         try {
-          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
           const response = getWalletAssistantResponse(content, previousAssistantMessage);
           setIsTyping(false);
           botReply(() => ({
@@ -725,7 +725,6 @@ export default function wallet() {
       if (parsed.intent === 'greeting') {
         setIsTyping(true);
         try {
-          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
           const response = getWalletAssistantResponse(content, previousAssistantMessage);
           setIsTyping(false);
           botReply(() => ({
@@ -895,7 +894,6 @@ export default function wallet() {
         const sched = getWithdrawScheduleStatus();
         setIsTyping(true);
         try {
-          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
           const response = getWalletAssistantResponse(content, previousAssistantMessage);
           setIsTyping(false);
           botReply(() => ({
@@ -923,7 +921,6 @@ export default function wallet() {
       if (parsed.intent === 'fees') {
         setIsTyping(true);
         try {
-          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
           const response = getWalletAssistantResponse(content);
           setIsTyping(false);
           botReply(() => ({
@@ -950,7 +947,6 @@ export default function wallet() {
       if (parsed.intent === 'withdraw_info') {
         setIsTyping(true);
         try {
-          const { getWalletAssistantResponse } = await import('./walletAssistantCore');
           const response = getWalletAssistantResponse(content);
           setIsTyping(false);
           botReply(() => ({
@@ -1114,7 +1110,6 @@ export default function wallet() {
       // 11. Resposta conversacional local; o conteúdo do assistente não depende de RPC.
       setIsTyping(true);
       try {
-        const { getWalletAssistantResponse } = await import('./walletAssistantCore');
         const response = getWalletAssistantResponse(content);
         setIsTyping(false);
         botReply(() => ({
@@ -1220,7 +1215,7 @@ export default function wallet() {
   }, [botReply, session?.user.id]);
 
   const renderBotText = (text: string) => {
-    return text.split('\n').map((line, lIdx, arr) => {
+    const renderFormattedText = (localizedText: string) => localizedText.split('\n').map((line, lIdx, arr) => {
       const parts = line.split(/(\*\*.*?\*\*|`[^`]+`|\/[-_a-zA-Z0-9]+)/g);
       return (
         <span key={lIdx}>
@@ -1255,6 +1250,15 @@ export default function wallet() {
         </span>
       );
     });
+
+    return (
+      <AutoTranslatedText
+        text={text}
+        language={language}
+        enabled={translateFullChats && language !== 'pt'}
+        renderFormatted={renderFormattedText}
+      />
+    );
   };
 
   return (
@@ -1280,8 +1284,14 @@ export default function wallet() {
 
         {/* Cápsula central — Wallet */}
         <div className="mx-2 flex min-w-0 flex-1 items-center gap-3 pointer-events-auto">
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
-            <img src={WITHDRAWAL_BOT_AVATAR} alt="Wallet" className="w-full h-full object-cover" />
+          <div className="relative h-12 w-12 shrink-0">
+            <div className="h-full w-full overflow-hidden rounded-full">
+              <img src={WITHDRAWAL_BOT_AVATAR} alt="Wallet" className="h-full w-full object-cover" />
+            </div>
+            <span
+              className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#10b981] dark:border-[#17212b]"
+              title={t('chat.online_now')}
+            />
           </div>
 
           <div className="flex flex-col min-w-0">
@@ -1291,8 +1301,7 @@ export default function wallet() {
               </h1>
               {isVerifiedManagerPhone(VERIFIED_MANAGER_PHONE) && <VerifiedBadge className="h-4 w-4 mt-0.5" />}
             </div>
-            <span className="mt-0.5 flex items-center gap-1 text-[12px] font-normal leading-[1.15] text-[#25ae60]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#25ae60]" />
+            <span className="mt-0.5 flex items-center gap-1 text-[14px] font-semibold leading-[1.2] text-[#25ae60]">
               Online
             </span>
           </div>

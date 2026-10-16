@@ -1,11 +1,14 @@
 import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function VerifiedBadge({ className = 'h-4 w-4' }: { className?: string }) {
+  const { t } = useLanguage();
+
   return (
     <svg
       viewBox="0 0 24 24"
       role="img"
-      aria-label="Conta verificada"
+      aria-label={t('common.verified')}
       className={`shrink-0 inline-block align-middle select-none ${className}`}
     >
       <path

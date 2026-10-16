@@ -20,11 +20,12 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
+import AutoTranslatedText from '../components/AutoTranslatedText';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchPayParams } from './paymentAssistantCore';
+import { fetchPayParams, getPaymentAssistantResponse } from './paymentAssistantCore';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedManager';
@@ -400,7 +401,7 @@ const BotFormattedText = React.memo(function BotFormattedText({
 export default function PaymentBot() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { t } = useLanguage();
+  const { t, language, translateFullChats } = useLanguage();
   const { session } = useAuth();
 
   const [userBalance, setUserBalance] = useState<number>(0);
@@ -426,9 +427,9 @@ export default function PaymentBot() {
     { shortcut: '/total_deposito', text: t('recharge.cmd_total') },
     { shortcut: '/ajuda', text: t('recharge.cmd_help') },
   ];
-  const suggestedReplies = quickReplies.map(({ shortcut }) => ({
+  const suggestedReplies = quickReplies.map(({ shortcut, text }) => ({
     shortcut,
-    label: shortcut.replace(/^\/+/, ''),
+    label: text,
   }));
 
   const [depositAmount, setDepositAmount] = useState<number | null>(() => rechargeSession.get().amount);
@@ -993,7 +994,6 @@ export default function PaymentBot() {
       if (nlp?.intent === 'support') {
         setIsTyping(true);
         try {
-          const { getPaymentAssistantResponse } = await import('./paymentAssistantCore');
           const response = getPaymentAssistantResponse(rawInput, previousAssistantMessage);
           setIsTyping(false);
           botReply(() => createBotMsg('text', response));
@@ -1008,7 +1008,6 @@ export default function PaymentBot() {
       if (nlp?.intent === 'greeting') {
         setIsTyping(true);
         try {
-          const { getPaymentAssistantResponse } = await import('./paymentAssistantCore');
           const response = getPaymentAssistantResponse(rawInput, previousAssistantMessage);
           setIsTyping(false);
           botReply(() => createBotMsg('text', response));
@@ -1173,7 +1172,6 @@ export default function PaymentBot() {
 
       try {
         setIsTyping(true);
-        const { getPaymentAssistantResponse } = await import('./paymentAssistantCore');
         const response = getPaymentAssistantResponse(rawInput, previousAssistantMessage);
         setIsTyping(false);
         botReply(() => createBotMsg('text', response));
@@ -1203,8 +1201,17 @@ export default function PaymentBot() {
   );
 
   const renderBotText = useCallback(
-    (text: string) => <BotFormattedText text={text} onCommandClick={handleSendMessage} />,
-    [handleSendMessage]
+    (text: string) => (
+      <AutoTranslatedText
+        text={text}
+        language={language}
+        enabled={translateFullChats && language !== 'pt'}
+        renderFormatted={(localizedText) => (
+          <BotFormattedText text={localizedText} onCommandClick={handleSendMessage} />
+        )}
+      />
+    ),
+    [handleSendMessage, language, translateFullChats]
   );
 
   return (
@@ -1236,8 +1243,14 @@ export default function PaymentBot() {
         </button>
 
         <div className="mx-2 flex min-w-0 flex-1 items-center gap-3 pointer-events-auto">
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
-            <img src={PAYMENT_BOT_AVATAR} alt="Payments Bot" className="w-full h-full object-cover" />
+          <div className="relative h-12 w-12 shrink-0">
+            <div className="h-full w-full overflow-hidden rounded-full">
+              <img src={PAYMENT_BOT_AVATAR} alt="Payments Bot" className="h-full w-full object-cover" />
+            </div>
+            <span
+              className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#10b981] dark:border-[#17212b]"
+              title={t('chat.online_now')}
+            />
           </div>
 
           <div className="flex flex-col min-w-0">
@@ -1247,8 +1260,7 @@ export default function PaymentBot() {
               </h1>
               {isVerifiedManagerPhone(VERIFIED_MANAGER_PHONE) && <VerifiedBadge className="h-4 w-4 mt-0.5" />}
             </div>
-            <span className="mt-0.5 flex items-center gap-1 text-[12px] font-normal leading-[1.15] text-[#25ae60]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#25ae60]" />
+            <span className="mt-0.5 flex items-center gap-1 text-[14px] font-semibold leading-[1.2] text-[#25ae60]">
               {t('chat.online_now')}
             </span>
           </div>
@@ -1469,7 +1481,7 @@ export default function PaymentBot() {
                     {msg.type === 'welcome' && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                         <p>
-                          Olá! Sou o assistente de recargas. Tudo bem? Como posso ajudar hoje?
+                          {t('recharge.bot_welcome')}
                         </p>
                       </div>
                     )}

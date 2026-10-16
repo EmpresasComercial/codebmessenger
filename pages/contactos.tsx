@@ -171,7 +171,7 @@ export default function ContactsInvite() {
             className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 px-4 text-[14px] text-[#2481cc] transition-colors hover:bg-gray-50"
           >
             <Share2 className="h-4 w-4" />
-            Compartilhar
+            {t('common.share')}
           </button>
           <button
             type="button"
@@ -201,7 +201,7 @@ export default function ContactsInvite() {
 
           <section id="comissoes" className="space-y-3">
             <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
-              Comissões
+              {t('profile.team_commissions')}
             </h2>
             <img
               src="/invite-rewards-levels.png"

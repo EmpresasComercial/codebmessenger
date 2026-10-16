@@ -28,16 +28,13 @@ export default function About() {
             className="mx-auto mb-6 h-24 w-24 rounded-2xl object-cover"
           />
           <h2 className="mb-4 text-[26px] font-semibold leading-tight">
-            Sobre o Business Messenger
+            {t('chat.about_telegram')}
           </h2>
           <p className="mx-auto max-w-[640px] text-[16px] leading-7 text-[#555]">
-            O Business Messenger disponibiliza conversas individuais e em grupo,
-            partilha de imagens e documentos, mensagens de voz e recursos de conta.
-            As funcionalidades disponíveis podem variar conforme a conta e o dispositivo.
+            {t('about.service_description')}
           </p>
           <p className="mx-auto mt-4 max-w-[640px] text-[14px] leading-6 text-[#666]">
-            Este serviço é o Business Messenger. Publicações e comprovativos enviados por utilizadores
-            não são validações de transações, recomendações ou declarações oficiais da plataforma.
+            {t('about.service_disclaimer')}
           </p>
         </section>
       </main>

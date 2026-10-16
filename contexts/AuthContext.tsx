@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { Session } from '@supabase/supabase-js';
 import { useToast } from '../components/Toast';
+import { useLanguage } from './LanguageContext';
 
 import { subscribeToPushNotifications } from '../lib/pushNotifications';
 
@@ -19,6 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [ready, setReady] = useState(false);
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     let active = true;
@@ -62,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
 
         if (event === 'SIGNED_OUT') {
-          showToast('Sessão expirada ou encerrada. Faça login novamente.', 'info');
+          showToast(t('auth.session_expired'), 'info');
           navigate('/login', { replace: true });
         }
         

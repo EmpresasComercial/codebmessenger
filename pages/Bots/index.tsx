@@ -238,9 +238,9 @@ export default function BusinessMessengerBotsChat() {
     { shortcut: "/ajuda", text: t('bots.cmd_help') },
     { shortcut: "/limpar", text: t('bots.cmd_clear') },
   ];
-  const suggestedReplies = quickReplies.map(({ shortcut }) => ({
+  const suggestedReplies = quickReplies.map(({ shortcut, text }) => ({
     shortcut,
-    label: shortcut.replace(/^\/+/, ''),
+    label: text,
   }));
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);

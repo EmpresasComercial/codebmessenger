@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '../contexts/LanguageContext';
+import { type Language, useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
@@ -31,12 +31,12 @@ interface AuditSession {
   created_at: string;
 }
 
-function getDeviceInfo() {
+function getDeviceInfo(t: ReturnType<typeof useLanguage>['t']) {
   if (typeof navigator === 'undefined') {
-    return { os: 'Navegador Web', browser: 'Web', isMobile: false };
+    return { os: t('devices.web_browser'), browser: 'Web', isMobile: false };
   }
   const ua = navigator.userAgent;
-  let os = 'Dispositivo Conectado';
+  let os = t('devices.connected_device');
   let isMobile = false;
 
   if (/windows/i.test(ua)) os = 'Windows PC';
@@ -45,7 +45,7 @@ function getDeviceInfo() {
   else if (/iphone|ipad|ipod/i.test(ua)) { os = 'iOS (Apple)'; isMobile = true; }
   else if (/linux/i.test(ua)) os = 'Linux';
 
-  let browser = 'Web Browser';
+  let browser = t('devices.web_browser');
   if (/edg/i.test(ua)) browser = 'Microsoft Edge';
   else if (/chrome|crios/i.test(ua)) browser = 'Google Chrome';
   else if (/firefox|fxios/i.test(ua)) browser = 'Mozilla Firefox';
@@ -57,9 +57,17 @@ function getDeviceInfo() {
 
 export default function DevicesPrivacy() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { session } = useAuth();
   const { showToast } = useToast();
+  const dateLocale: Record<Language, string> = {
+    pt: 'pt-PT',
+    en: 'en-GB',
+    fr: 'fr-FR',
+    ar: 'ar',
+    'zh-hans': 'zh-CN',
+    es: 'es-ES',
+  };
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -68,7 +76,7 @@ export default function DevicesPrivacy() {
   const [terminating, setTerminating] = useState(false);
 
   const localDeviceId = getDeviceId();
-  const deviceInfo = getDeviceInfo();
+  const deviceInfo = getDeviceInfo(t);
 
   const [dbDeviceId, setDbDeviceId] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
@@ -165,7 +173,7 @@ export default function DevicesPrivacy() {
     const idToCopy = dbDeviceId || localDeviceId;
     navigator.clipboard.writeText(idToCopy);
     setCopiedId(true);
-    showToast('Identificador do dispositivo copiado!', 'success');
+    showToast(t('devices.device_id_copied'), 'success');
     setTimeout(() => setCopiedId(false), 2000);
   };
 
@@ -173,7 +181,7 @@ export default function DevicesPrivacy() {
     setTerminating(true);
     try {
       // 1. Invoca encerramento de outras sessões no banco
-      const { data, error } = await (supabase.rpc as any)('terminate_other_sessions_mcpn', {
+      const { error } = await (supabase.rpc as any)('terminate_other_sessions_mcpn', {
         p_current_device_id: dbDeviceId || localDeviceId,
       });
 
@@ -188,22 +196,22 @@ export default function DevicesPrivacy() {
         logger.warn('DevicesPrivacy', 'signOut others scope fallback:', authErr);
       }
 
-      showToast((data as any)?.message || 'Todas as outras sessões foram encerradas com sucesso!', 'success');
+      showToast(t('devices.sessions_terminated'), 'success');
       setShowConfirmModal(false);
       await fetchDeviceData(true);
     } catch (err: any) {
       logger.error('DevicesPrivacy', 'Erro ao encerrar sessões:', err);
-      showToast(err.message || 'Não foi possível encerrar as outras sessões.', 'error');
+      showToast(t('devices.terminate_failed'), 'error');
     } finally {
       setTerminating(false);
     }
   };
 
   const formatSessionDate = (dateStr?: string) => {
-    if (!dateStr) return 'Recente';
+    if (!dateStr) return t('devices.recent');
     try {
       const date = new Date(dateStr);
-      return date.toLocaleString('pt-PT', {
+      return date.toLocaleString(dateLocale[language], {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -244,7 +252,7 @@ export default function DevicesPrivacy() {
           onClick={() => fetchDeviceData(true)}
           disabled={refreshing || loading}
           className="flex h-9 w-9 items-center justify-center rounded-full text-[#2481cc] hover:bg-[#2481cc]/10 active:scale-95 transition cursor-pointer"
-          title="Atualizar sessões"
+          title={t('devices.refresh_sessions')}
         >
           <RotateCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
         </button>
@@ -255,7 +263,7 @@ export default function DevicesPrivacy() {
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-8 h-8 text-[#2481cc] animate-spin" />
             <span className="text-[13.5px] text-[#707579] dark:text-[#8e9aa5]">
-              Carregando auditoria de dispositivos...
+              {t('devices.loading_sessions')}
             </span>
           </div>
         ) : (
@@ -277,7 +285,7 @@ export default function DevicesPrivacy() {
                     </h2>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#29b85e]/15 text-[#29b85e]">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#29b85e] animate-pulse" />
-                      Ativo agora
+                      {t('devices.active_now')}
                     </span>
                   </div>
 
@@ -287,7 +295,7 @@ export default function DevicesPrivacy() {
 
                   {phone && (
                     <p className="text-[12px] text-[#707579] dark:text-[#8e9aa5] mt-0.5">
-                      Conta vinculada: <span className="font-medium text-black dark:text-white">+{phone}</span>
+                      {t('devices.linked_account')} <span className="font-medium text-black dark:text-white">+{phone}</span>
                     </p>
                   )}
                 </div>
@@ -298,20 +306,20 @@ export default function DevicesPrivacy() {
                 <div className="flex items-center justify-between sm:justify-start gap-2 py-2 border-b border-[#edf0f2] dark:border-white/5">
                   <span className="text-[#707579] dark:text-[#8e9aa5] flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-[#2481cc]" />
-                    IP Atual:
+                    {t('devices.current_ip')}
                   </span>
                   <span className="font-mono font-semibold text-black dark:text-white truncate">
-                    {currentIp || 'Conexão Protegida'}
+                    {currentIp || t('devices.ip_protected')}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-start gap-2 py-2 border-b border-[#edf0f2] dark:border-white/5">
                   <span className="text-[#707579] dark:text-[#8e9aa5] flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#29b85e]" />
-                    Auditoria:
+                    {t('devices.audit')}
                   </span>
                   <span className="font-medium text-[#29b85e]">
-                    Autenticado & Seguro
+                    {t('devices.authenticated_secure')}
                   </span>
                 </div>
               </div>
@@ -319,7 +327,7 @@ export default function DevicesPrivacy() {
               {/* Identificador do dispositivo com Cópia Rápida */}
               <div className="space-y-1.5 pt-1">
                 <label className="text-[11.5px] font-normal text-[#707579] dark:text-[#8e9aa5]">
-                  ID do Dispositivo (Device ID)
+                  {t('devices.device_id')}
                 </label>
                 <div className="flex items-center justify-between gap-2 border-b border-[#edf0f2] dark:border-white/5 py-2 font-mono text-[12px] text-black dark:text-white">
                   <span className="truncate">{activeDeviceId}</span>
@@ -327,7 +335,7 @@ export default function DevicesPrivacy() {
                     type="button"
                     onClick={handleCopyDeviceId}
                     className="p-1.5 text-[#2481cc] transition active:scale-95 shrink-0 cursor-pointer"
-                    title="Copiar Device ID"
+                    title={t('devices.copy_device_id')}
                   >
                     {copiedId ? <Check className="w-4 h-4 text-[#29b85e]" /> : <Copy className="w-4 h-4" />}
                   </button>
@@ -339,10 +347,10 @@ export default function DevicesPrivacy() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2 text-[#e53935] font-semibold text-[14.5px]">
                   <ShieldAlert className="w-4 h-4" />
-                  <span>Segurança da Conta</span>
+                  <span>{t('password.security')}</span>
                 </div>
                 <p className="text-[12px] text-[#707579] dark:text-[#8e9aa5] max-w-[420px]">
-                  Se notar qualquer atividade suspeita, encerre as conexões ativas em outros navegadores ou aparelhos.
+                  {t('devices.suspicious_activity')}
                 </p>
               </div>
 
@@ -352,7 +360,7 @@ export default function DevicesPrivacy() {
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-1 py-2 text-[#e53935] font-medium text-[13.5px] transition active:scale-95 cursor-pointer shrink-0"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Terminar Outras Sessões</span>
+                <span>{t('devices.terminate_other_sessions')}</span>
               </button>
             </section>
 
@@ -361,11 +369,11 @@ export default function DevicesPrivacy() {
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-[#2481cc]" />
                   <h3 className="text-[14px] font-medium text-black dark:text-white">
-                    Histórico de Acessos & Conexões
+                    {t('devices.access_history')}
                   </h3>
                 </div>
                 <span className="text-[12px] font-semibold text-[#707579] dark:text-[#8e9aa5]">
-                  {sessions.length} {sessions.length === 1 ? 'registo' : 'registos'}
+                  {t(sessions.length === 1 ? 'devices.session_count_one' : 'devices.session_count_many').replace('{count}', String(sessions.length))}
                 </span>
               </div>
 
@@ -373,10 +381,10 @@ export default function DevicesPrivacy() {
                 <div className="p-8 text-center space-y-2">
                   <ShieldCheck className="w-10 h-10 text-[#29b85e] mx-auto opacity-75" />
                   <p className="text-[14px] font-medium text-black dark:text-white">
-                    Nenhuma outra sessão registada
+                    {t('devices.no_other_sessions')}
                   </p>
                   <p className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] max-w-sm mx-auto">
-                    A sua conta está conectada e operando com segurança exclusivamente neste dispositivo.
+                    {t('devices.only_current_device')}
                   </p>
                 </div>
               ) : (
@@ -407,18 +415,18 @@ export default function DevicesPrivacy() {
                               </span>
                               {(isCurrent || isSameDev) && (
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#2481cc]/15 text-[#2481cc] uppercase">
-                                  Atual
+                                  {t('devices.current')}
                                 </span>
                               )}
                             </div>
 
                             <p className="text-[12px] text-[#707579] dark:text-[#8e9aa5] truncate mt-0.5">
                               {sess.action_type === 'session_active'
-                                ? 'Sessão Ativa'
+                                ? t('devices.session_active')
                                 : sess.action_type === 'registration_check_success'
-                                ? 'Verificação de Registo'
+                                ? t('devices.registration_verified')
                                 : sess.action_type === 'session_terminated'
-                                ? 'Sessão Encerrada'
+                                ? t('devices.session_ended')
                                 : sess.action_type}
                               {' • '}
                               {formatSessionDate(sess.created_at)}
@@ -436,10 +444,10 @@ export default function DevicesPrivacy() {
                           }`} />
                           <span className="text-[11.5px] text-[#707579] dark:text-[#8e9aa5] font-medium hidden sm:inline">
                             {sess.action_type === 'session_terminated'
-                              ? 'Encerrada'
+                              ? t('devices.status_ended')
                               : sess.success
-                              ? 'Verificado'
-                              : 'Alerta'}
+                              ? t('devices.status_verified')
+                              : t('devices.status_alert')}
                           </span>
                         </div>
                       </div>
@@ -468,12 +476,12 @@ export default function DevicesPrivacy() {
                 <AlertTriangle className="w-5 h-5 text-[#e53935]" />
               </div>
               <h3 className="text-[16px] font-bold text-black dark:text-white">
-                Terminar Outras Sessões?
+                {t('devices.terminate_confirm_title')}
               </h3>
             </div>
 
             <p className="text-[13.5px] text-[#707579] dark:text-[#8e9aa5] leading-relaxed">
-              Todos os outros dispositivos ou navegadores conectados à sua conta serão desconectados imediatamente. Apenas esta sessão atual permanecerá ativa.
+              {t('devices.terminate_confirm_message')}
             </p>
 
             <div className="flex items-center justify-end gap-2.5 pt-2">
@@ -483,7 +491,7 @@ export default function DevicesPrivacy() {
                 onClick={() => setShowConfirmModal(false)}
                 className="px-4 py-2 rounded-xl text-[13.5px] font-semibold text-[#707579] dark:text-[#8e9aa5] hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -494,10 +502,10 @@ export default function DevicesPrivacy() {
                 {terminating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>A encerrar...</span>
+                    <span>                    {t('devices.terminating')}</span>
                   </>
                 ) : (
-                  <span>Confirmar e Encerrar</span>
+                  <span>                  {t('devices.confirm_terminate')}</span>
                 )}
               </button>
             </div>

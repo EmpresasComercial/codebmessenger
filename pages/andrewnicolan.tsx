@@ -95,6 +95,14 @@ export default function AndrewNicolan() {
   const { showToast } = useToast();
   const { session } = useAuth();
   const { language, t, translateFullChats } = useLanguage();
+  const dateLocale = {
+    pt: 'pt-PT',
+    en: 'en-US',
+    fr: 'fr-FR',
+    ar: 'ar',
+    'zh-hans': 'zh-CN',
+    es: 'es-ES',
+  }[language] ?? 'en-US';
 
   const [posts, setPosts] = useState<ChannelPost[]>([]);
   const [inputText, setInputText] = useState('');
@@ -128,15 +136,15 @@ export default function AndrewNicolan() {
       id: `post-${row.id}`,
       isProof: false,
       createdAt: date.getTime(),
-      title: row.titulo || 'Comunicado Oficial',
+      title: row.titulo || t('channel.official_announcement'),
       content: row.conteudo,
       image: row.imagem_url || undefined,
       forwardedFrom: {
         name: row.author_name || 'Andrew Nicolán (Oficial)',
       },
-      time: date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+      time: date.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' }),
     };
-  }, []);
+  }, [dateLocale, t]);
 
   // Carrega e sincroniza posts oficiais e comprovativos diretamente do Supabase com Realtime
   useEffect(() => {
@@ -195,7 +203,7 @@ export default function AndrewNicolan() {
                     amount: row.valorStr || '',
                     content: (row.comentario || '').trim(),
                     image: row.imagem_url,
-                    time: date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+                    time: date.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' }),
                   };
                 });
             }
@@ -252,7 +260,7 @@ export default function AndrewNicolan() {
             amount: valStr,
             content: comment.trim(),
             image: img,
-            time: new Date(row.created_at || Date.now()).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+            time: new Date(row.created_at || Date.now()).toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' }),
           };
 
           setPosts(prev => deduplicatePosts([...prev, newProofPost]));
@@ -263,7 +271,7 @@ export default function AndrewNicolan() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [canalRowToPost]);
+  }, [canalRowToPost, dateLocale]);
 
   const handleForwardPost = (post: ChannelPost) => {
     if (navigator.clipboard) {
@@ -304,7 +312,7 @@ export default function AndrewNicolan() {
 
       recordChatActivity(session?.user.id, 'business-community');
       setInputText('');
-      showToast('Comunicado publicado no Canal Oficial!', 'success');
+      showToast(t('channel.announcement_published'), 'success');
 
       setTimeout(() => {
         if (scrollRef.current) {
@@ -313,7 +321,7 @@ export default function AndrewNicolan() {
       }, 100);
     } catch (err: any) {
       logger.error('AndrewNicolán', 'Erro ao publicar comunicado:', err);
-      showToast(err.message || 'Erro ao publicar comunicado no canal.', 'error');
+      showToast(t('channel.publish_failed'), 'error');
     } finally {
       setIsSendingBroadcast(false);
     }
@@ -325,7 +333,7 @@ export default function AndrewNicolan() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showToast('Por favor, selecione um arquivo de imagem válido.', 'error');
+      showToast(t('channel.invalid_image'), 'error');
       return;
     }
 
@@ -338,7 +346,8 @@ export default function AndrewNicolan() {
       }
       setIsProofModalOpen(true);
     } catch (err) {
-      showToast('Erro ao processar imagem selecionada.', 'error');
+      logger.error('AndrewNicolán', 'Failed to process selected image.', err);
+      showToast(t('channel.image_process_failed'), 'error');
     } finally {
       e.target.value = '';
     }
@@ -349,13 +358,13 @@ export default function AndrewNicolan() {
     e.preventDefault();
 
     if (!previewImage) {
-      showToast('Selecione uma imagem do comprovativo.', 'error');
+      showToast(t('channel.receipt_image_required'), 'error');
       return;
     }
 
     const cleanAmount = proofAmount.replace(/\D/g, '');
     if (!cleanAmount || Number(cleanAmount) <= 0) {
-      showToast('Por favor, informe o valor recebido da retirada.', 'error');
+      showToast(t('channel.amount_required'), 'error');
       return;
     }
 
@@ -419,10 +428,10 @@ export default function AndrewNicolan() {
 
       // Adiciona a publicação no próprio canal imediatamente com ID único
       const now = new Date();
-      const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = now.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
       const userPhoneMasked = session?.user?.phone
         ? session.user.phone.replace(/(\d{3})\d{3}(\d{3})/, '$1***$2')
-        : 'Membro';
+        : t('channel.member');
 
       const uniquePostId = realId ? `sp-${realId}` : `proof-${Date.now()}`;
 
@@ -460,7 +469,7 @@ export default function AndrewNicolan() {
 
     } catch (err: any) {
       logger.error('AndrewNicolán', 'Erro ao enviar comprovativo:', err);
-      showToast(err.message || 'Erro ao enviar comprovativo.', 'error');
+      showToast(t('channel.receipt_send_failed'), 'error');
     } finally {
       setIsSubmittingProof(false);
     }
@@ -513,16 +522,16 @@ export default function AndrewNicolan() {
               <VerifiedBadge className="mt-0.5 h-[14px] w-[14px] shrink-0" />
             </div>
             <span className="text-[12.5px] text-[#707579] dark:text-[#8e9aa5] font-normal leading-[1.15] mt-0.5 truncate">
-              725.251 inscritos
+              {t('channel.subscriber_count').replace('{count}', '725.251')}
             </span>
           </div>
         </div>
 
         <button
           type="button"
-          onClick={() => showToast('Este espaço não é um canal oficial de terceiros.', 'info')}
+          onClick={() => showToast(t('channel.not_official'), 'info')}
           className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white pointer-events-auto cursor-pointer"
-          aria-label="Mais opções"
+          aria-label={t('channel.more_options')}
         >
           <MoreVertical className="w-5 h-5 stroke-[2]" />
         </button>
@@ -540,7 +549,9 @@ export default function AndrewNicolan() {
             : post.content;
           const displayedTitle = isProofPost
             ? `${t('social.proof_title')}${post.amount ? `: ${post.amount}` : ''}`
-            : post.title;
+            : post.title === 'Comunicado Oficial'
+              ? t('channel.official_announcement')
+              : post.title;
 
           return (
             <div key={post.id} className="flex items-end justify-start gap-2 relative min-w-0">
@@ -553,7 +564,7 @@ export default function AndrewNicolan() {
                       {post.forwardedFrom.avatar ? (
                         <img 
                           src={post.forwardedFrom.avatar} 
-                          alt="Avatar do Membro"
+                          alt={t('channel.member_avatar')}
                           className="h-6 w-6 shrink-0 rounded-full border border-orange-200 object-cover"
                           onError={(e) => {
                             (e.target as any).src = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=80&h=80&fit=crop";
@@ -579,11 +590,11 @@ export default function AndrewNicolan() {
                   <div
                     className="group relative w-full cursor-zoom-in"
                     onClick={() => setFullscreenImage(post.image!)}
-                    title="Toque para ampliar"
+                    title={t('channel.tap_to_enlarge')}
                   >
                     <img
                       src={post.image}
-                      alt={post.title || "Comprovativo"}
+                      alt={post.title || t('channel.receipt_preview')}
                       className="my-1.5 block h-auto max-h-[550px] w-full rounded-[12px] object-contain select-none transition-opacity group-active:opacity-80"
                       onError={(e) => {
                         (e.target as any).src = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=350&fit=crop";
@@ -641,8 +652,8 @@ export default function AndrewNicolan() {
                 type="button"
                 onClick={() => handleForwardPost(post)}
                 className="w-8 h-8 rounded-full bg-white dark:bg-[#242f3d] border border-[#e4e4e4] dark:border-[#1e2c3a] flex items-center justify-center text-[#2481cc] active:scale-90 transition-transform cursor-pointer shrink-0 mb-1"
-                title="Encaminhar post"
-                aria-label="Encaminhar post"
+                title={t('channel.forward_post')}
+                aria-label={t('channel.forward_post')}
               >
                 <Share2 className="w-4 h-4 -scale-x-100" />
               </button>
@@ -673,12 +684,12 @@ export default function AndrewNicolan() {
               type="button"
               onClick={() => {
                 setIsMuted(!isMuted);
-                showToast(isMuted ? 'Notificações ativadas' : 'Canal silenciado', 'info');
+                showToast(isMuted ? t('group.notifications_on') : t('channel.silenced'), 'info');
               }}
               className={`p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0 ml-0.5 ${
                 isMuted ? 'text-[#e53e3e]' : 'text-[#1877f2]'
               }`}
-              title={isMuted ? "Canal silencioso" : "Canal com som"}
+              title={isMuted ? t('channel.silenced') : t('channel.with_sound')}
             >
               {isMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
             </button>
@@ -701,8 +712,8 @@ export default function AndrewNicolan() {
             onClick={handleSendBroadcast}
             disabled={isSendingBroadcast || !inputText.trim()}
             className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 disabled:opacity-40 cursor-pointer"
-            title="Enviar mensagem"
-            aria-label="Enviar mensagem"
+            title={t('channel.send_message')}
+            aria-label={t('channel.send_message')}
           >
             <Send className="h-[25px] w-[25px] fill-current stroke-[1.8]" />
           </button>
@@ -719,7 +730,7 @@ export default function AndrewNicolan() {
             {/* Top Bar do Modal */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-[16px] font-bold text-[#111827] dark:text-white">
-                Partilhar Prova de Retirada
+                {t('channel.share_withdrawal_proof')}
               </h2>
               <button
                 type="button"
@@ -728,7 +739,7 @@ export default function AndrewNicolan() {
                   setPreviewImage(null);
                 }}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                title="Fechar"
+                title={t('common.close')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -745,7 +756,7 @@ export default function AndrewNicolan() {
                 <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#182533] flex items-center justify-center max-h-[220px]">
                   <img
                     src={previewImage}
-                    alt="Pré-visualização do Comprovativo"
+                    alt={t('channel.receipt_preview')}
                     className="w-full h-auto max-h-[220px] object-contain rounded-xl"
                   />
                   <button
@@ -768,7 +779,7 @@ export default function AndrewNicolan() {
                   <input
                     type="tel"
                     inputMode="numeric"
-                    placeholder="Ex: 25.000"
+                    placeholder={t('channel.amount_placeholder')}
                     value={proofAmount}
                     onChange={(e) => setProofAmount(e.target.value.replace(/\D/g, ''))}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#182533] text-[15px] font-medium text-[#111827] dark:text-white outline-none focus:border-[#2481cc] transition-colors"
@@ -785,7 +796,7 @@ export default function AndrewNicolan() {
               {/* Campo Comentário / Depoimento */}
               <div>
                 <label className="block text-[13px] font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  {t('social.your_comment')} (opcional)
+                  {t('social.your_comment')} ({t('channel.optional')})
                 </label>
                 <textarea
                   rows={3}
@@ -852,7 +863,7 @@ export default function AndrewNicolan() {
 
           <img
             src={fullscreenImage}
-            alt="Comprovativo ampliado"
+            alt={t('channel.receipt_enlarged')}
             className="max-w-full max-h-full object-contain rounded-lg select-none"
             style={{ maxHeight: '95dvh', maxWidth: '95dvw' }}
             onClick={(e) => e.stopPropagation()}
@@ -862,7 +873,7 @@ export default function AndrewNicolan() {
           />
 
           <p className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/50 text-[12px] select-none pointer-events-none">
-            Toque fora da imagem para fechar
+            {t('channel.tap_outside_close')}
           </p>
         </div>
       )}
