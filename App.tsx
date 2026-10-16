@@ -16,6 +16,7 @@ import { ConnectivityOverlay } from './components/ConnectivityOverlay';
 import { registerServiceWorker, subscribeToPushNotifications, clearAppBadge } from './lib/pushNotifications';
 import { LoadingProvider } from './contexts/LoadingContext';
 import { GlobalLoadingIndicator } from './components/GlobalLoadingIndicator';
+import { getInviteCode } from './lib/inviteCode';
 
 /* ── Lazy imports ─────────────────────────────────────────────────────────── */
 // Critical path: carregadas no pacote principal (sem lazy)
@@ -83,19 +84,12 @@ function PageSkeleton() {
 function RootRedirect() {
   const { session, ready } = useAuth();
   const [searchParams] = useSearchParams();
-  let joinCode = searchParams.get('join') || searchParams.get('invite') || searchParams.get('code') || searchParams.get('ref');
-
-  if (!joinCode) {
-    const rawSearch = window.location.search ? window.location.search.replace(/^\?/, '').trim() : '';
-    if (rawSearch) {
-      joinCode = rawSearch.includes('=') ? rawSearch.split('=')[1] : rawSearch;
-    }
-  }
+  const inviteCode = getInviteCode(searchParams);
 
   if (!ready) return null;
   if (session) return <Navigate to="/conversas" replace />;
-  if (joinCode) return <Navigate to={`/create?${encodeURIComponent(joinCode)}`} replace />;
-  return <Navigate to="/create" replace />;
+  if (inviteCode) return <Navigate to={`/signup?ref=${encodeURIComponent(inviteCode)}`} replace />;
+  return <Navigate to="/signup" replace />;
 }
 
 function GlobalLanguageSelector() {
@@ -104,7 +98,7 @@ function GlobalLanguageSelector() {
 
   const normalizedPath = pathname.toLocaleLowerCase();
   const firstSegment = normalizedPath.split('/').filter(Boolean)[0] ?? '';
-  const alwaysVisibleRoutes = new Set(['login', 'entrar', 'create', 'mensagens']);
+  const alwaysVisibleRoutes = new Set(['signin', 'signup', 'login', 'entrar']);
   const alwaysHiddenRoutes = new Set([
     'org',
     'conversas',
@@ -201,12 +195,8 @@ export default function App() {
                 <Suspense fallback={<PageSkeleton />}>
                 <Routes>
                   <Route path="/"         element={<RootRedirect />} />
-                  <Route path="/create"   element={<Messager />} />
-                  <Route path="/messager" element={<Navigate to="/create" replace />} />
-                  <Route path="/Entrar"   element={<Login />} />
-                  <Route path="/join"     element={<Navigate to="/create" replace />} />
-                  <Route path="/login"    element={<Login />} />
-                  <Route path="/Mensagens" element={<Navigate to="/create" replace />} />
+                  <Route path="/signup"  element={<Messager />} />
+                  <Route path="/signin"  element={<Login />} />
                   <Route path="/android"  element={<DownloadApp />} />
                   <Route path="/download-apk" element={<Navigate to="/android?setln=pt" replace />} />
                   <Route path="/privacidade" element={<PrivacyPolicy />} />
@@ -288,7 +278,7 @@ export default function App() {
                     <Route path="pavel-durov"             element={<AndrewNicolan />} />
                   </Route>
 
-                  <Route path="*" element={<Navigate to="/Entrar" replace />} />
+                  <Route path="*" element={<Navigate to="/signin" replace />} />
                 </Routes>
               </Suspense>
               </PresenceProvider>

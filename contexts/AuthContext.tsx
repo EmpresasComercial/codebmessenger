@@ -65,14 +65,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (event === 'SIGNED_OUT') {
           showToast(t('auth.session_expired'), 'info');
-          navigate('/login', { replace: true });
+          navigate('/signin', { replace: true });
         }
         
         if (event === 'SIGNED_IN') {
           if ('Notification' in window && Notification.permission === 'granted') {
             subscribeToPushNotifications();
           }
-          const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/messager' || window.location.pathname === '/cadastro';
+          const isAuthPage = ['/signin', '/signup'].includes(window.location.pathname);
           if (isAuthPage) {
             navigate('/org', { replace: true });
           }

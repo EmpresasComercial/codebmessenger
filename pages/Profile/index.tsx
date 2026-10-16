@@ -155,9 +155,9 @@ export default function Profile() {
     try {
       await supabase.auth.signOut();
       showToast(t('chat.logout_success'), "success");
-      navigate("/login");
+      navigate("/signin");
     } catch {
-      navigate("/login");
+      navigate("/signin");
     }
   };
 

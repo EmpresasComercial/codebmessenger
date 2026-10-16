@@ -186,7 +186,7 @@ export default function Login() {
           <img
             src="/logo_bussiness_messeger.jpg"
             alt="Business Messenger"
-            className="w-[80px] h-[80px] rounded-full object-cover"
+            className="w-[90px] h-[90px] rounded-full object-cover"
           />
         </div>
 
@@ -300,7 +300,7 @@ export default function Login() {
 
             <button
               type="button"
-              onClick={() => navigate('/create')}
+              onClick={() => navigate('/signup')}
               className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-normal text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
             >
               {t('auth.no_account')} {t('auth.create_one')}

@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { getDeviceId } from '../lib/device';
 import { subscribeToPushNotifications } from '../lib/pushNotifications';
+import { getInviteCode } from '../lib/inviteCode';
 import {
   AsYouType,
   validatePhoneNumberLength,
@@ -87,25 +88,10 @@ export default function Messager() {
   const [showUserPasskey, setShowUserPasskey] = useState(false);
 
   useEffect(() => {
-    let code =
-      searchParams.get('join') ||
-      searchParams.get('invite') ||
-      searchParams.get('code') ||
-      searchParams.get('ref');
-
-    if (!code) {
-      const rawSearch = window.location.search
-        ? window.location.search.replace(/^\?/, '').trim()
-        : '';
-      if (rawSearch) {
-        code = rawSearch.includes('=') ? rawSearch.split('=')[1] : rawSearch;
-      }
-    }
-
+    const code = getInviteCode(searchParams);
     if (code) {
-      const cleanCode = code.trim().slice(0, 6);
-      setFormData((prev) => ({ ...prev, inviteCode: cleanCode }));
-      setInviteCodeFromUrl(Boolean(cleanCode));
+      setFormData((prev) => ({ ...prev, inviteCode: code }));
+      setInviteCodeFromUrl(true);
     } else {
       setInviteCodeFromUrl(false);
     }
@@ -315,7 +301,7 @@ export default function Messager() {
 
   const handlePasskeyDialogClose = () => {
     setShowPasskeyDialog(false);
-    navigate('/login');
+    navigate('/signin');
   };
 
   const handleCopyPasskey = async () => {
@@ -383,7 +369,7 @@ export default function Messager() {
         ) : (
           <p className="w-full text-[13px] text-[#707579] text-center mb-6 leading-snug">
             {t('auth.signup_phone_prompt')}{' '}
-            <Link to="/login" className="text-[#2481cc] hover:underline">
+            <Link to="/signin" className="text-[#2481cc] hover:underline">
               {t('auth.signup_login_here')}
             </Link>
           </p>
@@ -557,7 +543,7 @@ export default function Messager() {
 
                 <button
                   type="button"
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate('/signin')}
                   className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-medium text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
                 >
                   {t('auth.has_account')} {t('auth.login')}

@@ -17,12 +17,10 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/create",
+  "start_url": "/",
   "scope": "/",
   "background_color": "#F2F2F2",
   "theme_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait"
 }
-
-
