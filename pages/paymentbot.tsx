@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as QRCode from 'qrcode';
 import {
   MoreVertical,
   Send,
@@ -25,6 +26,7 @@ import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { logger } from '../lib/logger';
 import { fetchPayParams, getPaymentAssistantResponse } from './paymentAssistantCore';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -35,6 +37,10 @@ import { PAYMENT_BOT_AVATAR } from '../lib/utils';
 const MIN_RECHARGE = 3000;
 const MAX_RECHARGE = 500000;
 const CHAT_STORAGE_KEY = 'telegram_deposit_bot_v3';
+const DEMO_MULTICAIXA_NUMBER = '928809034';
+const DEMO_MULTICAIXA_ENTITY = 'MCX';
+const DEMO_MULTICAIXA_REFERENCE = 'DEMO';
+const DEMO_USDT_ADDRESS = 'TrhjbvkjhbklDFgnh35kjhgihgu';
 const VERIFIED_MANAGER_DISPLAY_PHONE =
   parsePhoneNumberFromString(VERIFIED_MANAGER_PHONE)?.formatInternational() || VERIFIED_MANAGER_PHONE;
 
@@ -115,6 +121,34 @@ function isCancelRechargeRequest(text: string): boolean {
     '/cancelar_pedido',
     '/cancelar-pedido',
   ].includes(normalized);
+}
+
+function getRechargeCommandMessage(input: string): string {
+  const command = input.trim().toLowerCase().replace(/^\//, '');
+  const messages: Record<string, string> = {
+    depositar: 'Por favor, quero iniciar uma recarga.',
+    recarregar: 'Por favor, quero iniciar uma recarga.',
+    saldo: 'Por favor, quero consultar o meu saldo.',
+    bancos: 'Por favor, quero consultar os bancos disponíveis para depósito ou transferência.',
+    banco: 'Por favor, quero consultar os bancos disponíveis para depósito ou transferência.',
+    contas: 'Por favor, quero consultar os bancos disponíveis para depósito ou transferência.',
+    historico: 'Por favor, quero consultar o histórico das minhas recargas.',
+    registos: 'Por favor, quero consultar o histórico das minhas recargas.',
+    limites: 'Por favor, quero saber os limites e a taxa de cada recarga.',
+    taxa: 'Por favor, quero saber os limites e a taxa de cada recarga.',
+    taxas: 'Por favor, quero saber os limites e a taxa de cada recarga.',
+    horarios: 'Por favor, quero consultar o horário de funcionamento das recargas.',
+    horario: 'Por favor, quero consultar o horário de funcionamento das recargas.',
+    total_deposito: 'Por favor, quero consultar o relatório total dos meus depósitos.',
+    total_depositos: 'Por favor, quero consultar o relatório total dos meus depósitos.',
+    relatorio: 'Por favor, quero consultar o relatório total dos meus depósitos.',
+    extrato: 'Por favor, quero consultar o relatório total dos meus depósitos.',
+    ajuda: 'Por favor, quero consultar as opções de ajuda do bot de recarga.',
+    help: 'Por favor, quero consultar as opções de ajuda do bot de recarga.',
+    menu: 'Por favor, quero consultar as opções de ajuda do bot de recarga.',
+  };
+
+  return messages[command] || input;
 }
 
 function parseDepositNaturalLanguage(rawInput: string): {
@@ -288,6 +322,8 @@ interface ChatMessage {
     | 'amount_selector'
     | 'bank_selector'
     | 'deposit_instructions'
+    | 'demo_multicaixa'
+    | 'demo_usdt'
     | 'proof_success'
     | 'history_list'
     | 'banks_list'
@@ -313,6 +349,39 @@ function createBotMsg(
     text,
     payload,
   };
+}
+
+function DemoPaymentQrCode({ value, errorText }: { value: string; errorText: string }) {
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setQrDataUrl('');
+    setHasError(false);
+
+    QRCode.toDataURL(value, { width: 200, margin: 2, errorCorrectionLevel: 'M' })
+      .then((dataUrl) => {
+        if (active) setQrDataUrl(dataUrl);
+      })
+      .catch((error: unknown) => {
+        logger.error('PaymentBot', 'Falha ao gerar QR de demonstração:', error);
+        if (active) setHasError(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [value]);
+
+  if (hasError) {
+    return <p role="alert" className="text-xs text-red-600">{errorText}</p>;
+  }
+  if (!qrDataUrl) {
+    return <div className="h-[200px] w-[200px] animate-pulse rounded-lg bg-gray-100 dark:bg-[#242f3d]" aria-hidden="true" />;
+  }
+
+  return <img src={qrDataUrl} alt="QR Code de demonstração USDT" className="h-[200px] w-[200px] rounded-lg bg-white p-2" />;
 }
 
 function getCurrentDay(): string {
@@ -954,7 +1023,7 @@ export default function PaymentBot() {
         id: 'usr-' + Date.now(),
         sender: 'user',
         time: nowTime(),
-        text: rawInput,
+        text: getRechargeCommandMessage(rawInput),
         type: 'text',
       };
 
@@ -1260,8 +1329,18 @@ export default function PaymentBot() {
               </h1>
               {isVerifiedManagerPhone(VERIFIED_MANAGER_PHONE) && <VerifiedBadge className="h-4 w-4 mt-0.5" />}
             </div>
-            <span className="mt-0.5 flex items-center gap-1 text-[14px] font-semibold leading-[1.2] text-[#25ae60]">
-              {t('chat.online_now')}
+            <span
+              className={`mt-0.5 flex items-center gap-1 text-[14px] font-bold leading-[1.2] ${isTyping ? 'text-[#707579]' : 'text-[#25ae60]'}`}
+              aria-live="polite"
+            >
+              {isTyping ? t('chat.typing') : t('chat.online_now')}
+              {isTyping && (
+                <span className="inline-flex items-center gap-0.5" aria-hidden="true">
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:0ms]" />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
+                </span>
+              )}
             </span>
           </div>
         </div>
@@ -1551,25 +1630,28 @@ export default function PaymentBot() {
                           )}
                           <button
                             type="button"
-                            onClick={() => botReply(() => createBotMsg(
-                              'text',
-                              'O pagamento via Multicaixa Express está em preparação e ficará disponível em breve.'
-                            ))}
+                            onClick={() => botReply(() => createBotMsg('demo_multicaixa', undefined, {
+                              amount: msg.payload.amount,
+                              paymentNumber: DEMO_MULTICAIXA_NUMBER,
+                              entity: DEMO_MULTICAIXA_ENTITY,
+                              reference: DEMO_MULTICAIXA_REFERENCE,
+                            }))}
                             className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
                           >
                             <span>{t('recharge.multicaixa_express')}</span>
-                            <span className="text-[11px] font-medium text-gray-500 text-right">{t('common.coming_soon')}</span>
+                            <span className="text-[11px] font-medium text-[#25ae60] text-right">{t('recharge.demo_available')}</span>
                           </button>
                           <button
                             type="button"
-                            onClick={() => botReply(() => createBotMsg(
-                              'text',
-                              'O pagamento com carteira digital USDT está em preparação e ficará disponível em breve. Não envie fundos para um endereço que não tenha sido fornecido oficialmente.'
-                            ))}
+                            onClick={() => botReply(() => createBotMsg('demo_usdt', undefined, {
+                              amount: msg.payload.amount,
+                              address: DEMO_USDT_ADDRESS,
+                              network: 'TRON (TRC20)',
+                            }))}
                             className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
                           >
                             <span>{t('recharge.usdt_wallet')}</span>
-                            <span className="text-[11px] font-medium text-gray-500 text-right">{t('common.coming_soon')}</span>
+                            <span className="text-[11px] font-medium text-[#25ae60] text-right">{t('recharge.demo_available')}</span>
                           </button>
                         </div>
                       </div>
@@ -1627,24 +1709,77 @@ export default function PaymentBot() {
                       </div>
                     )}
 
-                    {msg.type === 'deposit_instructions' && msg.payload && awaitingProof && msg.payload.rechargeId === activeRechargeId && (
-                      <div className="mt-3 grid grid-cols-2 gap-2 select-none">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploading}
-                          className="rounded-lg bg-[#2481cc] px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-[#1f72b5] disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          Enviar comprovativo
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void cancelActiveRecharge()}
-                          disabled={isUploading || isTyping}
-                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          Cancelar depósito
-                        </button>
+                    {msg.type === 'demo_multicaixa' && msg.payload && (
+                      <div className="space-y-3 text-[13px] leading-relaxed text-gray-800 dark:text-gray-200">
+                        <p className="font-bold text-[15px] text-[#2481cc]">{t('recharge.multicaixa_express')}</p>
+                        <p className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 text-[12px] font-semibold text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+                          {t('recharge.demo_warning')}
+                        </p>
+                        <div className="space-y-2">
+                          <p>{t('recharge.payment_number')}: <strong className="font-mono text-[#2481cc]">{msg.payload.paymentNumber}</strong></p>
+                          <p>{t('recharge.entity')}: <strong>{msg.payload.entity}</strong></p>
+                          <p>{t('recharge.demo_reference')}: <strong>{msg.payload.reference}</strong></p>
+                          <div className="flex items-center gap-2">
+                            <p>{t('recharge.payment_amount')}: <strong className="text-[#dc2626]">{formatCurrency(msg.payload.amount, 'KZ')}</strong></p>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(String(msg.payload.amount), true)}
+                              className="text-[#2481cc] hover:text-[#1f72b5]"
+                              title={t('common.copy')}
+                              aria-label={`${t('common.copy')} ${formatCurrency(msg.payload.amount, 'KZ')}`}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {msg.type === 'demo_usdt' && msg.payload && (
+                      <div className="space-y-3 text-[13px] leading-relaxed text-gray-800 dark:text-gray-200">
+                        <p className="font-bold text-[15px] text-[#2481cc]">{t('recharge.usdt_transfer_title')}</p>
+                        <p className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 text-[12px] font-semibold text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+                          {t('recharge.demo_warning')}
+                        </p>
+                        <p>{t('recharge.network')}: <strong>{msg.payload.network}</strong></p>
+                        <div className="flex justify-center rounded-lg bg-white p-2">
+                          <DemoPaymentQrCode
+                            value={JSON.stringify({
+                              demo: true,
+                              network: msg.payload.network,
+                              address: msg.payload.address,
+                              amount: msg.payload.amount,
+                              currency: 'KZ',
+                            })}
+                            errorText={t('recharge.qr_generation_failed')}
+                          />
+                        </div>
+                        <p className="flex items-center gap-2">
+                          <span>{t('recharge.payment_amount')}: <strong className="text-[#dc2626]">{formatCurrency(msg.payload.amount, 'KZ')}</strong></span>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(String(msg.payload.amount), true)}
+                            className="shrink-0 text-[#2481cc] hover:text-[#1f72b5]"
+                            title={t('common.copy')}
+                            aria-label={`${t('common.copy')} ${formatCurrency(msg.payload.amount, 'KZ')}`}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        </p>
+                        <div className="flex items-start gap-2">
+                          <p className="min-w-0 break-all">
+                            {t('recharge.wallet_address')}: <strong className="font-mono text-[#2481cc]">{msg.payload.address}</strong>
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(msg.payload.address)}
+                            className="mt-0.5 shrink-0 text-[#2481cc] hover:text-[#1f72b5]"
+                            title={t('common.copy')}
+                            aria-label={`${t('common.copy')} ${t('recharge.wallet_address')}`}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     )}
 

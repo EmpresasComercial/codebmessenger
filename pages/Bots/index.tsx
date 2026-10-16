@@ -115,6 +115,47 @@ function displayBotName(name: string): string {
   });
 }
 
+function getBotFatherCommandMessage(input: string): string {
+  const command = input.trim().toLowerCase().replace(/^\//, '');
+  const messages: Record<string, string> = {
+    senha: 'Por favor, quero alterar a minha senha.',
+    bots: 'Por favor, quero consultar os bots disponíveis.',
+    catalogo: 'Por favor, quero consultar os bots disponíveis.',
+    catálogo: 'Por favor, quero consultar os bots disponíveis.',
+    comprar: 'Por favor, quero consultar os bots disponíveis.',
+    loja: 'Por favor, quero consultar os bots disponíveis.',
+    produtos: 'Por favor, quero consultar os bots disponíveis.',
+    meusbots: 'Por favor, quero consultar os meus bots ativos.',
+    mybots: 'Por favor, quero consultar os meus bots ativos.',
+    ativos: 'Por favor, quero consultar os meus bots ativos.',
+    compras: 'Por favor, quero consultar os meus bots ativos.',
+    minhascompras: 'Por favor, quero consultar os meus bots ativos.',
+    saldo: 'Por favor, quero consultar o saldo da minha carteira.',
+    carteira: 'Por favor, quero consultar o saldo da minha carteira.',
+    rendas: 'Por favor, quero consultar os rendimentos dos meus bots.',
+    historico: 'Por favor, quero consultar os rendimentos dos meus bots.',
+    histórico: 'Por favor, quero consultar os rendimentos dos meus bots.',
+    limites: 'Por favor, quero consultar os limites de compra dos bots.',
+    limite: 'Por favor, quero consultar os limites de compra dos bots.',
+    cupons: 'Por favor, quero consultar os meus cupons.',
+    cupon: 'Por favor, quero consultar os meus cupons.',
+    coupon: 'Por favor, quero consultar os meus cupons.',
+    codigo: 'Por favor, quero consultar os meus cupons.',
+    código: 'Por favor, quero consultar os meus cupons.',
+    ajuda: 'Por favor, quero ver as opções de ajuda disponíveis.',
+    help: 'Por favor, quero ver as opções de ajuda disponíveis.',
+    menu: 'Por favor, quero ver as opções de ajuda disponíveis.',
+    start: 'Olá, quero ver as opções disponíveis.',
+    inicio: 'Olá, quero ver as opções disponíveis.',
+    'início': 'Olá, quero ver as opções disponíveis.',
+    limpar: 'Quero limpar a conversa.',
+    reset: 'Quero limpar a conversa.',
+    clear: 'Quero limpar a conversa.',
+  };
+
+  return messages[command] || input;
+}
+
 function PurchasedBotCountdown({ dataInicio }: { dataInicio: string }) {
   const [sec, setSec] = useState(() => getSecondsUntilNextCredit(dataInicio));
 
@@ -438,7 +479,7 @@ export default function BusinessMessengerBotsChat() {
         id: "usr-" + Date.now(),
         sender: "user",
         time: getCurrentTime(),
-        text: content,
+        text: getBotFatherCommandMessage(content),
         type: "text"
       };
 
@@ -820,8 +861,14 @@ export default function BusinessMessengerBotsChat() {
           className="mx-2 flex min-w-0 flex-1 items-center gap-3 pointer-events-auto"
           onClick={() => handleSendMessage("/saldo")}
         >
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
-            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+          <div className="relative h-11 w-11 shrink-0">
+            <div className="h-full w-full overflow-hidden rounded-full">
+              <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+            </div>
+            <span
+              className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#10b981] dark:border-[#17212b]"
+              title={t('chat.online_now')}
+            />
           </div>
           <div className="flex min-w-0 flex-col">
             <h1 className="flex items-center gap-1 truncate text-[16px] font-semibold leading-[1.15] tracking-tight text-black dark:text-white">
@@ -830,8 +877,18 @@ export default function BusinessMessengerBotsChat() {
                 <Check className="h-[10px] w-[10px]" strokeWidth={3} />
               </span>
             </h1>
-            <span className="mt-0.5 truncate text-[12.5px] font-normal leading-[1.15] text-[#25ae60]">
-              Online
+            <span
+              className={`mt-0.5 flex items-center gap-1 truncate text-[12.5px] font-normal leading-[1.15] ${isTyping ? 'text-[#707579]' : 'text-[#25ae60]'}`}
+              aria-live="polite"
+            >
+              {isTyping ? t('chat.typing') : t('chat.online_now')}
+              {isTyping && (
+                <span className="inline-flex shrink-0 items-center gap-0.5" aria-hidden="true">
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:0ms]" />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
+                </span>
+              )}
             </span>
           </div>
         </div>

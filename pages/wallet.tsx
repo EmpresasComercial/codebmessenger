@@ -1301,8 +1301,18 @@ export default function wallet() {
               </h1>
               {isVerifiedManagerPhone(VERIFIED_MANAGER_PHONE) && <VerifiedBadge className="h-4 w-4 mt-0.5" />}
             </div>
-            <span className="mt-0.5 flex items-center gap-1 text-[14px] font-semibold leading-[1.2] text-[#25ae60]">
-              Online
+            <span
+              className={`mt-0.5 flex items-center gap-1 text-[14px] font-semibold leading-[1.2] ${isTyping ? 'text-[#707579]' : 'text-[#25ae60]'}`}
+              aria-live="polite"
+            >
+              {isTyping ? t('chat.typing') : t('chat.online_now')}
+              {isTyping && (
+                <span className="inline-flex items-center gap-0.5" aria-hidden="true">
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:0ms]" />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
+                </span>
+              )}
             </span>
           </div>
         </div>
