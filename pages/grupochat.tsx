@@ -2318,7 +2318,7 @@ export default function grupochat() {
                     }
                   }
                 }}
-                placeholder={editingMessage ? "Editar mensagem..." : "Mensagem"}
+                placeholder={editingMessage ? "Editar mensagem..." : t('chat.input_placeholder')}
                 className="w-full min-h-[24px] min-w-0 px-1 py-1.5 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-[#111111] placeholder:text-[#7b7b7b] font-normal leading-snug dark:text-white dark:placeholder:text-[#a0aab5]"
                 rows={1}
               />

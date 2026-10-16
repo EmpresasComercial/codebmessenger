@@ -664,7 +664,7 @@ export default function AndrewNicolan() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSendBroadcast();
               }}
-              placeholder="Mensagem"
+              placeholder={t('chat.input_placeholder')}
               className="flex-1 min-w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
             />
 

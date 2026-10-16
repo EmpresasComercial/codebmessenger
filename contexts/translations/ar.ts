@@ -150,7 +150,7 @@
   'recharge_confirm.confirm_deposit': 'تأكيد الإيداع',
   'chat.today': 'اليوم',
   'chat.title': 'الدردشة',
-  'chat.input_placeholder': 'اكتب رسالة...',
+  'chat.input_placeholder': 'رسالة',
   'chat.replying_to': 'ردًا على',
   'chat.image': 'صورة',
   'chat.search_placeholder': 'ابحث عن محادثات أو روبوتات أو رسائل...',

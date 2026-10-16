@@ -150,7 +150,7 @@
   'recharge_confirm.confirm_deposit': 'Confirmar depósito',
   'chat.today': 'Hoy',
   'chat.title': 'Charlar',
-  'chat.input_placeholder': 'Escribe un mensaje...',
+  'chat.input_placeholder': 'mensaje',
   'chat.replying_to': 'Respondiendo a',
   'chat.image': 'Imagen',
   'chat.info_desc': 'Grupo oficial de soporte en tiempo real, consejos de inversión y noticias tecnológicas Business Messenger.',

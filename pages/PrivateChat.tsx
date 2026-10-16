@@ -1467,7 +1467,7 @@ export default function PrivateChat() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
-              placeholder={replyTo ? t('chat.reply_placeholder') : 'mensagem'}
+              placeholder={replyTo ? t('chat.reply_placeholder') : t('chat.input_placeholder')}
               className="w-full min-h-[24px] min-w-0 px-2 py-2 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
               rows={1}
             />}

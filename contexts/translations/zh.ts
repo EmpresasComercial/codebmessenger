@@ -143,7 +143,7 @@
   'recharge_confirm.confirm_deposit': '确认存款',
   'chat.today': '今天',
   'chat.title': '聊天',
-  'chat.input_placeholder': '输入消息...',
+  'chat.input_placeholder': '消息',
   'chat.replying_to': '正在回复',
   'chat.image': '图片',
   'chat.info_desc': 'Business Messenger 官方群组，提供实时支持、投资建议和技术新闻。',
