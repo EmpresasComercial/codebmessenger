@@ -31,7 +31,8 @@ import {
   Smartphone,
   Moon,
   Sun,
-  ZoomIn
+  ZoomIn,
+  Palette
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -41,6 +42,7 @@ import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js/
 import { isVerifiedManagerPhone } from '../lib/verifiedManager';
 import VerifiedBadge from '../components/VerifiedBadge';
 import ZoomSettingsModal from '../components/ZoomSettingsModal';
+import ThemeSettingsScreen from '../components/ThemeSettingsScreen';
 import { CHAT_ACTIVITY_EVENT, loadChatActivities, type ChatActivity } from '../lib/chatActivity';
 import { COMMUNITY_CHAT_AVATAR, DEFAULT_PROFILE_AVATAR, PAYMENT_BOT_AVATAR, WITHDRAWAL_BOT_AVATAR, getProfileAvatarUrl } from '../lib/utils';
 
@@ -188,6 +190,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   );
   const [isNavigationDrawerOpen, setIsNavigationDrawerOpen] = useState(false);
   const [isZoomSettingsOpen, setIsZoomSettingsOpen] = useState(false);
+  const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<{
     src: string | null;
     name: string;
@@ -1400,6 +1403,17 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 <ZoomIn className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" aria-hidden="true" />
                 {t('zoom.title')}
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNavigationDrawerOpen(false);
+                  setIsThemeSettingsOpen(true);
+                }}
+                className="flex h-12 shrink-0 items-center gap-4 px-5 text-left text-[16px] text-[#222] transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-white/5"
+              >
+                <Palette className="h-5 w-5 text-[#707579] dark:text-[#9eaab6]" aria-hidden="true" />
+                {t('theme.title')}
+              </button>
               {[
                 { label: t('chat.wallet'), path: "/carteira", icon: Wallet },
                 { label: t('chat.payment_wallet'), path: "/sand-pay", icon: PlusCircle },
@@ -1445,6 +1459,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         )}
         {isZoomSettingsOpen && (
           <ZoomSettingsModal onClose={() => setIsZoomSettingsOpen(false)} />
+        )}
+        {isThemeSettingsOpen && (
+          <ThemeSettingsScreen onClose={() => setIsThemeSettingsOpen(false)} />
         )}
 
         {/* ── ABAS SUPERIORES ── */}

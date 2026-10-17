@@ -486,3 +486,122 @@ textarea,
   -ms-user-select: text !important;
   user-select: text !important;
 }
+
+/* User-selectable color themes stay independent from the light/dark mode. */
+:root[data-app-theme] {
+  --app-theme-accent: var(--app-theme-accent-light);
+  --app-theme-hover: var(--app-theme-hover-light);
+  --app-theme-button: var(--app-theme-button-light);
+  --tg-primary: var(--app-theme-accent);
+  --tg-primary-hover: var(--app-theme-hover);
+  --tg-primary-light: var(--app-theme-hover);
+  --tg-header-modern: var(--app-theme-accent);
+  --tg-chat-bg: var(--app-theme-chat-bg-light);
+  --tg-bubble-out: var(--app-theme-bubble-out-light);
+  --tg-bubble-in: var(--app-theme-bubble-in-light);
+  --tg-ticks: var(--app-theme-accent);
+  --tg-badge: var(--app-theme-accent);
+  --tg-online: var(--app-theme-accent);
+}
+
+.dark[data-app-theme] {
+  --app-theme-accent: var(--app-theme-accent-dark);
+  --app-theme-hover: var(--app-theme-hover-dark);
+  --app-theme-button: var(--app-theme-button-dark);
+  --tg-primary: var(--app-theme-accent);
+  --tg-primary-hover: var(--app-theme-hover);
+  --tg-primary-light: var(--app-theme-hover);
+  --tg-header-modern: var(--app-theme-accent);
+  --tg-chat-bg: var(--app-theme-chat-bg-dark);
+  --tg-bubble-out: var(--app-theme-bubble-out-dark);
+  --tg-bubble-in: var(--app-theme-bubble-in-dark);
+  --tg-ticks: var(--app-theme-accent);
+  --tg-badge: var(--app-theme-accent);
+  --tg-online: var(--app-theme-accent);
+}
+
+:root[data-app-theme] [class~="text-[#2481cc]"],
+:root[data-app-theme] [class~="text-[#1877f2]"],
+:root[data-app-theme] [class~="text-[#007aff]"],
+:root[data-app-theme] [class~="text-[#3390ec]"],
+:root[data-app-theme] [class~="hover:text-[#2481cc]"] {
+  color: var(--app-theme-accent) !important;
+}
+
+:root[data-app-theme] [class~="text-[#6ab3f3]"],
+.dark[data-app-theme] [class~="dark:text-[#6ab3f3]"],
+.dark[data-app-theme] [class~="dark:text-[#5288c1]"] {
+  color: var(--app-theme-accent) !important;
+}
+
+:root[data-app-theme] [class~="bg-[#2481cc]"],
+:root[data-app-theme] [class~="bg-[#3390ec]"],
+:root[data-app-theme] [class~="bg-[#50a2e9]"],
+:root[data-app-theme] [class~="bg-[#50a8eb]"],
+:root[data-app-theme] [class~="bg-[#007aff]"] {
+  background-color: var(--app-theme-button) !important;
+}
+
+.dark[data-app-theme] [class~="dark:bg-[#5288c1]"],
+.dark[data-app-theme] [class~="dark:bg-[#6ab3f3]"] {
+  background-color: var(--app-theme-button) !important;
+}
+
+:root[data-app-theme] [class~="bg-[#1877f2]"] {
+  background-color: var(--app-theme-bubble-out-light) !important;
+}
+
+.dark[data-app-theme] [class~="dark:bg-[#2b5278]"] {
+  background-color: var(--app-theme-bubble-out-dark) !important;
+}
+
+.dark[data-app-theme] [class~="dark:fill-[#2b5278]"] {
+  fill: var(--app-theme-bubble-out-dark) !important;
+}
+
+:root[data-app-theme] [class~="bg-[#f5f5f5]"] {
+  background-color: var(--app-theme-bubble-in-light) !important;
+}
+
+.dark[data-app-theme] [class~="dark:bg-[#182533]"] {
+  background-color: var(--app-theme-bubble-in-dark) !important;
+}
+
+:root[data-app-theme] [class~="border-[#2481cc]"],
+:root[data-app-theme] [class~="border-[#50a2e9]"],
+:root[data-app-theme] [class~="border-[#1877f2]"] {
+  border-color: var(--app-theme-accent) !important;
+}
+
+:root[data-app-theme] [class~="fill-[#2481cc]"],
+:root[data-app-theme] [class~="stroke-[#2481cc]"],
+:root[data-app-theme] [class~="fill-[#1877f2]"],
+:root[data-app-theme] [class~="stroke-[#1877f2]"] {
+  fill: var(--app-theme-accent) !important;
+  stroke: var(--app-theme-accent) !important;
+}
+
+:root[data-app-theme] .tg-theme-icon {
+  color: var(--app-theme-accent) !important;
+}
+
+:root:not(.dark)[data-app-theme] [class~="bg-white"] {
+  background-color: var(--app-theme-surface) !important;
+}
+
+:root[data-app-theme] .tg-wallpaper {
+  background-color: var(--tg-chat-bg);
+}
+
+.dark[data-app-theme] .tg-theme-chat-canvas,
+:root[data-app-theme] .tg-theme-chat-canvas {
+  background-color: var(--tg-chat-bg) !important;
+}
+
+.theme-option-button {
+  border-radius: 18px !important;
+}
+
+.theme-preview-device {
+  border-radius: 16px !important;
+}

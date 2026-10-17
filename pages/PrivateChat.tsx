@@ -905,14 +905,14 @@ export default function PrivateChat() {
             className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
             aria-label={t('chat.contact_profile')}
           >
-            <Phone className="w-5 h-5" />
+            <Phone className="tg-theme-icon w-5 h-5" />
           </button>
           <button
             onClick={() => setShowContactProfile(true)}
             className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
             aria-label={t('chat.more_options')}
           >
-            <MoreVertical className="w-5 h-5" />
+            <MoreVertical className="tg-theme-icon w-5 h-5" />
           </button>
         </div>
       </header>
@@ -1035,7 +1035,7 @@ export default function PrivateChat() {
       {/* ── ÁREA DE MENSAGENS TELEGRAM (LARGURA TOTAL FLUIDA) ── */}
       <main
         ref={scrollRef}
-        className="w-full min-h-0 flex-1 overflow-y-auto bg-white no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-3 relative scroll-smooth dark:bg-[#0e1621] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="tg-theme-chat-canvas w-full min-h-0 flex-1 overflow-y-auto bg-white no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-3 relative scroll-smooth dark:bg-[#0e1621] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         onClick={() => contextMenu && closeContextMenu()}
       >
         {isLoading && messages.length === 0 && (
@@ -1496,7 +1496,7 @@ export default function PrivateChat() {
               title={t('chat.attach_pdf')}
               aria-label={t('chat.attach_pdf')}
             >
-              <Paperclip className="w-5 h-5" />
+              <Paperclip className="tg-theme-icon w-5 h-5" />
             </button>}
             {!voiceComposerActive && <button
               type="button"
@@ -1506,7 +1506,7 @@ export default function PrivateChat() {
               title={t('chat.choose_photo')}
               aria-label={t('chat.choose_photo')}
             >
-              <Camera className="w-5 h-5" />
+              <Camera className="tg-theme-icon w-5 h-5" />
             </button>}
             <VoiceMessageComposer
               ref={voiceComposerRef}
@@ -1547,8 +1547,8 @@ export default function PrivateChat() {
             aria-label={inputText.trim() || imagePreview || pdfPreview || voiceComposerActive ? t('common.send') : t('chat.voice_record')}
           >
             {(inputText.trim() || imagePreview || pdfPreview || voiceComposerActive)
-              ? <Send className="ml-0.5 h-5 w-5" />
-              : <Mic className="h-5 w-5" />}
+              ? <Send className="tg-theme-icon ml-0.5 h-5 w-5" />
+              : <Mic className="tg-theme-icon h-5 w-5" />}
           </button>
         </div>
       </div>

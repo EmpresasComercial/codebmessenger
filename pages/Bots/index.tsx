@@ -907,7 +907,7 @@ export default function BusinessMessengerBotsChat() {
       <main
         ref={mainChatRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto bg-white px-2.5 py-3 pb-40 space-y-3 relative select-text dark:bg-[#0e1621]"
+        className="tg-theme-chat-canvas flex-1 overflow-y-auto bg-white px-2.5 py-3 pb-40 space-y-3 relative select-text dark:bg-[#0e1621]"
       >
         <div className="flex justify-center my-2 select-none">
           <span className="text-white text-[12px] font-medium px-3.5 py-0.5 rounded-full" style={{ backgroundColor: "rgba(74, 100, 74, 0.72)", backdropFilter: "blur(4px)" }}>

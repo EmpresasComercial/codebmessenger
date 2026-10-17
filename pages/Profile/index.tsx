@@ -20,6 +20,7 @@ import {
   Fingerprint,
   Loader2,
   ZoomIn,
+  Palette,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { logger } from "../../lib/logger";
@@ -29,6 +30,8 @@ import { useToast } from "../../components/Toast";
 import { useAuth } from "../../contexts/AuthContext";
 import ZoomSettingsModal from "../../components/ZoomSettingsModal";
 import { getSavedAppZoom } from "../../lib/appZoom";
+import ThemeSettingsScreen from "../../components/ThemeSettingsScreen";
+import { getSavedAppTheme, type AppThemeId } from "../../lib/appThemes";
 
 const EditProfileModal = lazy(() => import("./components/EditProfileModal"));
 
@@ -66,6 +69,8 @@ export default function Profile() {
   const [showLanguage, setShowLanguage] = useState(false);
   const [showZoomSettings, setShowZoomSettings] = useState(false);
   const [appZoom, setAppZoom] = useState(getSavedAppZoom);
+  const [showThemeSettings, setShowThemeSettings] = useState(false);
+  const [appTheme, setAppTheme] = useState<AppThemeId>(getSavedAppTheme);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
   const [isProfileAvatarHidden, setIsProfileAvatarHidden] = useState(false);
@@ -459,6 +464,14 @@ export default function Profile() {
           />
 
           <SettingsItem
+            icon={<Palette className="w-5 h-5 text-white" />}
+            iconBg="bg-[#7048ae]"
+            title={t('theme.title')}
+            subtitle={t(`theme.name.${appTheme}`)}
+            onClick={() => setShowThemeSettings(true)}
+          />
+
+          <SettingsItem
             icon={<ShieldAlert className="w-5 h-5 text-white" />}
             iconBg="bg-[#2481cc]"
             title={t('chat.reset_password')}
@@ -583,6 +596,13 @@ export default function Profile() {
             setShowZoomSettings(false);
             setAppZoom(getSavedAppZoom());
           }}
+        />
+      )}
+
+      {showThemeSettings && (
+        <ThemeSettingsScreen
+          onClose={() => setShowThemeSettings(false)}
+          onSaved={setAppTheme}
         />
       )}
 
