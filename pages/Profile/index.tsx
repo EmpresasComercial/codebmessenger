@@ -19,6 +19,7 @@ import {
   Moon,
   Fingerprint,
   Loader2,
+  ZoomIn,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { logger } from "../../lib/logger";
@@ -26,6 +27,8 @@ import { type Language, supportedLanguages, useLanguage } from "../../contexts/L
 import { DEFAULT_PROFILE_AVATAR, getProfileAvatarUrl } from "../../lib/utils";
 import { useToast } from "../../components/Toast";
 import { useAuth } from "../../contexts/AuthContext";
+import ZoomSettingsModal from "../../components/ZoomSettingsModal";
+import { getSavedAppZoom } from "../../lib/appZoom";
 
 const EditProfileModal = lazy(() => import("./components/EditProfileModal"));
 
@@ -61,6 +64,8 @@ export default function Profile() {
     : initialFullName.split(" ").slice(1).join(" ");
 
   const [showLanguage, setShowLanguage] = useState(false);
+  const [showZoomSettings, setShowZoomSettings] = useState(false);
+  const [appZoom, setAppZoom] = useState(getSavedAppZoom);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
   const [isProfileAvatarHidden, setIsProfileAvatarHidden] = useState(false);
@@ -446,6 +451,14 @@ export default function Profile() {
           />
 
           <SettingsItem
+            icon={<ZoomIn className="w-5 h-5 text-white" />}
+            iconBg="bg-[#2481cc]"
+            title={t('zoom.title')}
+            subtitle={`${appZoom}%`}
+            onClick={() => setShowZoomSettings(true)}
+          />
+
+          <SettingsItem
             icon={<ShieldAlert className="w-5 h-5 text-white" />}
             iconBg="bg-[#2481cc]"
             title={t('chat.reset_password')}
@@ -562,6 +575,15 @@ export default function Profile() {
             }}
           />
         </Suspense>
+      )}
+
+      {showZoomSettings && (
+        <ZoomSettingsModal
+          onClose={() => {
+            setShowZoomSettings(false);
+            setAppZoom(getSavedAppZoom());
+          }}
+        />
       )}
 
     </div>
