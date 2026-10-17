@@ -71,26 +71,26 @@ export default function Navbar() {
       name: t('nav.home'),
       path: '/conversas',
       aliasPaths: ['/conversas', '/org', '/telegramBussiness', '/telegramBusiness', '/telegram-business'],
-      icon: (isActive: boolean) => <MessageCircle className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />,
+      icon: (isActive: boolean) => <MessageCircle aria-hidden="true" className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />,
       badge: unreadMessagesCount
     },
     {
       name: t('nav.invite'),
       path: '/contactos',
       aliasPaths: ['/contactos', '/convite'],
-      icon: (isActive: boolean) => <Users className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
+      icon: (isActive: boolean) => <Users aria-hidden="true" className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     },
     {
       name: t('nav.products'),
       path: '/botfather',
       aliasPaths: ['/botfather', '/bot-pay', '/operacoes'],
-      icon: (isActive: boolean) => <Sparkles className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
+      icon: (isActive: boolean) => <Sparkles aria-hidden="true" className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     },
     {
       name: t('nav.profile'),
       path: '/definicoes',
       aliasPaths: ['/definicoes', '/perfil', '/settings', '/configuracoes-conta'],
-      icon: (isActive: boolean) => <Settings className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
+      icon: (isActive: boolean) => <Settings aria-hidden="true" className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     }
   ];
 
@@ -102,24 +102,31 @@ export default function Navbar() {
       {/* Floating compose button */}
       {showFab && (
         <button
+          type="button"
           onClick={() => navigate('/grupo')}
           className="fixed bottom-[72px] right-4 sm:right-6 z-40 w-12 h-12 rounded-full bg-[#50a8eb] dark:bg-[#50a8eb] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(80,168,235,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
           title={t('nav.new_message')}
           aria-label={t('nav.new_message')}
         >
-          <Plus className="h-6 w-6" strokeWidth={2.2} />
+          <Plus className="h-6 w-6" strokeWidth={2.2} aria-hidden="true" />
         </button>
       )}
 
       {/* Bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 w-full z-50 h-[56px] bg-white dark:bg-[#1c242f] border-t border-black/5 dark:border-[#000000]/30 flex items-center justify-around px-2 select-none shadow-[0_-1px_3px_rgba(0,0,0,0.02)]">
+      <nav
+        aria-label={t('chat.main_navigation')}
+        className="fixed bottom-0 left-0 right-0 w-full z-50 h-[56px] bg-white dark:bg-[#1c242f] border-t border-black/5 dark:border-[#000000]/30 flex items-center justify-around px-2 select-none shadow-[0_-1px_3px_rgba(0,0,0,0.02)]"
+      >
         {navItems.map((item) => {
-          const isActive = item.aliasPaths.some(p => location.pathname === p || (p !== '/home' && location.pathname.startsWith(p)));
+          const isActive = item.aliasPaths.some(p =>
+            location.pathname === p || location.pathname.startsWith(`${p}/`)
+          );
 
           return (
             <NavLink
               key={item.name}
               to={item.path}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
                 "relative flex-1 flex flex-col items-center justify-center h-full transition-colors cursor-pointer group",
                 isActive

@@ -4,20 +4,17 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { normalizeAllowedMessageUrl, renderMessageWithAllowedLinks } from './allowedMessageLinks';
 
-test('allows signup links on both supported hostnames', () => {
-  assert.equal(
-    normalizeAllowedMessageUrl('https://telegramas.cc/signup?ref=000123'),
-    'https://telegramas.cc/signup?ref=000123'
-  );
-  assert.equal(
-    normalizeAllowedMessageUrl('https://www.telegramas.cc/signup?ref=123456'),
-    'https://www.telegramas.cc/signup?ref=123456'
-  );
+test('allows signup links on the main, www, and me hostnames', () => {
+  for (const hostname of ['telegramas.cc', 'www.telegramas.cc', 'me.telegramas.cc']) {
+    const signupUrl = `https://${hostname}/signup?ref=123456`;
+    assert.equal(normalizeAllowedMessageUrl(signupUrl), signupUrl);
+  }
 });
 
-test('allows both supported hostnames without a signup path', () => {
-  assert.equal(normalizeAllowedMessageUrl('https://telegramas.cc'), 'https://telegramas.cc/');
-  assert.equal(normalizeAllowedMessageUrl('https://www.telegramas.cc'), 'https://www.telegramas.cc/');
+test('allows all supported hostnames without a signup path', () => {
+  for (const hostname of ['telegramas.cc', 'www.telegramas.cc', 'me.telegramas.cc']) {
+    assert.equal(normalizeAllowedMessageUrl(`https://${hostname}`), `https://${hostname}/`);
+  }
 });
 
 test('normalizes the signup link typed without a slash after the hostname', () => {
@@ -29,6 +26,7 @@ test('normalizes the signup link typed without a slash after the hostname', () =
 
 test('does not allow unrelated or insecure hostnames', () => {
   assert.equal(normalizeAllowedMessageUrl('https://telegramas.cc.example.com/signup'), null);
+  assert.equal(normalizeAllowedMessageUrl('https://not-me.telegramas.cc/signup'), null);
   assert.equal(normalizeAllowedMessageUrl('http://telegramas.cc/signup'), null);
 });
 
@@ -41,6 +39,6 @@ test('renders the captured URL as a message preview instead of dropping it', () 
     )
   );
 
-  assert.match(markup, /Teggram X/);
+  assert.match(markup, /Teggram-X/);
   assert.match(markup, /href="https:\/\/www\.telegramas\.cc\/signup\?ref=6DK4"/);
 });

@@ -1958,7 +1958,7 @@ export default function grupochat() {
           className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full pointer-events-auto"
           aria-label="Abrir detalhes do grupo"
         >
-          <img src="/logo_bussiness_messeger.jpg" alt="" className="h-full w-full object-cover" />
+          <img src="/logo_tegx.jfif" alt="" className="h-full w-full object-cover" />
         </button>
 
         <button
@@ -2393,7 +2393,7 @@ export default function grupochat() {
                 aria-hidden="true"
               >
                 <img
-                  src="/logo_bussiness_messeger.jpg"
+                  src="/logo_tegx.jfif"
                   alt=""
                   className="w-full h-full object-cover"
                 />
@@ -2415,7 +2415,7 @@ export default function grupochat() {
               {/* ── Avatar + Nome + Membros ── */}
               <div className="flex flex-col items-center pt-6 pb-5 px-4">
                 <div ref={groupInfoAvatarRef} className="w-[96px] h-[96px] rounded-full overflow-hidden mb-4">
-                  <img src="/logo_bussiness_messeger.jpg" alt="Teggram X" className="w-full h-full object-cover" />
+                  <img src="/logo_tegx.jfif" alt="Teggram-X" className="w-full h-full object-cover" />
                 </div>
                 <h1 className="text-[18px] font-bold text-[#111] text-center leading-tight">
                   Grupo de discursão
@@ -2433,7 +2433,7 @@ export default function grupochat() {
                 <div
                   className="flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-gray-50 transition-colors"
                   onClick={() => {
-                    navigator.clipboard.writeText('http://telegramas.cc/web');
+                    navigator.clipboard.writeText('https://me.telegramas.cc/grupo');
                     setIsCopiedLink(true);
                     showToast('Link copiado!', 'success');
                     setTimeout(() => setIsCopiedLink(false), 2000);
@@ -2444,7 +2444,7 @@ export default function grupochat() {
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="text-[14px] truncate" style={{ color: '#007aff' }}>
-                      {isCopiedLink ? 'Copiado!' : 'http://telegramas.cc/web'}
+                      {isCopiedLink ? 'Copiado!' : 'me.telegramas.cc/grupo'}
                     </span>
                     <span className="text-[12px]" style={{ color: '#8e8e93' }}>Link</span>
                   </div>

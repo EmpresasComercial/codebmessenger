@@ -340,7 +340,7 @@ export default function DevicesPrivacy() {
                   </div>
 
                   <p className="text-[13px] text-[#707579] dark:text-[#8e9aa5] mt-0.5">
-                    {deviceInfo.browser} • Teggram X
+                    {deviceInfo.browser} • Teggram-X
                   </p>
 
                 </div>

@@ -210,14 +210,14 @@ export default function Login() {
       <main className="w-full max-w-[340px] sm:max-w-[360px] flex flex-col items-center">
         <div className="mb-3.5 flex items-center justify-center">
           <img
-            src="/logo_bussiness_messeger.jpg"
-            alt="Teggram X"
+            src="/logo_tegx.jfif"
+            alt="Teggram-X"
             className="w-[90px] h-[90px] rounded-full object-cover"
           />
         </div>
 
         <h1 className="text-[20px] font-medium text-center mb-1.5 text-[#1c1c1e]">
-          Teggram X
+          Teggram-X
         </h1>
         <p className="w-full text-[13px] text-[#707579] text-center mb-6 leading-snug">
           {loginMethod === 'password'

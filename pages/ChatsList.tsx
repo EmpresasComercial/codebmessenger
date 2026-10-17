@@ -295,11 +295,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       timestamp: 0
     };
   });
-  const [channelLastPost, setChannelLastPost] = useState<{ text: string; timestamp: number } | null>(null);
-  
   // Abas oficiais conforme especificação da Fase 1:
   // Conversas | Grupos | Canais | Bots | Mensagens não lidas
-  type ChatFolder = 'all' | 'groups' | 'channels' | 'bots' | 'unread';
+  type ChatFolder = 'all' | 'groups' | 'bots' | 'unread';
   const [activeFilter, setActiveFilter] = useState<ChatFolder>('all');
 
   const formatSenderPhone = (phone?: string | null, countryCode?: string) => {
@@ -519,39 +517,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       window.removeEventListener('app:sync-data', handleSync);
     };
   }, [user]);
-
-  useEffect(() => {
-    let active = true;
-    const fetchLatestChannelPost = async () => {
-      const { data, error } = await (supabase as any)
-        .from('canal_posts')
-        .select('titulo,conteudo,created_at')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) {
-        console.error('Não foi possível carregar a atividade recente do canal:', error);
-        return;
-      }
-      if (!active || !data) return;
-      setChannelLastPost({
-        text: String(data.conteudo || data.titulo || 'Comunicado Oficial'),
-        timestamp: new Date(data.created_at).getTime(),
-      });
-    };
-
-    void fetchLatestChannelPost();
-    const channel = supabase.channel('chatslist_channel_activity')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'canal_posts' }, () => {
-        void fetchLatestChannelPost();
-      })
-      .subscribe();
-
-    return () => {
-      active = false;
-      void supabase.removeChannel(channel);
-    };
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -907,7 +872,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   }, [queryClean, user?.id, contacts]);
 
   const filteredContacts = useMemo(() => {
-    if (activeFilter === 'groups' || activeFilter === 'channels' || activeFilter === 'bots') return [];
+    if (activeFilter === 'groups' || activeFilter === 'bots') return [];
 
     let list = contacts;
 
@@ -932,11 +897,10 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     });
   }, [contacts, queryClean, queryDigits, activeFilter, unreadContactIds]);
 
-  // Estrutura das abas solicitadas: Conversas | Grupos | Canais | Bots | Mensagens não lidas
+  // Estrutura das abas de conversas disponíveis.
   const folders: { id: ChatFolder; label: string; count?: number }[] = [
-    { id: 'all', label: t('chat.tab_chats'), count: contacts.length + 5 },
+    { id: 'all', label: t('chat.tab_chats'), count: contacts.length + 4 },
     { id: 'groups', label: t('chat.tab_groups'), count: 1 },
-    { id: 'channels', label: t('chat.tab_channels'), count: 1 },
     { id: 'bots', label: t('chat.tab_bots'), count: 3 },
     { id: 'unread', label: t('chat.tab_unread'), count: unreadContactIds.size },
   ];
@@ -945,11 +909,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
   // Lista de conversas com ordenação estrita por data/hora da mensagem mais recente (sem fixação permanente)
   const allConversations = useMemo(() => {
-    const channelActivityTimestamp = Math.max(
-      channelLastPost?.timestamp || 0,
-      chatActivities['business-community']?.timestamp || 0,
-      Date.now() - 1000 * 60 * 60 * 20,
-    );
     // 1. Conversas do Sistema / Oficiais
     const systemChats = [
       {
@@ -975,30 +934,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           </div>
         ),
         onClick: () => navigate('/web')
-      },
-      {
-        id: 'business-community',
-        folder: 'channels' as ChatFolder,
-        name: 'Andrew Nicolan',
-        isVerified: true,
-        lastMessage: channelLastPost?.text || 'Fundador',
-        senderPrefix: null,
-        time: formatTelegramTime(channelActivityTimestamp),
-        timestamp: channelActivityTimestamp,
-        isMe: false,
-        avatarUrl: '/Andrew_avatar_1792019295598.jpg',
-        avatarLabel: 'B',
-        avatarColor: '#2481cc',
-        actionBtn: null,
-        tag: null,
-        isSubordinate: false,
-        nivel: null,
-        avatar: (
-          <div className="w-13 h-13 rounded-full overflow-hidden shadow-xs bg-[#2481cc]/20 border border-white/40">
-            <img src="/Andrew_avatar_1792019295598.jpg" alt="Andrew Nicolan" className="w-full h-full object-cover" />
-          </div>
-        ),
-        onClick: () => navigate('/andrewnicolan')
       },
       {
         id: 'deposit-bot',
@@ -1060,21 +995,22 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       {
         id: 'business-bot-manager',
         folder: 'bots' as ChatFolder,
-        name: 'BotFather',
+        name: 'X-father',
         isVerified: true,
         tag: null,
-        lastMessage: 'Gestão de bots do Teggram X',
+        lastMessage: 'Gestão de bots do Teggram-X',
         senderPrefix: null,
         time: formatTelegramTime(chatActivities['business-bot-manager']?.timestamp || Date.now() - 1000 * 60 * 60 * 72),
         timestamp: chatActivities['business-bot-manager']?.timestamp || Date.now() - 1000 * 60 * 60 * 72,
         isMe: false,
-        avatarUrl: '/logo_bussiness_messeger.jpg',
+        avatarUrl: '/logo_tegx.jfif',
         avatarLabel: 'B',
         avatarColor: '#2481cc',
         isSubordinate: false,
         nivel: null,
         actionBtn: (
           <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); navigate('/botfather'); }}
             className="shrink-0 px-3.5 py-1 rounded-full bg-[#2481cc] text-white text-[13px] font-medium leading-none cursor-pointer hover:bg-[#1e6eb0] active:bg-[#1a5e9a] transition-colors"
           >
@@ -1083,7 +1019,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         ),
         avatar: (
           <div className="w-[52px] h-[52px] rounded-full overflow-hidden border border-gray-200/80 bg-white flex-shrink-0">
-            <img src="/logo_bussiness_messeger.jpg" alt="Teggram X" className="w-full h-full object-cover" />
+            <img src="/logo_tegx.jfif" alt="Teggram-X" className="w-full h-full object-cover" />
           </div>
         ),
         onClick: () => navigate('/botfather')
@@ -1227,7 +1163,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       .filter((chat): chat is NonNullable<typeof chat> => chat !== null);
 
     return [...systemChats, ...activeContactChats, ...searchedContactChats].sort((a, b) => b.timestamp - a.timestamp);
-  }, [chatActivities, channelLastPost, communityLastMessage, contacts, messageSearchHits, messageSearchProfiles, navigate]);
+  }, [chatActivities, communityLastMessage, contacts, messageSearchHits, messageSearchProfiles, navigate]);
 
   const filteredChats = useMemo(() => {
     let list = allConversations;
@@ -1235,8 +1171,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     if (!queryClean) {
       if (activeFilter === 'groups') {
         list = list.filter(c => c.folder === 'groups');
-      } else if (activeFilter === 'channels') {
-        list = list.filter(c => c.folder === 'channels');
       } else if (activeFilter === 'bots') {
         list = list.filter(c => c.folder === 'bots');
       } else if (activeFilter === 'unread') {
@@ -1282,14 +1216,16 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           {isSearching ? (
             <>
               <button
+                type="button"
                 onClick={() => {
                   setIsSearching(false);
                   setSearchQuery("");
                 }}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0"
                 title={t('chat.back')}
+                aria-label={t('chat.back')}
               >
-                <X className="w-5 h-5 text-[#111] dark:text-white" />
+                <X className="w-5 h-5 text-[#111] dark:text-white" aria-hidden="true" />
               </button>
 
               <div className="flex-1 flex items-center bg-[#f1f1f1] dark:bg-[#1c2733] rounded-full px-3.5 py-1.5 mx-1">
@@ -1301,6 +1237,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 <input
                   type="text"
                   autoFocus
+                  aria-label={t('chat.search')}
                   placeholder={t('chat.search_placeholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -1308,10 +1245,12 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 />
                 {searchQuery && (
                   <button 
+                    type="button"
                     onClick={() => setSearchQuery("")}
                     className="w-5 h-5 flex items-center justify-center rounded-full bg-[#aaa] hover:bg-[#999] text-white cursor-pointer"
+                    aria-label={t('chat.clear_search')}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3 h-3" aria-hidden="true" />
                   </button>
                 )}
               </div>
@@ -1337,7 +1276,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     <Menu className="h-[20px] w-[20px]" />
                   </button>
                   <h1 className="min-w-0 truncate whitespace-nowrap text-[20px] font-semibold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
-                    Teggram X
+                    Teggram-X
                   </h1>
                 </>
               )}
@@ -1348,15 +1287,18 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           <div className="flex items-center gap-0">
             {!isSearching && (
               <button
+                type="button"
                 onClick={() => setIsSearching(true)}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer"
                 title={t('chat.search')}
+                aria-label={t('chat.search')}
               >
-                <Search className="w-5 h-5 text-[#111] dark:text-white" />
+                <Search className="w-5 h-5 text-[#111] dark:text-white" aria-hidden="true" />
               </button>
             )}
 
             <button
+              type="button"
               onClick={() => {
                 if (outletContext?.openAutoMessages) {
                   outletContext.openAutoMessages();
@@ -1366,8 +1308,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               }}
               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer"
               title={t('chat.automatic_messages')}
+              aria-label={t('chat.automatic_messages')}
             >
-              <MoreVertical className="w-5 h-5 text-[#111] dark:text-white" />
+              <MoreVertical className="w-5 h-5 text-[#111] dark:text-white" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -1492,6 +1435,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             return (
               <button
                 key={folder.id}
+                type="button"
+                aria-pressed={isActive}
                 onClick={() => setActiveFilter(folder.id)}
                 className={`relative flex items-center gap-1.5 px-3 py-2.5 text-[14px] font-medium whitespace-nowrap shrink-0 transition-all cursor-pointer ${
                   isActive
@@ -1540,9 +1485,14 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               return (
                 <div
                   key={chat.id}
-                  onClick={chat.onClick}
-                  className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-[#202b36] active:bg-gray-100 dark:active:bg-[#242f3d] transition-colors cursor-pointer border-b border-gray-100/80 dark:border-[#202b36]"
+                  className="relative flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-[#202b36] active:bg-gray-100 dark:active:bg-[#242f3d] transition-colors cursor-pointer border-b border-gray-100/80 dark:border-[#202b36]"
                 >
+                  <button
+                    type="button"
+                    onClick={chat.onClick}
+                    className="absolute inset-0 z-0 rounded-none border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2481cc] focus-visible:outline-offset-[-2px]"
+                    aria-label={chat.name}
+                  />
                   <button
                     type="button"
                     onClick={(event) => {
@@ -1554,7 +1504,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                         color: chat.avatarColor,
                       });
                     }}
-                    className="relative shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2481cc]"
+                    className="relative z-10 shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2481cc]"
                     aria-label={`Ver avatar de ${chat.name}`}
                   >
                     {chat.avatar}
@@ -1566,7 +1516,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     )}
                   </button>
 
-                  <div className="flex-1 min-w-0 py-0.5">
+                  <div className="relative z-10 flex-1 min-w-0 py-0.5 pointer-events-none">
                     <div className="flex justify-between items-center mb-0.5">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <h3 className="text-[15.5px] font-medium text-[#111] dark:text-white truncate leading-tight">
@@ -1611,7 +1561,11 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                           </p>
                         );
                       })()}
-                      {chat.actionBtn}
+                      {chat.actionBtn && (
+                        <div className="pointer-events-auto">
+                          {chat.actionBtn}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1636,9 +1590,14 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   return (
                     <div
                       key={contact.id}
-                      onClick={() => navigate(`/chat/${contact.id}?t=${encodeURIComponent(contact.telefone)}${nv ? `&nv=${nv}` : ''}`)}
-                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-[#202b36] active:bg-gray-100 dark:active:bg-[#242f3d] transition-colors cursor-pointer border-b border-gray-100/80 dark:border-[#202b36]"
+                      className="relative flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-[#202b36] active:bg-gray-100 dark:active:bg-[#242f3d] transition-colors cursor-pointer border-b border-gray-100/80 dark:border-[#202b36]"
                     >
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/chat/${contact.id}?t=${encodeURIComponent(contact.telefone)}${nv ? `&nv=${nv}` : ''}`)}
+                        className="absolute inset-0 z-0 rounded-none border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2481cc] focus-visible:outline-offset-[-2px]"
+                        aria-label={contact.nome_exibicao || formatSenderPhone(contact.telefone, contact.countryCode)}
+                      />
                       <button
                         type="button"
                         onClick={(event) => {
@@ -1650,7 +1609,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                             color,
                           });
                         }}
-                        className="relative shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2481cc]"
+                        className="relative z-10 shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2481cc]"
                         aria-label={`Ver avatar de ${contact.nome_exibicao || formatSenderPhone(contact.telefone, contact.countryCode)}`}
                       >
                         {contact.avatarUrl ? (
@@ -1680,7 +1639,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                         )}
                       </button>
 
-                      <div className="flex-1 min-w-0 py-0.5">
+                      <div className="relative z-10 flex-1 min-w-0 py-0.5 pointer-events-none">
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-1.5 min-w-0 pr-2">
                             <h3 className="text-[15px] font-medium text-[#111] dark:text-white truncate leading-tight">
@@ -1714,6 +1673,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   {t('chat.no_search_results').split('{query}')[1]}
                 </p>
                 <button
+                  type="button"
                   onClick={() => setSearchQuery("")}
                   className="text-[#2481cc] text-[14px] font-semibold cursor-pointer"
                 >
@@ -1728,6 +1688,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         <>
           {/* ── BOTÃO DE NOVA CONVERSA ── */}
           <button
+            type="button"
             onClick={() => {
               showToast(t('chat.new_conversation'), 'info');
               navigate('/web');

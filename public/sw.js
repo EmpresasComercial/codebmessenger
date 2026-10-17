@@ -1,12 +1,13 @@
-// Service Worker para Teggram X - Push Notifications & Offline Support
-const CACHE_NAME = 'business-messenger-shell-v8';
+// Service Worker para Teggram-X - Push Notifications & Offline Support
+const CACHE_NAME = 'business-messenger-shell-v9';
 
 // Assets fundamentais para o App abrir offline
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo_bussiness_messeger.jpg',
+  '/logo_tegx.jfif',
+  '/community-group-logo.svg',
   '/avatar_padrao_bm.jpg?v=2',
   '/payment_bot_avatar.jpg?v=1',
   '/withdrawal_bot_avatar.jpg?v=1',
@@ -89,10 +90,10 @@ self.addEventListener('fetch', (event) => {
 // Escuta eventos de Notificação Push
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Teggram X',
+    title: 'Teggram-X',
     body: 'Você tem uma nova notificação na sua conta.',
-    icon: '/logo_bussiness_messeger.jpg',
-    badge: '/logo_bussiness_messeger.jpg',
+    icon: '/logo_tegx.jfif',
+    badge: '/logo_tegx.jfif',
     url: '/perfil',
   };
 
@@ -107,8 +108,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body,
-    icon: data.icon || '/logo_bussiness_messeger.jpg',
-    badge: data.badge || '/logo_bussiness_messeger.jpg',
+    icon: data.icon || '/logo_tegx.jfif',
+    badge: data.badge || '/logo_tegx.jfif',
     vibrate: [200, 100, 200, 100, 200],
     tag: data.tag || 'business-messenger-notification',
     renotify: true,

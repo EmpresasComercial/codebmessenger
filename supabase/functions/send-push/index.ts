@@ -48,8 +48,8 @@ serve(async (req) => {
     const payload = JSON.stringify({
       title: title || "Busne Messaging",
       body: body,
-      icon: "/logo_bussiness_messeger.jpg",
-      badge: "/logo_bussiness_messeger.jpg",
+      icon: "/logo_tegx.jfif",
+      badge: "/logo_tegx.jfif",
       url: url || "/perfil",
     });
 

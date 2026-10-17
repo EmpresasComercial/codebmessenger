@@ -18,10 +18,6 @@ export const GlobalLoadingIndicator: React.FC = () => {
       '/telegramBusiness',
       '/telegram-business',
       '/web',
-      '/canais',
-      '/andrewnicolan',
-      '/pavelDurov',
-      '/pavel-durov'
     ].includes(location.pathname);
 
   if (isChatPage) {
@@ -39,11 +35,11 @@ export const GlobalLoadingIndicator: React.FC = () => {
           className="fixed top-0 left-0 right-0 h-[44px] z-[10000] bg-white/95 backdrop-blur-xs border-b border-gray-100 flex items-center justify-start px-[18px] select-none overflow-hidden shadow-xs pointer-events-none"
         >
           <div className="flex items-center gap-2.5">
-            {/* Teggram X logo with a spinning ring */}
+            {/* Teggram-X logo with a spinning ring */}
             <div className="relative w-7 h-7 flex items-center justify-center shrink-0">
               {/* Outer spinning green ring */}
               <div className="absolute -inset-[2px] rounded-full border-[2.2px] border-[#25ae60] border-t-transparent animate-spin" />
-              <img src="/logo_bussiness_messeger.jpg" alt="" aria-hidden="true" className="h-7 w-7 rounded-full object-cover shadow-xs" />
+              <img src="/logo_tegx.jfif" alt="" aria-hidden="true" className="h-7 w-7 rounded-full object-cover shadow-xs" />
             </div>
 
             {/* Text "Conectando..." in green */}

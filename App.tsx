@@ -36,7 +36,6 @@ const GrupoChat        = lazy(() => import('./pages/grupochat'));
 const PrivateChat      = lazy(() => import('./pages/PrivateChat'));
 const DevicesPrivacy   = lazy(() => import('./pages/DevicesPrivacy'));
 const PrivacyPolicy    = lazy(() => import('./pages/PrivacyPolicy'));
-const AndrewNicolan    = lazy(() => import('./pages/andrewnicolan'));
 const DownloadApp      = lazy(() => import('./pages/DownloadApp'));
 
 /* ── Skeleton global de transição (Telegram-style) ─────────────────────────── */
@@ -144,7 +143,7 @@ function GlobalLanguageSelector() {
 /* ── App ──────────────────────────────────────────────────────────────────── */
 export default function App() {
   React.useEffect(() => {
-    document.title = 'Teggram';
+    document.title = 'Teggram-X';
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
@@ -166,7 +165,7 @@ export default function App() {
       }
     });
 
-    const iconUrl = '/logo_bussiness_messeger.jpg?v=3';
+    const iconUrl = '/logo_tegx.jfif?v=4';
     let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
     link.type = 'image/jpeg';
@@ -212,8 +211,7 @@ export default function App() {
                     <Route path="Dispositivos"           element={<Navigate to="/sessoes-ativas" replace />} />
                     <Route path="grupo"                  element={<GrupoChat />} />
                     <Route path="Ajuda"                  element={<HelpFAQ />} />
-                    <Route path="Canal"                  element={<AndrewNicolan />} />
-                    <Route path="Perfil"                 element={<AndrewNicolan />} />
+                    <Route path="Perfil"                 element={<Profile />} />
                     <Route path="Pagamento"              element={<Playmentbot />} />
                     <Route path="Privado"                element={<PrivateChat />} />
                     <Route path="Privado/:contactId"     element={<PrivateChat />} />
@@ -227,7 +225,7 @@ export default function App() {
                     <Route path="contactos"               element={<Invite />} />
                     <Route path="convite"                 element={<Navigate to="/Contactos" replace />} />
                     <Route path="definicoes"              element={<Profile />} />
-                    <Route path="perfil"                  element={<AndrewNicolan />} />
+                    <Route path="perfil"                  element={<Profile />} />
                     <Route path="settings"                element={<Navigate to="/Definições" replace />} />
                     <Route path="bank"                   element={<AddBank />} />
                     <Route path="adicionar-banco"         element={<Navigate to="/bank" replace />} />
@@ -272,10 +270,6 @@ export default function App() {
                     <Route path="premium"                 element={<Navigate to="/Contactos" replace />} />
                     <Route path="stars"                   element={<Navigate to="/botfather" replace />} />
                     <Route path="telegram-stars"          element={<Navigate to="/botfather" replace />} />
-                    <Route path="canais"                  element={<AndrewNicolan />} />
-                    <Route path="andrewnicolan"           element={<AndrewNicolan />} />
-                    <Route path="pavelDurov"              element={<AndrewNicolan />} />
-                    <Route path="pavel-durov"             element={<AndrewNicolan />} />
                   </Route>
 
                   <Route path="*" element={<Navigate to="/signin" replace />} />

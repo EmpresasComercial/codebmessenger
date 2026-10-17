@@ -114,15 +114,15 @@ export async function sendLocalTestNotification(title: string, body: string, url
     if (registration) {
       registration.showNotification(title, {
         body,
-        icon: '/logo_bussiness_messeger.jpg',
-        badge: '/logo_bussiness_messeger.jpg',
+        icon: '/logo_tegx.jfif',
+        badge: '/logo_tegx.jfif',
         vibrate: [200, 100, 200] as any,
         data: { url },
       } as any);
     } else {
       new Notification(title, {
         body,
-        icon: '/logo_bussiness_messeger.jpg',
+        icon: '/logo_tegx.jfif',
       });
     }
   } else if (Notification.permission !== 'denied') {

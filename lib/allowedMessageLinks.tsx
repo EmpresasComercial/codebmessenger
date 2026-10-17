@@ -4,6 +4,7 @@ import MessageLinkPreview from '../components/MessageLinkPreview';
 
 const MESSAGE_URL_PATTERN = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
 const TRAILING_URL_PUNCTUATION = /[.,;!?)}\]"']+$/;
+const ALLOWED_MESSAGE_HOSTS = new Set(['telegramas.cc', 'www.telegramas.cc', 'me.telegramas.cc']);
 
 export function normalizeAllowedMessageUrl(value: string): string | null {
   const cleanValue = value.trim().replace(TRAILING_URL_PUNCTUATION, '');
@@ -13,7 +14,7 @@ export function normalizeAllowedMessageUrl(value: string): string | null {
     const url = new URL(target);
     if (
       url.protocol === 'https:' &&
-      (url.hostname.toLowerCase() === 'telegramas.cc' || url.hostname.toLowerCase() === 'www.telegramas.cc')
+      ALLOWED_MESSAGE_HOSTS.has(url.hostname.toLowerCase())
     ) {
       return url.href;
     }

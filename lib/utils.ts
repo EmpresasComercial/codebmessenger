@@ -4,7 +4,7 @@ import { twMerge } from 'tailwind-merge';
 export const DEFAULT_PROFILE_AVATAR = '/avatar_padrao_bm.jpg?v=2';
 export const PAYMENT_BOT_AVATAR = '/payment_bot_avatar.jpg?v=1';
 export const WITHDRAWAL_BOT_AVATAR = '/withdrawal_bot_avatar.jpg?v=1';
-export const COMMUNITY_CHAT_AVATAR = '/avatar_chatcomunudade_bm.jpg?v=1';
+export const COMMUNITY_CHAT_AVATAR = '/community-group-logo.svg?v=1';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

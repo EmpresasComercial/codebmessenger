@@ -644,7 +644,7 @@ export default function PrivateChat() {
           id: `auto_${Date.now()}`,
           remetente_id: contactId,
           destinatario_id: user.id,
-          mensagem: 'Obrigado pela sua mensagem! O Teggram X está ativo para impulsionar suas operações e conexões em tempo real. Se precisar de assistência financeira com Stars, consulte a aba de Carteira.',
+          mensagem: 'Obrigado pela sua mensagem! O Teggram-X está ativo para impulsionar suas operações e conexões em tempo real. Se precisar de assistência financeira com Stars, consulte a aba de Carteira.',
           lida: true,
           created_at: new Date().toISOString()
         };
@@ -844,7 +844,7 @@ export default function PrivateChat() {
             {isCommunityChat ? (
               <img
                 src={COMMUNITY_CHAT_AVATAR}
-                alt="Teggram X"
+                alt="Teggram-X"
                 className="h-full w-full rounded-full object-cover"
               />
             ) : (
@@ -866,7 +866,7 @@ export default function PrivateChat() {
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1">
               <h1 className="text-[16px] font-semibold text-black dark:text-white tracking-tight truncate leading-[1.15] mt-0.5">
-                {isCommunityChat ? 'Comunidade Teggram X' : formatPhoneClean(contactDisplayName)}
+                {isCommunityChat ? 'Comunidade Teggram-X' : formatPhoneClean(contactDisplayName)}
               </h1>
             </div>
             {statusText ? (
@@ -1171,7 +1171,7 @@ export default function PrivateChat() {
                             <span className="truncate">
                               {isVerifiedSender
                                 ? formatPhoneClean(verifiedSenderPhone || '')
-                                : isCommunityChat ? 'Comunidade Teggram X' : formatPhoneClean(contactDisplayName)}
+                                : isCommunityChat ? 'Comunidade Teggram-X' : formatPhoneClean(contactDisplayName)}
                             </span>
                             {isVerifiedSender && <VerifiedBadge className="h-[14px] w-[14px]" />}
                           </p>
@@ -1224,7 +1224,7 @@ export default function PrivateChat() {
                           <span className="truncate">
                             {isVerifiedSender
                               ? formatPhoneClean(verifiedSenderPhone || '')
-                              : isCommunityChat ? 'Comunidade Teggram X' : formatPhoneClean(contactDisplayName)}
+                              : isCommunityChat ? 'Comunidade Teggram-X' : formatPhoneClean(contactDisplayName)}
                           </span>
                           {isVerifiedSender && <VerifiedBadge className="h-[14px] w-[14px]" />}
                         </p>

@@ -1,17 +1,17 @@
 {
   "id": "/",
-  "short_name": "Teggram X",
-  "name": "Teggram X",
-  "description": "Teggram X messaging and chat platform",
+  "short_name": "Teggram-X",
+  "name": "Teggram-X",
+  "description": "Teggram-X messaging and chat platform",
   "icons": [
     {
-      "src": "/logo_bussiness_messeger.jpg",
+      "src": "/logo_tegx.jfif",
       "type": "image/jpeg",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo_bussiness_messeger.jpg",
+      "src": "/logo_tegx.jfif",
       "type": "image/jpeg",
       "sizes": "512x512",
       "purpose": "any maskable"
