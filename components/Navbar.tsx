@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { MessageCircle, Users, Bot, Settings, Sparkles, Plus } from 'lucide-react';
+import { MessageCircle, Users, UserRound, Sparkles, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -90,7 +90,7 @@ export default function Navbar() {
       name: t('nav.profile'),
       path: '/definicoes',
       aliasPaths: ['/definicoes', '/perfil', '/settings', '/configuracoes-conta'],
-      icon: (isActive: boolean) => <Settings aria-hidden="true" className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
+      icon: (isActive: boolean) => <UserRound aria-hidden="true" className={`w-[22px] h-[22px] transition-colors ${isActive ? 'fill-[#2481cc] stroke-[#2481cc]' : 'fill-transparent'}`} strokeWidth={2} />
     }
   ];
 

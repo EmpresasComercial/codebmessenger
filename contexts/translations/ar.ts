@@ -310,7 +310,7 @@
   'nav.home': 'الرئيسية',
   'nav.invite': 'دعوة',
   'nav.products': 'المنتجات',
-  'nav.profile': 'الملف الشخصي',
+  'nav.profile': 'القائمة',
   'ops.btn_finished': 'اكتملت العملية',
   'ops.btn_start': 'بدء العمليات',
   'ops.collect': 'تحصيل الأرباح',

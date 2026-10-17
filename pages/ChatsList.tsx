@@ -1276,7 +1276,9 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     <Menu className="h-[20px] w-[20px]" />
                   </button>
                   <h1 className="min-w-0 truncate whitespace-nowrap text-[22px] font-semibold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
-                    Teggram-X
+                    <button type="button" onClick={() => window.location.reload()}>
+                      Teggram-X
+                    </button>
                   </h1>
                 </>
               )}

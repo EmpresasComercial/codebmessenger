@@ -272,7 +272,7 @@
   'nav.home': 'Comenzar',
   'nav.invite': 'invitar',
   'nav.products': 'Productos',
-  'nav.profile': 'Perfil',
+  'nav.profile': 'Menú',
   'ops.btn_finished': 'Trabajo completado',
   'ops.btn_start': 'Iniciar operaciones',
   'ops.collect': 'Recaudación de ingresos',

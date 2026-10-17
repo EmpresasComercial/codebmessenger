@@ -277,7 +277,7 @@
   'nav.home': '首页',
   'nav.invite': '邀请',
   'nav.products': '产品',
-  'nav.profile': '个人资料',
+  'nav.profile': '菜单',
   'ops.btn_finished': '任务已完成',
   'ops.btn_start': '开始操作',
   'ops.collect': '收益收集',
