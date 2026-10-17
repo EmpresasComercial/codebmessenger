@@ -8,6 +8,7 @@ import {
   isAppThemeId,
   saveAppTheme,
 } from './appThemes';
+import translations from '../contexts/translations/supplemental';
 
 test('accepts only theme ids defined in the app palette', () => {
   for (const theme of APP_THEMES) {
@@ -16,6 +17,74 @@ test('accepts only theme ids defined in the app palette', () => {
 
   assert.equal(isAppThemeId('unknown'), false);
   assert.equal(isAppThemeId(null), false);
+});
+
+test('provides every visible theme-page translation in all supported languages', () => {
+  const pageKeys = [
+    'theme.title',
+    'theme.description',
+    'theme.save',
+    'theme.back',
+    'theme.save_failed',
+    'theme.preview_title',
+    'theme.preview_incoming',
+    'theme.preview_outgoing',
+    'theme.preview_input',
+    'theme.preview_tab_chats',
+    'theme.preview_tab_contacts',
+    'theme.preview_tab_settings',
+    ...APP_THEMES.flatMap((theme) => [theme.nameKey, theme.descriptionKey]),
+  ];
+
+  for (const [language, dictionary] of Object.entries(translations)) {
+    for (const key of pageKeys) {
+      assert.ok(Object.hasOwn(dictionary, key), `${language} is missing ${key}`);
+    }
+  }
+});
+
+test('keeps the original white theme visually distinct from the blue theme', () => {
+  const defaultTheme = APP_THEMES.find((theme) => theme.id === 'default')!;
+  const blueTheme = APP_THEMES.find((theme) => theme.id === 'classic')!;
+
+  assert.equal(defaultTheme.chatBackground, '#ffffff');
+  assert.equal(defaultTheme.surface, '#ffffff');
+  assert.notEqual(blueTheme.accent, defaultTheme.accent);
+  assert.notEqual(blueTheme.surface, defaultTheme.surface);
+  assert.notEqual(blueTheme.chatBackground, defaultTheme.chatBackground);
+  assert.notEqual(blueTheme.outgoingBubble, defaultTheme.outgoingBubble);
+});
+
+test('provides unique patterned wallpapers for the added conversation themes', () => {
+  for (const themeId of ['sunset', 'mint', 'forest'] as const) {
+    const theme = APP_THEMES.find((item) => item.id === themeId)!;
+    assert.notEqual(theme.chatWallpaper, 'none');
+    assert.notEqual(theme.darkChatWallpaper, 'none');
+  }
+});
+
+test('adds illustrated wallpaper to every non-default theme only', () => {
+  const defaultTheme = APP_THEMES.find((theme) => theme.id === 'default')!;
+  assert.equal(defaultTheme.chatWallpaper, 'none');
+  assert.equal(defaultTheme.darkChatWallpaper, 'none');
+
+  for (const theme of APP_THEMES.filter((item) => item.id !== 'default')) {
+    assert.notEqual(theme.chatWallpaper, 'none', `${theme.id} light wallpaper`);
+    assert.notEqual(theme.darkChatWallpaper, 'none', `${theme.id} dark wallpaper`);
+    if (theme.id !== 'green') {
+      assert.match(theme.chatWallpaper, /chat-wallpaper-pattern\.svg/);
+      assert.match(theme.darkChatWallpaper, /chat-wallpaper-pattern-dark\.svg/);
+    }
+  }
+});
+
+test('matches the green theme to the provided chat screenshot colors', () => {
+  const greenTheme = APP_THEMES.find((theme) => theme.id === 'green')!;
+
+  assert.equal(greenTheme.chatBackground, '#f5f2eb');
+  assert.equal(greenTheme.incomingBubble, '#ffffff');
+  assert.equal(greenTheme.outgoingBubble, '#367653');
+  assert.equal(greenTheme.chatWallpaper, "url('/green-chat-wallpaper.svg')");
 });
 
 test('non-default theme colors keep readable text contrast in light and dark mode', () => {
@@ -72,6 +141,8 @@ test('saves, applies, and restores the selected theme', () => {
     assert.equal(root.dataset.appTheme, 'violet');
     assert.equal(styles.get('--app-theme-accent-light'), '#7048ae');
     assert.equal(styles.get('--app-theme-accent-dark'), '#bea2f4');
+    assert.equal(styles.get('--app-theme-chat-wallpaper-light'), APP_THEMES.find((theme) => theme.id === 'violet')!.chatWallpaper);
+    assert.equal(styles.get('--app-theme-chat-wallpaper-dark'), APP_THEMES.find((theme) => theme.id === 'violet')!.darkChatWallpaper);
     assert.equal(getSavedAppTheme(), 'violet');
 
     applyAppTheme('green');

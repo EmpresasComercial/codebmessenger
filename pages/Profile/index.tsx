@@ -31,7 +31,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import ZoomSettingsModal from "../../components/ZoomSettingsModal";
 import { getSavedAppZoom } from "../../lib/appZoom";
 import ThemeSettingsScreen from "../../components/ThemeSettingsScreen";
-import { getSavedAppTheme, type AppThemeId } from "../../lib/appThemes";
+import { APP_THEME_STORAGE_KEY, getSavedAppTheme, type AppThemeId } from "../../lib/appThemes";
 
 const EditProfileModal = lazy(() => import("./components/EditProfileModal"));
 
@@ -84,6 +84,17 @@ export default function Profile() {
   const [lastName, setLastName] = useState(initialLastName);
   const [userBio, setUserBio] = useState(typeof initialMetadata.bio === "string" ? initialMetadata.bio : "");
   const [avatarUrl, setAvatarUrl] = useState(getProfileAvatarUrl(initialMetadata));
+
+  useEffect(() => {
+    const syncThemeLabel = (event: StorageEvent) => {
+      if (event.key === APP_THEME_STORAGE_KEY) {
+        setAppTheme(getSavedAppTheme());
+      }
+    };
+
+    window.addEventListener("storage", syncThemeLabel);
+    return () => window.removeEventListener("storage", syncThemeLabel);
+  }, []);
 
   useEffect(() => {
     const metadata = session?.user.user_metadata;

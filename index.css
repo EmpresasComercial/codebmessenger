@@ -99,7 +99,7 @@ html, body, * {
    ══════════════════════════════════════════════════════════════════ */
 
 /* 1. Botões a nível global (sem arredondamento) */
-button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn):not(.gallery-photo-button):not(.profile-save-button),
+button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn):not(.gallery-photo-button):not(.profile-save-button):not(.theme-apply-button),
 [role="button"]:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn),
 input[type="button"],
 input[type="submit"],
@@ -497,6 +497,7 @@ textarea,
   --tg-primary-light: var(--app-theme-hover);
   --tg-header-modern: var(--app-theme-accent);
   --tg-chat-bg: var(--app-theme-chat-bg-light);
+  --app-theme-chat-wallpaper: var(--app-theme-chat-wallpaper-light, none);
   --tg-bubble-out: var(--app-theme-bubble-out-light);
   --tg-bubble-in: var(--app-theme-bubble-in-light);
   --tg-ticks: var(--app-theme-accent);
@@ -513,6 +514,7 @@ textarea,
   --tg-primary-light: var(--app-theme-hover);
   --tg-header-modern: var(--app-theme-accent);
   --tg-chat-bg: var(--app-theme-chat-bg-dark);
+  --app-theme-chat-wallpaper: var(--app-theme-chat-wallpaper-dark, none);
   --tg-bubble-out: var(--app-theme-bubble-out-dark);
   --tg-bubble-in: var(--app-theme-bubble-in-dark);
   --tg-ticks: var(--app-theme-accent);
@@ -596,12 +598,43 @@ textarea,
 .dark[data-app-theme] .tg-theme-chat-canvas,
 :root[data-app-theme] .tg-theme-chat-canvas {
   background-color: var(--tg-chat-bg) !important;
+  background-image: var(--app-theme-chat-wallpaper) !important;
 }
 
 .theme-option-button {
-  border-radius: 18px !important;
+  border-radius: 0 !important;
 }
 
 .theme-preview-device {
-  border-radius: 16px !important;
+  border: 2px solid #36383b;
+  border-radius: 30px !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16);
+}
+
+.theme-preview-screen {
+  border-radius: 23px !important;
+}
+
+.theme-apply-button {
+  border-radius: 22px !important;
+  background-color: #2481cc !important;
+}
+
+.theme-apply-button:hover:not(:disabled) {
+  background-color: #1f72b5 !important;
+}
+
+@media (max-width: 639px) {
+  .theme-preview-device {
+    position: relative;
+    left: 50%;
+    width: calc(100vw - 32px) !important;
+    max-width: 360px;
+    aspect-ratio: 0.72;
+    transform: translateX(-50%);
+  }
+
+  .theme-preview-chat {
+    flex: 1 1 auto;
+  }
 }
