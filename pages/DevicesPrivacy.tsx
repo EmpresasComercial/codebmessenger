@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type Language, useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 import { getDeviceId } from '../lib/device';
+import { COUNTRIES, detectCountryFromPhone } from '../lib/countries';
 import { logger } from '../lib/logger';
 import {
-  Smartphone,
-  Monitor,
   ShieldAlert,
   ShieldCheck,
   LogOut,
@@ -31,9 +30,24 @@ interface AuditSession {
   created_at: string;
 }
 
+type NavigatorWithDeviceModel = Navigator & {
+  userAgentData?: {
+    model?: string;
+  };
+};
+
+const DATE_LOCALE: Record<Language, string> = {
+  pt: 'pt-PT',
+  en: 'en-GB',
+  fr: 'fr-FR',
+  ar: 'ar',
+  'zh-hans': 'zh-CN',
+  es: 'es-ES',
+};
+
 function getDeviceInfo(t: ReturnType<typeof useLanguage>['t']) {
   if (typeof navigator === 'undefined') {
-    return { os: t('devices.web_browser'), browser: 'Web', isMobile: false };
+    return { os: t('devices.web_browser'), name: t('devices.web_browser'), browser: 'Web', isMobile: false };
   }
   const ua = navigator.userAgent;
   let os = t('devices.connected_device');
@@ -45,6 +59,18 @@ function getDeviceInfo(t: ReturnType<typeof useLanguage>['t']) {
   else if (/iphone|ipad|ipod/i.test(ua)) { os = 'iOS (Apple)'; isMobile = true; }
   else if (/linux/i.test(ua)) os = 'Linux';
 
+  const browserModel = (navigator as NavigatorWithDeviceModel).userAgentData?.model?.trim();
+  const androidModel = ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build\/[^;)]+)?[;)]/i)?.[1]?.trim();
+  const candidateModel = browserModel || androidModel;
+  const deviceModel = candidateModel && !/^(android|linux|k|wv)$/i.test(candidateModel)
+    ? candidateModel
+    : undefined;
+  const name = deviceModel || (
+    os === 'Android' ? 'Android' :
+    os === 'iOS (Apple)' ? (/ipad/i.test(ua) ? 'iPad' : 'iPhone') :
+    os
+  );
+
   let browser = t('devices.web_browser');
   if (/edg/i.test(ua)) browser = 'Microsoft Edge';
   else if (/chrome|crios/i.test(ua)) browser = 'Google Chrome';
@@ -52,7 +78,7 @@ function getDeviceInfo(t: ReturnType<typeof useLanguage>['t']) {
   else if (/safari/i.test(ua)) browser = 'Apple Safari';
   else if (/opera|opr/i.test(ua)) browser = 'Opera';
 
-  return { os, browser, isMobile };
+  return { os, name, browser, isMobile };
 }
 
 export default function DevicesPrivacy() {
@@ -60,14 +86,6 @@ export default function DevicesPrivacy() {
   const { language, t } = useLanguage();
   const { session } = useAuth();
   const { showToast } = useToast();
-  const dateLocale: Record<Language, string> = {
-    pt: 'pt-PT',
-    en: 'en-GB',
-    fr: 'fr-FR',
-    ar: 'ar',
-    'zh-hans': 'zh-CN',
-    es: 'es-ES',
-  };
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,6 +100,25 @@ export default function DevicesPrivacy() {
   const [phone, setPhone] = useState<string>('');
   const [currentIp, setCurrentIp] = useState<string>('');
   const [sessions, setSessions] = useState<AuditSession[]>([]);
+  const accountCountry = useMemo(() => {
+    const normalizedPhone = phone.trim().startsWith('+')
+      ? phone.trim()
+      : `+${phone.replace(/\D/g, '')}`;
+    const countryFromPhone = detectCountryFromPhone(normalizedPhone).country;
+    const metadataCountryCode = session?.user.user_metadata?.country_code;
+    const country = countryFromPhone || COUNTRIES.find(
+      (item) => item.code === metadataCountryCode,
+    );
+
+    if (!country) return t('devices.country_unavailable');
+
+    try {
+      return new Intl.DisplayNames([DATE_LOCALE[language]], { type: 'region' }).of(country.code)
+        || country.name;
+    } catch {
+      return country.name;
+    }
+  }, [language, phone, session?.user.user_metadata, t]);
 
   const fetchDeviceData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -211,7 +248,7 @@ export default function DevicesPrivacy() {
     if (!dateStr) return t('devices.recent');
     try {
       const date = new Date(dateStr);
-      return date.toLocaleString(dateLocale[language], {
+      return date.toLocaleString(DATE_LOCALE[language], {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -259,6 +296,11 @@ export default function DevicesPrivacy() {
       </header>
 
       <main className="mx-auto w-full max-w-[680px] flex-1 px-4 sm:px-6 py-2">
+        <img
+          src="/active-sessions-chat-preview.png"
+          alt={t('devices.sessions_preview_alt')}
+          className="mb-4 w-full rounded-xl object-cover"
+        />
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-8 h-8 text-[#2481cc] animate-spin" />
@@ -272,32 +314,35 @@ export default function DevicesPrivacy() {
               <div className="flex items-start gap-3.5">
                 <div className="w-10 h-10 flex items-center justify-center text-[#2481cc] shrink-0">
                   {deviceInfo.isMobile ? (
-                    <Smartphone className="w-6 h-6" />
+                    <img
+                      src="/active-session-mobile.png"
+                      alt=""
+                      className="h-10 w-10 object-contain"
+                    />
                   ) : (
-                    <Monitor className="w-6 h-6" />
+                    <img
+                      src="/active-session-desktop.png"
+                      alt=""
+                      className="h-10 w-10 object-cover"
+                    />
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-[15px] font-medium text-black dark:text-white truncate">
-                      {deviceInfo.os}
+                      {deviceInfo.name}
                     </h2>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#29b85e]/15 text-[#29b85e]">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#29b85e] animate-pulse" />
-                      {t('devices.active_now')}
+                      {t('chat.online_now')}
                     </span>
                   </div>
 
                   <p className="text-[13px] text-[#707579] dark:text-[#8e9aa5] mt-0.5">
-                    {deviceInfo.browser} • Business Messenger
+                    {deviceInfo.browser} • Teggram X
                   </p>
 
-                  {phone && (
-                    <p className="text-[12px] text-[#707579] dark:text-[#8e9aa5] mt-0.5">
-                      {t('devices.linked_account')} <span className="font-medium text-black dark:text-white">+{phone}</span>
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -315,11 +360,11 @@ export default function DevicesPrivacy() {
 
                 <div className="flex items-center justify-between sm:justify-start gap-2 py-2 border-b border-[#edf0f2] dark:border-white/5">
                   <span className="text-[#707579] dark:text-[#8e9aa5] flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#29b85e]" />
-                    {t('devices.audit')}
+                    <Globe className="w-3.5 h-3.5 text-[#29b85e]" />
+                    {t('devices.country')}
                   </span>
                   <span className="font-medium text-[#29b85e]">
-                    {t('devices.authenticated_secure')}
+                    {accountCountry}
                   </span>
                 </div>
               </div>

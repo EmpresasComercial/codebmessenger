@@ -336,13 +336,13 @@ export default function Messager() {
             <div className="mb-3.5 flex items-center justify-center">
               <img
                 src="/logo_bussiness_messeger.jpg"
-                alt="Business Messenger"
+                alt="Teggram X"
                 className="w-[80px] h-[80px] rounded-full object-cover"
               />
             </div>
 
             <h1 className="text-[20px] font-medium text-center mb-1.5 text-[#1c1c1e]">
-              Business
+              Teggram X
             </h1>
           </>
         )}

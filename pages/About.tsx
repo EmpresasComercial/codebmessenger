@@ -17,14 +17,14 @@ export default function About() {
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-[17px] font-bold tracking-tight">Business Messenger</h1>
+        <h1 className="text-[17px] font-bold tracking-tight">Teggram X</h1>
       </header>
 
       <main className="mx-auto max-w-[760px] px-5 pt-10">
         <section className="text-center">
           <img
             src="/logo_bussiness_messeger.jpg"
-            alt="Business Messenger"
+            alt="Teggram X"
             className="mx-auto mb-6 h-24 w-24 rounded-2xl object-cover"
           />
           <h2 className="mb-4 text-[26px] font-semibold leading-tight">

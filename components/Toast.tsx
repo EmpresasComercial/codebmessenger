@@ -72,40 +72,47 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
             style={{
               position: 'fixed',
-              top: '50%',
+              bottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
               left: '50%',
-              transform: 'translate(-50%, -50%)',
+              transform: 'translateX(-50%)',
               zIndex: 9999,
               pointerEvents: 'none',
+              width: 'max-content',
+              maxWidth: 'calc(100vw - 32px)',
             }}
           >
             <motion.div
               key={toast.id}
-              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.98 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{
+                opacity: { duration: 0.18, ease: 'easeOut' },
+                y: { type: 'spring', stiffness: 420, damping: 30 },
+                scale: { type: 'spring', stiffness: 420, damping: 30 },
+              }}
             >
               <div
                 style={{
                   maxWidth: 'min(85vw, 420px)',
-                  padding: '12px 18px',
-                  borderRadius: 6,
-                  backgroundColor: '#ffffff',
-                  color: '#111111',
-                  border: '1px solid #d9d9d9',
+                  padding: '10px 16px',
+                  borderRadius: 9999,
+                  backgroundColor: 'rgba(32, 33, 36, 0.88)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                  backdropFilter: 'blur(8px)',
                   userSelect: 'none',
-                  textAlign: 'center',
                 }}
               >
                 <p
                   style={{
                     margin: 0,
-                    color: '#111111',
-                    fontSize: 12,
+                    color: '#ffffff',
+                    fontSize: 13,
                     fontWeight: 400,
                     lineHeight: 1.4,
-                    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                    fontFamily: '"Times New Roman", Times, serif',
                   }}
                 >
                   {toast.title && <strong className="mb-1 block font-semibold">{toast.title}</strong>}

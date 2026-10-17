@@ -27,7 +27,7 @@ export default function MessageLinkPreview({
           : 'border-[#2481cc] bg-black/5 text-[#202020] dark:bg-white/5 dark:text-white'
       }`}
     >
-      <span className="block truncate text-[14px] font-semibold">Business Messenger</span>
+      <span className="block truncate text-[14px] font-semibold">Teggram X</span>
       <span className={`flex min-w-0 items-center gap-1 text-[13px] ${linkColor}`}>
         <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />

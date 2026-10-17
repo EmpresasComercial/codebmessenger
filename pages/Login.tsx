@@ -4,7 +4,7 @@ import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { AsYouType, validatePhoneNumberLength, type CountryCode } from 'libphonenumber-js/max';
-import { Eye, EyeOff, Loader2, ChevronDown, Fingerprint } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ChevronDown, ChevronLeft, Fingerprint } from 'lucide-react';
 import {
   COUNTRIES,
   Country,
@@ -21,6 +21,7 @@ export default function Login() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasskey, setShowPasskey] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<'password' | 'passkey' | null>(null);
   const [phone, setPhone] = useState('');
   const [passkey, setPasskey] = useState('');
 
@@ -172,8 +173,10 @@ export default function Login() {
       return;
     }
 
+    setLoginMethod('passkey');
     setIsSubmitting(true);
     try {
+      await new Promise((resolve) => window.setTimeout(resolve, 3000));
       const { data, error } = await supabase.auth.signInWithPasskey();
       if (error) throw error;
       if (!data.session) throw new Error(t('passkey.signin_failed'));
@@ -183,6 +186,7 @@ export default function Login() {
     } catch (error: unknown) {
       const detail = error instanceof Error ? ` ${error.message}` : '';
       showToast(`${t('passkey.signin_failed')}${detail}`, 'error');
+      setLoginMethod(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -207,20 +211,23 @@ export default function Login() {
         <div className="mb-3.5 flex items-center justify-center">
           <img
             src="/logo_bussiness_messeger.jpg"
-            alt="Business Messenger"
+            alt="Teggram X"
             className="w-[90px] h-[90px] rounded-full object-cover"
           />
         </div>
 
         <h1 className="text-[20px] font-medium text-center mb-1.5 text-[#1c1c1e]">
-          Business
+          Teggram X
         </h1>
         <p className="w-full text-[13px] text-[#707579] text-center mb-6 leading-snug">
-          {t('auth.login_description')}
+          {loginMethod === 'password'
+            ? t('auth.login_description')
+            : t('auth.choose_login_method')}
         </p>
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-          <div className="w-full flex flex-col gap-4 mt-2">
+          {loginMethod === 'password' && (
+            <div className="w-full flex flex-col gap-4 mt-2">
             {/* Country Selector Button */}
             <div className="relative w-full">
               <div className="absolute -top-[9px] left-[12px] bg-white px-1 z-10">
@@ -305,42 +312,73 @@ export default function Login() {
                 </button>
               </div>
             </div>
-          </div>
+            </div>
+          )}
 
           <div className="w-full pt-1 space-y-2.5">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full h-11 rounded-full btn-auth bg-[#3390ec] hover:bg-[#2881dc] active:scale-[0.98] text-white font-medium text-[15px] transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer"
-            >
-              {isSubmitting ? (
-                <Loader2 className="animate-spin h-5 w-5 text-white" />
-              ) : (
-                t('auth.login')
-              )}
-            </button>
+            {loginMethod === null && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod('password')}
+                  className="w-full h-11 rounded-full btn-auth bg-[#3390ec] hover:bg-[#2881dc] active:scale-[0.98] text-white font-medium text-[15px] transition-all flex items-center justify-center cursor-pointer"
+                >
+                  {t('auth.login')}
+                </button>
 
-            <button
-              type="button"
-              onClick={handlePasskeySignIn}
-              disabled={isSubmitting}
-              className="w-full h-11 rounded-full border border-[#3390ec] bg-white hover:bg-[#f2f8fe] active:scale-[0.98] text-[#2481cc] font-medium text-[15px] transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              {isSubmitting ? (
-                <Loader2 className="animate-spin h-5 w-5" />
-              ) : (
-                <Fingerprint className="h-5 w-5" />
-              )}
-              {t('passkey.signin')}
-            </button>
+                <button
+                  type="button"
+                  onClick={handlePasskeySignIn}
+                  disabled={isSubmitting}
+                  className="w-full h-11 rounded-full border border-[#3390ec] bg-white hover:bg-[#f2f8fe] active:scale-[0.98] text-[#2481cc] font-medium text-[15px] transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Fingerprint className="h-5 w-5" />
+                  {t('passkey.signin')}
+                </button>
+              </>
+            )}
 
-            <button
-              type="button"
-              onClick={() => navigate('/signup')}
-              className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-normal text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
-            >
-              {t('auth.no_account')} {t('auth.create_one')}
-            </button>
+            {loginMethod === 'passkey' && isSubmitting && (
+              <div role="status" aria-live="polite" className="flex h-11 items-center justify-center gap-2 text-[14px] text-[#707579]">
+                <Loader2 className="h-5 w-5 animate-spin text-[#3390ec]" />
+                {t('passkey.signin')}
+              </div>
+            )}
+
+            {loginMethod === 'password' && (
+              <>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full h-11 rounded-full btn-auth bg-[#3390ec] hover:bg-[#2881dc] active:scale-[0.98] text-white font-medium text-[15px] transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="animate-spin h-5 w-5 text-white" />
+                  ) : (
+                    t('auth.login')
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod(null)}
+                  disabled={isSubmitting}
+                  className="flex w-full items-center justify-center gap-1 py-2 text-[14px] text-[#3390ec] hover:text-[#2881dc] disabled:opacity-50"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  {t('common.back')}
+                </button>
+              </>
+            )}
+
+            {loginMethod !== 'passkey' && (
+              <button
+                type="button"
+                onClick={() => navigate('/signup')}
+                className="w-full text-center text-[#3390ec] hover:text-[#2881dc] font-normal text-[14.5px] transition-colors py-2 cursor-pointer hover:underline"
+              >
+                {t('auth.no_account')} {t('auth.create_one')}
+              </button>
+            )}
           </div>
         </form>
       </main>

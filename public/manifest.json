@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "short_name": "Business Messenger",
-  "name": "Business Messenger",
-  "description": "Business messaging and chat platform",
+  "short_name": "Teggram X",
+  "name": "Teggram X",
+  "description": "Teggram X messaging and chat platform",
   "icons": [
     {
       "src": "/logo_bussiness_messeger.jpg",

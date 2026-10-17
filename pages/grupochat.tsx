@@ -2415,7 +2415,7 @@ export default function grupochat() {
               {/* ── Avatar + Nome + Membros ── */}
               <div className="flex flex-col items-center pt-6 pb-5 px-4">
                 <div ref={groupInfoAvatarRef} className="w-[96px] h-[96px] rounded-full overflow-hidden mb-4">
-                  <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+                  <img src="/logo_bussiness_messeger.jpg" alt="Teggram X" className="w-full h-full object-cover" />
                 </div>
                 <h1 className="text-[18px] font-bold text-[#111] text-center leading-tight">
                   Grupo de discursão

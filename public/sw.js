@@ -1,4 +1,4 @@
-// Service Worker para Business Messenger - Push Notifications & Offline Support
+// Service Worker para Teggram X - Push Notifications & Offline Support
 const CACHE_NAME = 'business-messenger-shell-v8';
 
 // Assets fundamentais para o App abrir offline
@@ -89,7 +89,7 @@ self.addEventListener('fetch', (event) => {
 // Escuta eventos de Notificação Push
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Business Messenger',
+    title: 'Teggram X',
     body: 'Você tem uma nova notificação na sua conta.',
     icon: '/logo_bussiness_messeger.jpg',
     badge: '/logo_bussiness_messeger.jpg',

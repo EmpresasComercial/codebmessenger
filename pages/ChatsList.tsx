@@ -1063,7 +1063,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         name: 'BotFather',
         isVerified: true,
         tag: null,
-        lastMessage: 'Gestão de bots do Business Messenger',
+        lastMessage: 'Gestão de bots do Teggram X',
         senderPrefix: null,
         time: formatTelegramTime(chatActivities['business-bot-manager']?.timestamp || Date.now() - 1000 * 60 * 60 * 72),
         timestamp: chatActivities['business-bot-manager']?.timestamp || Date.now() - 1000 * 60 * 60 * 72,
@@ -1083,7 +1083,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         ),
         avatar: (
           <div className="w-[52px] h-[52px] rounded-full overflow-hidden border border-gray-200/80 bg-white flex-shrink-0">
-            <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+            <img src="/logo_bussiness_messeger.jpg" alt="Teggram X" className="w-full h-full object-cover" />
           </div>
         ),
         onClick: () => navigate('/botfather')
@@ -1337,7 +1337,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                     <Menu className="h-[20px] w-[20px]" />
                   </button>
                   <h1 className="min-w-0 truncate whitespace-nowrap text-[20px] font-semibold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
-                    Business
+                    Teggram X
                   </h1>
                 </>
               )}

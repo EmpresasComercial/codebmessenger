@@ -1,5 +1,5 @@
 /**
- * Logger centralizado para o Business Messenger.
+ * Logger centralizado para o Teggram X.
  *
  * Em produção o esbuild remove todas as chamadas de console (drop: ['console']),
  * mas usar este wrapper mantém o código limpo e permite controlar o nível de log

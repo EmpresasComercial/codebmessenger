@@ -39,7 +39,7 @@ export const GlobalLoadingIndicator: React.FC = () => {
           className="fixed top-0 left-0 right-0 h-[44px] z-[10000] bg-white/95 backdrop-blur-xs border-b border-gray-100 flex items-center justify-start px-[18px] select-none overflow-hidden shadow-xs pointer-events-none"
         >
           <div className="flex items-center gap-2.5">
-            {/* Business Messenger logo with a spinning ring */}
+            {/* Teggram X logo with a spinning ring */}
             <div className="relative w-7 h-7 flex items-center justify-center shrink-0">
               {/* Outer spinning green ring */}
               <div className="absolute -inset-[2px] rounded-full border-[2.2px] border-[#25ae60] border-t-transparent animate-spin" />

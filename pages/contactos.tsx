@@ -90,7 +90,7 @@ export default function ContactsInvite() {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: 'Business Messenger', url: rawInviteLink }); } catch {}
+      try { await navigator.share({ title: 'Teggram X', url: rawInviteLink }); } catch {}
     } else {
       copyToClipboard(rawInviteLink, false);
     }
@@ -122,7 +122,7 @@ export default function ContactsInvite() {
         >
           <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
         </button>
-        <h1 className="text-[17px] font-bold tracking-tight text-[#222222]">Business Messenger</h1>
+        <h1 className="text-[17px] font-bold tracking-tight text-[#222222]">Teggram X</h1>
       </header>
 
       <main className="mx-auto w-full max-w-[860px] space-y-8 px-4 pt-8">
@@ -132,7 +132,7 @@ export default function ContactsInvite() {
         >
           <img
             className="block h-auto w-full"
-            src="/affiliate-programs-image.png"
+            src="/2fb457ae0320d6e535.jpg"
             alt={t('invite.program_image_alt')}
           />
         </div>

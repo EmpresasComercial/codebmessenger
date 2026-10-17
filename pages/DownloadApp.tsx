@@ -65,7 +65,7 @@ export default function DownloadApp() {
             style={{ borderRadius: 24 }}
           >
             <img
-              src="/business-android-preview.png"
+              src="/SiteAndroid_2x.webp"
               alt={t("download.android_alt")}
               className="block h-auto w-full"
             />

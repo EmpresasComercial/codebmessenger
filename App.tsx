@@ -144,7 +144,7 @@ function GlobalLanguageSelector() {
 /* ── App ──────────────────────────────────────────────────────────────────── */
 export default function App() {
   React.useEffect(() => {
-    document.title = 'Business Messenger';
+    document.title = 'Teggram';
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();

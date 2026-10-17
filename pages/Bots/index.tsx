@@ -863,7 +863,7 @@ export default function BusinessMessengerBotsChat() {
         >
           <div className="relative h-11 w-11 shrink-0">
             <div className="h-full w-full overflow-hidden rounded-full">
-              <img src="/logo_bussiness_messeger.jpg" alt="Business Messenger" className="w-full h-full object-cover" />
+              <img src="/logo_bussiness_messeger.jpg" alt="Teggram X" className="w-full h-full object-cover" />
             </div>
             <span
               className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#10b981] dark:border-[#17212b]"
@@ -924,7 +924,7 @@ export default function BusinessMessengerBotsChat() {
                 {msg.type === "welcome" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
                     <p className="text-[14px] text-[#1c1c1e]">
-                      Olá! Sou o assistente de bots do Business Messenger. Posso ajudar-te com os teus bots, o saldo e os rendimentos. Como posso ajudar?
+                      Olá! Sou o assistente de bots do Teggram X. Posso ajudar-te com os teus bots, o saldo e os rendimentos. Como posso ajudar?
                     </p>
                   </div>
                 )}

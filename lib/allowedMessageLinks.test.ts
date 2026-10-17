@@ -41,6 +41,6 @@ test('renders the captured URL as a message preview instead of dropping it', () 
     )
   );
 
-  assert.match(markup, /Business Messenger/);
+  assert.match(markup, /Teggram X/);
   assert.match(markup, /href="https:\/\/www\.telegramas\.cc\/signup\?ref=6DK4"/);
 });

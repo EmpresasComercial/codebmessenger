@@ -4,7 +4,6 @@ import * as QRCode from 'qrcode';
 import {
   MoreVertical,
   Send,
-  HelpCircle,
   ChevronLeft,
   ChevronDown,
   Copy,
@@ -17,7 +16,6 @@ import {
   RotateCcw,
   Camera,
   BarChart3,
-  Zap,
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
@@ -484,7 +482,6 @@ export default function PaymentBot() {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [copiedIban, setCopiedIban] = useState(false);
-  const [showQuickHints, setShowQuickHints] = useState(false);
 
   const quickReplies = [
     { shortcut: '/depositar', text: t('recharge.cmd_deposit'), shortLabel: t('suggestion.recharge') },
@@ -528,7 +525,6 @@ export default function PaymentBot() {
     setDepositAmount(null);
     setSelectedBank(null);
     setActiveRechargeId(null);
-    setShowQuickHints(false);
     setMessages([createBotMsg('welcome', undefined, undefined, 'welcome-reset-' + Date.now())]);
     showToast('Conversa reiniciada!', 'success');
   }, [awaitingProof, showToast]);
@@ -1295,7 +1291,7 @@ export default function PaymentBot() {
       <input type="file" ref={photoInputRef} accept="image/*" className="hidden"
         onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUploadProof(file); e.target.value = ''; }}
       />
-      <input type="file" ref={fileDocInputRef} accept="image/*,.pdf" className="hidden"
+      <input type="file" ref={fileDocInputRef} accept="application/pdf,.pdf" className="hidden"
         onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUploadProof(file); e.target.value = ''; }}
       />
       <input type="file" ref={fileInputRef} accept="image/*,.pdf" className="hidden"
@@ -1966,40 +1962,6 @@ export default function PaymentBot() {
         </button>
       )}
 
-      {/* ── QUICK HINTS (RESPOSTAS RÁPIDAS / COMANDOS) ── */}
-      {showQuickHints && (
-        <div className="fixed bottom-[135px] left-0 right-0 flex justify-center px-2 sm:px-6 z-40 animate-in slide-in-from-bottom-2">
-          <div className="w-full max-w-[650px] bg-white dark:bg-[#17212b] rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 space-y-1">
-            <div className="flex items-center justify-between px-2 py-1 text-[11.5px] font-semibold text-[#2481cc] uppercase">
-              <span className="flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5" /> {t('chat.quick_commands')} (Payments Bot)
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowQuickHints(false)}
-                className="text-gray-400 hover:text-black dark:hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            {quickReplies.map((qr) => (
-              <button
-                key={qr.shortcut}
-                type="button"
-                onClick={() => {
-                  setShowQuickHints(false);
-                  handleSendMessage(qr.shortcut);
-                }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-[#242f3d] rounded-lg transition-colors flex items-center justify-between text-xs cursor-pointer"
-              >
-                <span className="font-mono font-bold text-[#2481cc]">{qr.shortcut}</span>
-                <span className="text-gray-600 dark:text-gray-300 truncate max-w-[70%]">{qr.shortLabel}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ── FOOTER FLUTUANTE IDÊNTICO AO OFFICIAL CHANNEL ── */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 flex justify-center bg-white px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:bg-[#17212b]">
         <div className="flex w-full max-w-[650px] flex-col gap-2 pointer-events-auto">
@@ -2036,16 +1998,6 @@ export default function PaymentBot() {
               >
                 <RotateCcw className="w-5 h-5" />
               </button>
-              <button
-                type="button"
-                onClick={() => setShowQuickHints(true)}
-                className="shrink-0 rounded-full p-1.5 text-[#1877f2] transition-all hover:bg-[#1877f2]/10 active:scale-90"
-                title={t('common.help')}
-                aria-label={t('common.help')}
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
-
               {/* Campo de texto */}
               <input
                 ref={inputRef}
