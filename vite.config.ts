@@ -44,6 +44,27 @@ export default defineConfig(({ mode }) => {
             if (id.includes('@supabase')) {
               return 'supabase';
             }
+            // Phone number metadata → separado do pacote inicial
+            if (id.includes('/node_modules/libphonenumber-js/')) {
+              return 'phone-number';
+            }
+            if (
+              id.includes('/node_modules/motion/') ||
+              id.includes('/node_modules/motion-dom/') ||
+              id.includes('/node_modules/motion-utils/') ||
+              id.includes('/node_modules/framer-motion/')
+            ) {
+              return 'motion';
+            }
+            if (id.includes('/node_modules/tailwind-merge/')) {
+              return 'tailwind-merge';
+            }
+            if (
+              id.includes('/contexts/translations/') ||
+              id.endsWith('/contexts/LanguageContext.tsx')
+            ) {
+              return 'translations';
+            }
             // Lucide icons → chunk separado
             if (id.includes('lucide-react')) {
               return 'icons';

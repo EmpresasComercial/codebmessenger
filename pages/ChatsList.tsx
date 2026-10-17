@@ -1275,7 +1275,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   >
                     <Menu className="h-[20px] w-[20px]" />
                   </button>
-                  <h1 className="min-w-0 truncate whitespace-nowrap text-[20px] font-semibold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
+                  <h1 className="min-w-0 truncate whitespace-nowrap text-[22px] font-semibold tracking-tight text-[#2481cc] dark:text-[#6ab3f3]">
                     Teggram-X
                   </h1>
                 </>
@@ -1465,7 +1465,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
       </header>
 
       {/* ── CORPO PRINCIPAL DE CHATS (ORDENAÇÃO DINÂMICA SEM CONVERSAS FIXAS) ── */}
-      <main className={`w-full flex-1 overflow-y-auto ${embedded ? "pb-2" : "pb-20"}`}>
+      <main className={`w-full flex-1 overflow-y-auto pt-[6px] ${embedded ? "pb-2" : "pb-20"}`}>
         {isLoading && contacts.length === 0 && (
           <div className="flex items-center justify-center gap-2 px-4 py-3 text-[13px] text-[#707579] dark:text-[#9eaab6]">
             <Loader2 className="h-4 w-4 animate-spin text-[#2481cc]" />
