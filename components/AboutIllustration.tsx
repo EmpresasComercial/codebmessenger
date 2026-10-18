@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import {
   Bell,
   Bot,
@@ -255,16 +255,34 @@ export default function AboutIllustration({
   section: AboutSection;
   logoRef?: RefObject<HTMLImageElement | null>;
 }) {
+  const illustrationRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const illustration = illustrationRef.current;
+    if (!illustration) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { rootMargin: '100px 0px' },
+    );
+    observer.observe(illustration);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div aria-hidden="true" className="relative mx-auto mb-4 h-[278px] w-full max-w-[340px] overflow-hidden rounded-2xl bg-[#f0f7fc] dark:bg-[#1b2b39]">
-      <span className="absolute -left-5 -top-8 h-24 w-24 rounded-full bg-sky-100/80 dark:bg-sky-900/20" />
-      <span className="absolute -bottom-10 -right-5 h-28 w-28 rounded-full bg-blue-100/80 dark:bg-blue-900/20" />
-      <div className="absolute left-1/2 top-1/2 h-[260px] w-[140px] -translate-x-1/2 -translate-y-1/2">
-        <span className="absolute -left-[2px] top-[58px] h-8 w-[3px] rounded-l-sm bg-[#626a73] shadow-[inset_1px_0_rgba(255,255,255,.45)]" />
-        <span className="absolute -left-[2px] top-[100px] h-12 w-[3px] rounded-l-sm bg-[#626a73] shadow-[inset_1px_0_rgba(255,255,255,.45)]" />
-        <span className="absolute -right-[2px] top-[76px] h-14 w-[3px] rounded-r-sm bg-[#626a73] shadow-[inset_-1px_0_rgba(255,255,255,.45)]" />
-        <div className="relative h-full w-full rounded-[32px] border-2 border-[#858c94] bg-gradient-to-br from-[#555d66] via-[#1c2229] to-[#080b0e] p-[4px] shadow-[0_14px_28px_rgba(15,23,42,.32),inset_0_0_0_1px_rgba(255,255,255,.38)]">
-          <div className="h-full overflow-hidden rounded-[26px] border border-black/70 bg-white">
+    <div
+      ref={illustrationRef}
+      aria-hidden="true"
+      className={`about-illustration relative mt-4 mb-4 h-[230px] w-full overflow-hidden${isVisible ? ' is-visible' : ''}`}
+    >
+      <div className="absolute inset-x-0 top-0 h-[260px]">
+        <span className="absolute -left-[1px] top-[58px] h-8 w-[2px] rounded-l-sm bg-slate-400/80" />
+        <span className="absolute -left-[1px] top-[100px] h-12 w-[2px] rounded-l-sm bg-slate-400/80" />
+        <span className="absolute -right-[1px] top-[76px] h-14 w-[2px] rounded-r-sm bg-slate-400/80" />
+        <div className="relative h-full w-full rounded-[30px] border border-slate-400/80 bg-slate-300/80 p-[3px] shadow-[0_5px_14px_rgba(15,23,42,.14)]">
+          <div className="h-full overflow-hidden rounded-[26px] border border-slate-300 bg-white">
             <div className="relative flex h-[23px] items-center justify-between bg-white px-3 text-[7px] font-semibold text-slate-900">
               <span>9:41</span>
               <span className="absolute left-1/2 top-[3px] flex h-[14px] w-[43px] -translate-x-1/2 items-center justify-end rounded-full bg-[#07090b] pr-1">
@@ -291,8 +309,6 @@ export default function AboutIllustration({
           </div>
         </div>
       </div>
-      <span className="absolute bottom-4 left-5 h-2 w-12 rounded-full bg-sky-200/80 dark:bg-sky-700/40" />
-      <span className="absolute right-6 top-5 h-2 w-7 rounded-full bg-sky-200/80 dark:bg-sky-700/40" />
     </div>
   );
 }

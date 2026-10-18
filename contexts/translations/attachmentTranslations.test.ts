@@ -66,6 +66,17 @@ const aboutPageKeys = [
   'about.important.body',
 ] as const;
 
+const inviteIllustrationKeys = [
+  'invite.demo_title',
+  'invite.demo_copied',
+  'invite.tree_description',
+  'invite.tree_owner',
+  'invite.tree_level_one',
+  'invite.tree_level_two',
+  'invite.tree_level_three',
+  'invite.code_copy_instruction',
+] as const;
+
 test('translates the attachment picker and preview flow in all supported languages', () => {
   for (const [language, dictionary] of Object.entries(translations)) {
     for (const key of attachmentFlowKeys) {
@@ -80,6 +91,17 @@ test('translates the attachment picker and preview flow in all supported languag
 test('translates the About page in all supported languages', () => {
   for (const [language, dictionary] of Object.entries(translations)) {
     for (const key of aboutPageKeys) {
+      assert.ok(
+        Object.hasOwn(dictionary, key) && dictionary[key].trim().length > 0,
+        `${language} is missing ${key}`
+      );
+    }
+  }
+});
+
+test('translates invite illustrations in all supported languages', () => {
+  for (const [language, dictionary] of Object.entries(translations)) {
+    for (const key of inviteIllustrationKeys) {
       assert.ok(
         Object.hasOwn(dictionary, key) && dictionary[key].trim().length > 0,
         `${language} is missing ${key}`

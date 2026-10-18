@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import InviteShareIllustration from '../components/InviteShareIllustration';
+import InviteCommissionIllustration from '../components/InviteCommissionIllustration';
 import { 
   ChevronLeft, Copy, Share2, Check, 
   QrCode, X
@@ -122,41 +124,24 @@ export default function ContactsInvite() {
         >
           <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
         </button>
-        <h1 className="text-[17px] font-bold tracking-tight text-[#222222]">Teggram-X</h1>
+        <h1 className="text-[17px] font-bold tracking-tight text-[#222222]">Programa de convide</h1>
       </header>
 
       <main className="mx-auto w-full max-w-[860px] space-y-8 px-4 pt-8">
-        <div
-          className="w-full overflow-hidden"
-          style={{ borderRadius: 24 }}
-        >
-          <img
-            className="block h-auto w-full"
-            src="/2fb457ae0320d6e535.jpg"
-            alt={t('invite.program_image_alt')}
+        <div className="mx-auto w-full max-w-[420px] px-1">
+          <InviteShareIllustration
+            inviteCode={inviteCode}
+            copiedCode={copiedCode}
+            onCopyCode={() => copyToClipboard(inviteCode, true)}
           />
         </div>
 
         <section className="mx-auto w-full max-w-[420px] space-y-5 px-1 text-center">
           <div className="space-y-3 pt-1">
-            {inviteCode && inviteCode !== '---' && (
-              <button
-                type="button"
-                onClick={() => copyToClipboard(inviteCode, true)}
-                aria-label={`${t('common.copy')} ${t('invite.code_label').toLocaleLowerCase()}`}
-                className="flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] bg-[#f1f1f5] px-4 text-left font-mono text-[14px] text-[#222222] transition-colors hover:bg-[#e8e8ee]"
-              >
-                <span className="truncate">{inviteCode}</span>
-                {copiedCode
-                  ? <Check className="h-4 w-4 shrink-0 text-[#29b85e]" />
-                  : <Copy className="h-4 w-4 shrink-0 text-[#2481cc]" />
-                }
-              </button>
-            )}
             <button
               type="button"
               onClick={() => copyToClipboard(rawInviteLink, false)}
-              className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-[#0878ff] text-[15px] font-semibold text-white transition-colors hover:bg-[#006be6]"
+              className="invite-link-copy-button flex h-12 w-full cursor-pointer items-center justify-center gap-2 bg-[#0878ff] text-[14px] font-medium text-white transition-colors hover:bg-[#006be6]"
             >
               {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               <span>{copiedLink ? t('common.copied') : `${t('common.copy')} ${t('invite.link_label').toLocaleLowerCase()}`}</span>
@@ -183,7 +168,7 @@ export default function ContactsInvite() {
           </button>
         </div>
 
-        <section className="space-y-6 border-t border-gray-200 pt-8 text-[15px] leading-7 text-[#333333]">
+        <section className="space-y-6 border-t border-gray-200 pt-8 text-[14px] leading-6 text-[#333333]">
           <section id="programa-afiliados" className="space-y-3">
             <p>
               {t('invite.program_description')}
@@ -191,7 +176,7 @@ export default function ContactsInvite() {
           </section>
 
           <section id="compartilhando-link-afiliado" className="space-y-3">
-            <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
+            <h2 className="text-[19px] font-medium leading-tight text-[#222222]">
               {t('invite.title')}
             </h2>
             <p>
@@ -200,19 +185,14 @@ export default function ContactsInvite() {
           </section>
 
           <section id="comissoes" className="space-y-3">
-            <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
+            <h2 className="text-[19px] font-medium leading-tight text-[#222222]">
               {t('profile.team_commissions')}
             </h2>
-            <img
-              src="/invite-rewards-levels.png"
-              alt={t('invite.commissions_image_alt')}
-              className="mx-auto block h-auto w-full max-w-[520px] rounded-xl"
-              loading="lazy"
-            />
+            <InviteCommissionIllustration />
           </section>
 
           <section id="perguntas-frequentes" className="space-y-4">
-            <h2 className="text-[21px] font-medium leading-tight text-[#222222]">
+            <h2 className="text-[19px] font-medium leading-tight text-[#222222]">
               {t('invite.faq_heading')}
             </h2>
             <details className="border-b border-gray-200 pb-4">

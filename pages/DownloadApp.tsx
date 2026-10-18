@@ -55,32 +55,62 @@ export default function DownloadApp() {
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-[17px] font-semibold">{t("download.android_title")}</h1>
+        <h1 className="text-[17px] font-medium">{t("download.android_title")}</h1>
       </header>
 
-      <main className="mx-auto max-w-[720px] px-3 pt-0">
+      <main className="mx-auto w-full max-w-[720px] px-3 pt-0">
         <section className="text-center">
-          <div
-            className="mx-auto mb-1 w-full max-w-[520px] overflow-hidden"
-            style={{ borderRadius: 24 }}
-          >
-            <img
-              src="/SiteAndroid_2x.webp"
-              alt={t("download.android_alt")}
-              className="block h-auto w-full"
-            />
+          <div className="mx-auto mb-3 h-[226px] w-full max-w-[412px] overflow-hidden">
+            <div className="relative h-[270px] w-full">
+              <span className="absolute -left-px top-[56px] h-8 w-[2px] rounded-l-sm bg-slate-400/80" />
+              <span className="absolute -right-px top-[74px] h-10 w-[2px] rounded-r-sm bg-slate-400/80" />
+              <div className="relative h-full rounded-[30px] border border-slate-400/90 bg-gradient-to-br from-slate-400 via-slate-600 to-slate-800 p-[3px] shadow-[0_5px_14px_rgba(15,23,42,.16)]">
+                <div className="h-full overflow-hidden rounded-[26px] border border-slate-800/80 bg-white">
+                  <div className="relative flex h-[20px] items-center justify-between bg-white px-3 text-[7px] font-semibold text-slate-900">
+                    <span>9:41</span>
+                    <span className="absolute left-1/2 top-[3px] h-[13px] w-[42px] -translate-x-1/2 rounded-full bg-[#07090b]" />
+                    <span className="flex items-center gap-1">
+                      <span className="h-1.5 w-2 rounded-[2px] border border-slate-800" />
+                      <span className="h-1.5 w-2 rounded-[2px] bg-slate-800" />
+                    </span>
+                  </div>
+                  <div className="flex h-6 items-center gap-1.5 border-b border-slate-100 bg-white px-2">
+                    <span className="h-4 w-4 overflow-hidden rounded-full">
+                      <img src="/logo_tegx.jfif" alt="" className="h-full w-full object-cover" />
+                    </span>
+                    <span className="h-1.5 w-14 rounded-full bg-slate-300" />
+                    <span className="ml-auto h-1 w-3 rounded-full bg-slate-200" />
+                  </div>
+                  <div className="flex h-[204px] flex-col items-center bg-slate-50 px-4 pt-4">
+                    <img
+                      src="/logo_tegx.jfif"
+                      alt=""
+                      className="h-12 w-12 rounded-full object-cover shadow-sm"
+                    />
+                    <span className="mt-2 text-[14px] font-medium leading-5 text-slate-800">Teggram-X</span>
+                    <div className="download-preview-button mt-3 inline-flex min-h-8 w-full max-w-[170px] items-center justify-center gap-1 rounded-full bg-[#3390ec] px-3 text-[10px] font-medium text-white">
+                      <Download className="h-3 w-3" />
+                      {t("download.install_button")}
+                    </div>
+                  </div>
+                  <div className="flex h-3 items-center justify-center bg-white">
+                    <span className="h-[3px] w-9 rounded-full bg-[#15191d]" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <h2 className="mb-1.5 text-[26px] font-semibold tracking-tight text-[#222]">
+          <h2 className="mb-1.5 text-[23px] font-medium tracking-tight text-[#222]">
             {t("download.android_title")}
           </h2>
-          <p className="mx-auto max-w-[540px] text-[16px] leading-6 text-[#707579]">
+          <p className="mx-auto max-w-[540px] text-[14px] leading-[22px] text-[#707579]">
             {t("download.android_description")}
           </p>
           <button
             type="button"
             onClick={handleInstall}
             disabled={isInstalling}
-            className="mx-auto mt-3 inline-flex min-h-12 w-full max-w-[520px] items-center justify-center gap-2 rounded-full bg-[#3390ec] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#287fcf] disabled:cursor-wait disabled:opacity-70"
+            className="mx-auto mt-3 inline-flex min-h-12 w-full max-w-[520px] items-center justify-center gap-2 rounded-full bg-[#3390ec] px-8 text-[15px] font-medium text-white transition-colors hover:bg-[#287fcf] disabled:cursor-wait disabled:opacity-70"
           >
             <Download className="h-5 w-5" />
             {isInstalling ? t("download.installing") : t("download.install_button")}
@@ -88,15 +118,15 @@ export default function DownloadApp() {
         </section>
 
         <section className="mt-8 border-t border-gray-100 pt-5">
-          <h2 className="mb-3 text-[20px] font-semibold text-[#222]">
+          <h2 className="mb-3 text-[18px] font-medium text-[#222]">
             {t("download.how_to_install")}
           </h2>
-          <ol className="list-inside list-decimal space-y-3 text-[15px] leading-6 text-[#707579]">
+          <ol className="list-inside list-decimal space-y-3 text-[13px] leading-[22px] text-[#707579]">
             <li>{t("download.step1")}</li>
             <li>{t("download.step2")}</li>
             <li>{t("download.step3")}</li>
           </ol>
-          <p className="mt-5 text-[14px] leading-6 text-[#707579]">
+          <p className="mt-5 text-[12px] leading-5 text-[#707579]">
             {t("download.availability")}
           </p>
         </section>

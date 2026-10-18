@@ -1988,7 +1988,7 @@ export default function grupochat() {
       <main 
         ref={scrollRef} 
         onScroll={handleScroll}
-        className="tg-theme-chat-canvas w-full min-h-0 flex-1 overflow-y-auto bg-white dark:bg-[#0e1621] no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-3 relative [overflow-anchor:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="tg-theme-chat-canvas w-full min-h-0 flex-1 overflow-y-auto bg-white dark:bg-[#0e1621] no-scrollbar px-3 sm:px-4 md:px-6 pt-2 pb-24 space-y-4 relative [overflow-anchor:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {publicMessages.map((m, i) => {
           const isMe = m.uid_emissor === user?.id;

@@ -157,7 +157,7 @@ html, body, * {
    ══════════════════════════════════════════════════════════════════ */
 
 /* 1. Botões a nível global (sem arredondamento) */
-button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn):not(.gallery-photo-button):not(.profile-save-button):not(.theme-apply-button),
+button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn):not(.gallery-photo-button):not(.profile-save-button):not(.theme-apply-button):not(.invite-link-copy-button),
 [role="button"]:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn),
 input[type="button"],
 input[type="submit"],
@@ -673,6 +673,61 @@ textarea,
   border-radius: 23px !important;
 }
 
+button.invite-link-copy-button {
+  border-radius: 22px !important;
+}
+
+@keyframes invite-share-first-stage {
+  0%, 46% { opacity: 1; transform: translateY(0); }
+  52%, 94% { opacity: 0; transform: translateY(-3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes invite-share-second-stage {
+  0%, 46% { opacity: 0; transform: translateY(3px); }
+  52%, 94% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(3px); }
+}
+
+@keyframes invite-demo-copy-state {
+  0%, 12%, 100% { opacity: 0; }
+  18%, 43% { opacity: 1; }
+}
+
+@keyframes invite-demo-link-arrive {
+  0%, 54% { opacity: 0; transform: translateY(5px) scale(.96); }
+  66%, 96% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes invite-demo-message-type {
+  0%, 65% { transform: scaleX(.15); opacity: .4; }
+  82%, 97% { transform: scaleX(1); opacity: 1; }
+}
+
+.invite-share-stage-copy {
+  animation: invite-share-first-stage 8s ease-in-out infinite;
+}
+
+.invite-share-stage-message {
+  animation: invite-share-second-stage 8s ease-in-out infinite;
+}
+
+.invite-demo-copied {
+  opacity: 0;
+  animation: invite-demo-copy-state 8s ease-in-out infinite;
+}
+
+.invite-demo-link {
+  opacity: 0;
+  animation: invite-demo-link-arrive 8s ease-in-out infinite;
+}
+
+.invite-demo-composer-text {
+  transform: scaleX(.15);
+  transform-origin: left center;
+  animation: invite-demo-message-type 8s ease-in-out infinite;
+}
+
 @keyframes about-screen-content-enter {
   from {
     opacity: 0;
@@ -686,6 +741,44 @@ textarea,
 
 .about-screen-content {
   animation: about-screen-content-enter 420ms ease-out both;
+}
+
+.about-illustration {
+  content-visibility: auto;
+  contain-intrinsic-size: 230px;
+}
+
+.about-illustration:not(.is-visible) .about-screen-content,
+.about-illustration:not(.is-visible) [data-about-section] * {
+  animation-play-state: paused;
+}
+
+.download-preview-button {
+  animation: download-preview-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes download-preview-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025); }
+}
+
+.invite-share-illustration,
+.invite-commission-illustration {
+  content-visibility: auto;
+  contain-intrinsic-size: 260px;
+}
+
+.invite-share-illustration {
+  contain-intrinsic-size: 244px;
+}
+
+.invite-commission-illustration {
+  contain-intrinsic-size: 184px;
+}
+
+.invite-share-illustration:not(.is-visible) *,
+.invite-commission-illustration:not(.is-visible) * {
+  animation-play-state: paused;
 }
 
 @keyframes about-chat-message {
@@ -805,7 +898,13 @@ textarea,
 @media (prefers-reduced-motion: reduce) {
   .about-screen-content,
   .about-screen-content *,
-  [data-about-section] * {
+  [data-about-section] *,
+  .download-preview-button,
+  .invite-share-illustration *,
+  .invite-share-stage,
+  .invite-demo-copied,
+  .invite-demo-link,
+  .invite-demo-composer-text {
     animation-duration: 1ms;
     animation-iteration-count: 1;
   }

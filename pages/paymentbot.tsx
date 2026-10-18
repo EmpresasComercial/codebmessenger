@@ -1430,7 +1430,7 @@ export default function PaymentBot() {
         ref={mainChatRef}
         onScroll={handleScroll}
         onClick={() => setShowMenuDropdown(false)}
-        className="tg-theme-chat-canvas flex-1 overflow-y-auto bg-white px-2.5 pt-2 pb-40 space-y-3 relative select-text dark:bg-[#0e1621]"
+        className="tg-theme-chat-canvas flex-1 overflow-y-auto bg-white px-2.5 pt-2 pb-40 space-y-4 relative select-text dark:bg-[#0e1621]"
       >
         <div className="flex justify-center my-1 select-none">
           <span

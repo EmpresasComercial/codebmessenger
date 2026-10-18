@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   AlertTriangle,
   Loader2,
+  Monitor,
 } from 'lucide-react';
 
 interface AuditSession {
@@ -79,6 +80,78 @@ function getDeviceInfo(t: ReturnType<typeof useLanguage>['t']) {
   else if (/opera|opr/i.test(ua)) browser = 'Opera';
 
   return { os, name, browser, isMobile };
+}
+
+function ActiveDeviceIllustration({ isMobile }: { isMobile: boolean }) {
+  return (
+    <div aria-hidden="true" className="mb-4 h-[220px] w-full overflow-hidden">
+      {isMobile ? (
+        <div className="relative mx-auto h-[286px] w-[min(240px,calc(100%-48px))]">
+          <div className="h-full rounded-[32px] border border-slate-400/90 bg-gradient-to-br from-slate-400 via-slate-600 to-slate-800 p-[3px] shadow-[0_5px_14px_rgba(15,23,42,.16)]">
+            <div className="h-full overflow-hidden rounded-[27px] border border-slate-800/80 bg-white">
+              <div className="relative flex h-7 items-center justify-between bg-white px-3 text-[9px] font-semibold text-slate-900">
+                <span>9:41</span>
+                <span className="absolute left-1/2 top-1 h-4 w-12 -translate-x-1/2 rounded-full bg-[#07090b]" />
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-[2px] border border-slate-800" />
+                  <span className="h-2 w-2 rounded-[2px] bg-slate-800" />
+                </span>
+              </div>
+              <div className="flex h-10 items-center gap-2 border-b border-slate-100 bg-white px-3">
+                <img src="/logo_tegx.jfif" alt="" className="h-6 w-6 rounded-full object-cover" />
+                <span className="h-2 w-20 rounded-full bg-slate-300" />
+                <span className="ml-auto h-1.5 w-5 rounded-full bg-slate-200" />
+              </div>
+              <div className="space-y-3 bg-slate-50 px-3 py-4">
+                <div className="ml-auto h-8 w-4/5 rounded-2xl rounded-br-sm bg-sky-100" />
+                <div className="h-10 w-4/5 rounded-2xl rounded-bl-sm bg-white shadow-[0_1px_3px_rgba(15,23,42,.08)]" />
+                <div className="ml-auto h-8 w-3/5 rounded-2xl rounded-br-sm bg-sky-100" />
+                <div className="h-10 w-3/4 rounded-2xl rounded-bl-sm bg-white shadow-[0_1px_3px_rgba(15,23,42,.08)]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="relative mx-auto h-[260px] w-full max-w-[560px]">
+          <div className="h-[244px] rounded-t-[22px] border border-slate-400/90 bg-gradient-to-br from-slate-400 via-slate-600 to-slate-800 p-[4px] shadow-[0_5px_14px_rgba(15,23,42,.16)]">
+            <div className="h-full overflow-hidden rounded-t-[17px] border border-slate-800/80 bg-white">
+              <div className="flex h-8 items-center gap-2 border-b border-slate-200 bg-slate-50 px-3">
+                <span className="flex gap-1">
+                  <span className="h-2 w-2 rounded-full bg-rose-400" />
+                  <span className="h-2 w-2 rounded-full bg-amber-400" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                <span className="mx-auto flex h-5 w-2/3 max-w-[300px] items-center justify-center rounded-md bg-white text-[8px] text-slate-400 shadow-sm">
+                  teggram-x.com
+                </span>
+                <Monitor className="h-3.5 w-3.5 text-slate-400" />
+              </div>
+              <div className="flex h-[196px] bg-white">
+                <aside className="w-[27%] border-r border-slate-100 bg-slate-50 p-3">
+                  <div className="mb-4 flex items-center gap-2">
+                    <img src="/logo_tegx.jfif" alt="" className="h-5 w-5 rounded-full object-cover" />
+                    <span className="h-1.5 w-12 rounded-full bg-slate-300" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-7 rounded-lg bg-sky-100" />
+                    <div className="h-7 rounded-lg bg-slate-100" />
+                    <div className="h-7 rounded-lg bg-slate-100" />
+                  </div>
+                </aside>
+                <div className="flex-1 px-4 py-4">
+                  <div className="mb-4 h-2 w-24 rounded-full bg-slate-200" />
+                  <div className="ml-auto mb-3 h-8 w-3/5 rounded-xl rounded-br-sm bg-sky-100" />
+                  <div className="mb-3 h-9 w-3/5 rounded-xl rounded-bl-sm bg-slate-100" />
+                  <div className="ml-auto h-8 w-2/5 rounded-xl rounded-br-sm bg-sky-100" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mx-auto h-3 w-[18%] rounded-b-md bg-gradient-to-b from-slate-400 to-slate-300" />
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function DevicesPrivacy() {
@@ -296,11 +369,7 @@ export default function DevicesPrivacy() {
       </header>
 
       <main className="mx-auto w-full max-w-[680px] flex-1 px-4 sm:px-6 py-2">
-        <img
-          src="/active-sessions-chat-preview.png"
-          alt={t('devices.sessions_preview_alt')}
-          className="mb-4 w-full rounded-xl object-cover"
-        />
+        <ActiveDeviceIllustration isMobile={deviceInfo.isMobile} />
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-8 h-8 text-[#2481cc] animate-spin" />
@@ -311,23 +380,7 @@ export default function DevicesPrivacy() {
         ) : (
           <>
             <section className="border-b border-[#e6e8eb] dark:border-white/10 py-5 space-y-4">
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 flex items-center justify-center text-[#2481cc] shrink-0">
-                  {deviceInfo.isMobile ? (
-                    <img
-                      src="/active-session-mobile.png"
-                      alt=""
-                      className="h-10 w-10 object-contain"
-                    />
-                  ) : (
-                    <img
-                      src="/active-session-desktop.png"
-                      alt=""
-                      className="h-10 w-10 object-cover"
-                    />
-                  )}
-                </div>
-
+              <div className="flex items-start">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-[15px] font-medium text-black dark:text-white truncate">
