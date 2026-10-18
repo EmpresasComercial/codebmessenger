@@ -1,5 +1,5 @@
 // Service Worker para Teggram-X - Push Notifications & Offline Support
-const CACHE_NAME = 'business-messenger-shell-v9';
+const CACHE_NAME = 'business-messenger-shell-v10';
 
 // Assets fundamentais para o App abrir offline
 const STATIC_ASSETS = [
@@ -7,6 +7,7 @@ const STATIC_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/logo_tegx.jfif',
+  '/notification-badge.svg',
   '/community-group-logo.svg',
   '/avatar_padrao_bm.jpg?v=2',
   '/payment_bot_avatar.jpg?v=1',
@@ -87,13 +88,40 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+function formatNotification(data) {
+  const senderName = typeof data.senderName === 'string' ? data.senderName.trim() : '';
+  const senderPhone = typeof data.senderPhone === 'string' ? data.senderPhone.trim() : '';
+  const message = typeof data.message === 'string' ? data.message.trim() : '';
+
+  if (senderName && senderPhone) {
+    const phoneDigits = senderPhone.replace(/\D/g, '');
+    return {
+      title: `${senderName} +${phoneDigits}`,
+      body: message || data.body,
+    };
+  }
+
+  const body = typeof data.body === 'string' ? data.body : '';
+  const senderLine = body.match(/^\s*([^()\n:]{1,80}?)\s*\(\s*(\+?[\d\s().-]{6,24})\s*\)\s*:\s*/);
+  if (!senderLine) {
+    return { title: data.title, body };
+  }
+
+  const sender = senderLine[1].trim();
+  const phone = `+${senderLine[2].replace(/\D/g, '')}`;
+  return {
+    title: `${sender} ${phone}`,
+    body: body.slice(senderLine[0].length).trim(),
+  };
+}
+
 // Escuta eventos de Notificação Push
 self.addEventListener('push', (event) => {
   let data = {
     title: 'Teggram-X',
     body: 'Você tem uma nova notificação na sua conta.',
     icon: '/logo_tegx.jfif',
-    badge: '/logo_tegx.jfif',
+    badge: '/notification-badge.svg',
     url: '/perfil',
   };
 
@@ -106,10 +134,11 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  const formatted = formatNotification(data);
   const options = {
-    body: data.body,
+    body: formatted.body,
     icon: data.icon || '/logo_tegx.jfif',
-    badge: data.badge || '/logo_tegx.jfif',
+    badge: data.badge || '/notification-badge.svg',
     vibrate: [200, 100, 200, 100, 200],
     tag: data.tag || 'business-messenger-notification',
     renotify: true,
@@ -127,7 +156,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     (async () => {
       // 1. Exibe a notificação push
-      await self.registration.showNotification(data.title, options);
+      await self.registration.showNotification(formatted.title, options);
 
       // 2. Incrementa o número no badge do ícone do PWA
       try {

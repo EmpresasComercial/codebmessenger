@@ -18,7 +18,7 @@ webpush.setVapidDetails(
 
 serve(async (req) => {
   try {
-    const { user_id, title, body, url } = await req.json();
+    const { user_id, title, body, url, senderName, senderPhone, message } = await req.json();
 
     if (!user_id || !title || !body) {
       return new Response(JSON.stringify({ error: "Parâmetros obrigatórios: user_id, title, body" }), {
@@ -49,8 +49,11 @@ serve(async (req) => {
       title: title || "Busne Messaging",
       body: body,
       icon: "/logo_tegx.jfif",
-      badge: "/logo_tegx.jfif",
+      badge: "/notification-badge.svg",
       url: url || "/perfil",
+      ...(typeof senderName === "string" ? { senderName } : {}),
+      ...(typeof senderPhone === "string" ? { senderPhone } : {}),
+      ...(typeof message === "string" ? { message } : {}),
     });
 
     const sendPromises = subscriptions.map(async (sub) => {
