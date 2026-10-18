@@ -77,6 +77,26 @@ const inviteIllustrationKeys = [
   'invite.code_copy_instruction',
 ] as const;
 
+const rechargeBankKeys = [
+  'recharge.banks_query_failed',
+] as const;
+
+const walletBankCommandKeys = [
+  'suggestion.add_bank',
+  'suggestion.bank',
+] as const;
+
+const botFatherCommandKeys = [
+  'suggestion.bots',
+  'suggestion.password',
+  'suggestion.active_bots',
+  'suggestion.balance',
+  'suggestion.income',
+  'suggestion.limits',
+  'suggestion.coupon',
+  'suggestion.help',
+] as const;
+
 test('translates the attachment picker and preview flow in all supported languages', () => {
   for (const [language, dictionary] of Object.entries(translations)) {
     for (const key of attachmentFlowKeys) {
@@ -102,6 +122,39 @@ test('translates the About page in all supported languages', () => {
 test('translates invite illustrations in all supported languages', () => {
   for (const [language, dictionary] of Object.entries(translations)) {
     for (const key of inviteIllustrationKeys) {
+      assert.ok(
+        Object.hasOwn(dictionary, key) && dictionary[key].trim().length > 0,
+        `${language} is missing ${key}`
+      );
+    }
+  }
+});
+
+test('translates recharge bank-query errors in all supported languages', () => {
+  for (const [language, dictionary] of Object.entries(translations)) {
+    for (const key of rechargeBankKeys) {
+      assert.ok(
+        Object.hasOwn(dictionary, key) && dictionary[key].trim().length > 0,
+        `${language} is missing ${key}`
+      );
+    }
+  }
+});
+
+test('translates Wallet add-bank and view-bank command labels in all supported languages', () => {
+  for (const [language, dictionary] of Object.entries(translations)) {
+    for (const key of walletBankCommandKeys) {
+      assert.ok(
+        Object.hasOwn(dictionary, key) && dictionary[key].trim().length > 0,
+        `${language} is missing ${key}`
+      );
+    }
+  }
+});
+
+test('provides BotFather command labels in all supported languages', () => {
+  for (const [language, dictionary] of Object.entries(translations)) {
+    for (const key of botFatherCommandKeys) {
       assert.ok(
         Object.hasOwn(dictionary, key) && dictionary[key].trim().length > 0,
         `${language} is missing ${key}`

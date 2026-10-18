@@ -2,6 +2,7 @@
 import { logger } from '../lib/logger';
 
 const MAX_TRANSLATION_CACHE = 250;
+const EMPTY_SENSITIVE_VALUES: readonly string[] = [];
 const translationCache = new Map<string, string>();
 const translationsInFlight = new Map<string, Promise<string>>();
 let translationQueue = Promise.resolve();
@@ -73,12 +74,68 @@ function translateTextPreservingUrls(text: string, language: string): Promise<st
   ).then((parts) => parts.join(''));
 }
 
+interface MaskedText {
+  text: string;
+  restore: (translated: string) => string;
+  placeholders: string[];
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function maskSensitiveText(text: string, sensitiveValues: readonly string[] = []): MaskedText {
+  const replacements: Array<{ placeholder: string; value: string }> = [];
+  let maskedText = text;
+
+  const mask = (value: string, isIban = false) => {
+    const normalized = value.trim();
+    if (!normalized) return;
+
+    const pattern = isIban
+      ? new RegExp(`(?<![A-Z0-9])${[...normalized.replace(/[\s-]/g, '')].map(escapeRegExp).join('[\\s-]*')}(?![A-Z0-9])`, 'gi')
+      : new RegExp(escapeRegExp(normalized).replace(/\s+/g, '\\s+'), 'gi');
+
+    maskedText = maskedText.replace(pattern, (match) => {
+      let placeholder = `ZXQPRIVATE${replacements.length}TOKENQXZ`;
+      while (text.includes(placeholder)) {
+        placeholder = `Z${placeholder}`;
+      }
+      replacements.push({ placeholder, value: match });
+      return placeholder;
+    });
+  };
+
+  [...sensitiveValues]
+    .filter((value) => typeof value === 'string' && value.trim())
+    .sort((a, b) => b.length - a.length)
+    .forEach((value) => mask(value, /^[A-Z]{2}\d{2}[A-Z0-9\s-]+$/i.test(value)));
+
+  const detectedIbans = [
+    ...(text.match(/\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b/gi) || []),
+    ...(text.match(/\bAO\d{2}(?:[\s-]?[A-Z0-9]){21}\b/gi) || []),
+    ...(text.match(/(?<!\d)(?:\d[\s-]?){20}\d(?!\d)/g) || []),
+  ];
+  detectedIbans.forEach((iban) => mask(iban, true));
+
+  return {
+    text: maskedText,
+    placeholders: replacements.map(({ placeholder }) => placeholder),
+    restore: (translated) =>
+      replacements.reduce(
+        (result, { placeholder, value }) => result.replace(placeholder, value),
+        translated
+      ),
+  };
+}
+
 interface AutoTranslatedTextProps {
   text: string;
   language: string;
   enabled: boolean;
   renderFormatted?: (text: string) => React.ReactNode;
   preserveUrls?: boolean;
+  sensitiveValues?: readonly string[];
 }
 
 export default React.memo(function AutoTranslatedText({
@@ -87,6 +144,7 @@ export default React.memo(function AutoTranslatedText({
   enabled,
   renderFormatted,
   preserveUrls = false,
+  sensitiveValues = EMPTY_SENSITIVE_VALUES,
 }: AutoTranslatedTextProps) {
   const [translated, setTranslated] = useState(text);
 
@@ -95,18 +153,25 @@ export default React.memo(function AutoTranslatedText({
     setTranslated(text);
     if (!enabled || !text.trim()) return () => { isMounted = false; };
 
+    const masked = maskSensitiveText(text, sensitiveValues);
     const translation = preserveUrls
-      ? translateTextPreservingUrls(text, language)
-      : translateText(text, language);
+      ? translateTextPreservingUrls(masked.text, language)
+      : translateText(masked.text, language);
 
     translation.then((result) => {
-      if (isMounted) setTranslated(result);
+      if (!isMounted) return;
+      if (masked.placeholders.some((placeholder) => !result.includes(placeholder))) {
+        logger.warn('AutoTranslatedText', 'Translation changed a protected-value placeholder; showing the original message.');
+        setTranslated(text);
+        return;
+      }
+      setTranslated(masked.restore(result));
     });
 
     return () => {
       isMounted = false;
     };
-  }, [enabled, language, preserveUrls, text]);
+  }, [enabled, language, preserveUrls, sensitiveValues, text]);
 
   return <>{renderFormatted ? renderFormatted(translated) : translated}</>;
 });

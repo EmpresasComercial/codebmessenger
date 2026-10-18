@@ -2,11 +2,15 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { clearLegacyAssistantChatHistory } from './lib/legacyAssistantChatHistory';
+import {
+  clearLegacyAssistantChatHistory,
+  clearLegacyPaymentBotStorage,
+} from './lib/legacyAssistantChatHistory';
 import { applyAppZoom, getSavedAppZoom } from './lib/appZoom';
 import { APP_THEME_STORAGE_KEY, applyAppTheme, getSavedAppTheme } from './lib/appThemes';
 
 clearLegacyAssistantChatHistory();
+clearLegacyPaymentBotStorage();
 applyAppZoom(getSavedAppZoom());
 applyAppTheme(getSavedAppTheme());
 window.addEventListener('storage', (event) => {

@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
+import { buildWithdrawalFeeExample } from './withdrawalFeeExample';
 
 export interface WalletAssistantParams {
   minAmount: number;
@@ -77,16 +78,15 @@ function formatKZ(val: number): string {
 function buildDynamicResponses(params: WalletAssistantParams) {
   const minFmt = formatKZ(params.minAmount);
   const maxFmt = formatKZ(params.maxAmount);
-  const sampleGross = 10000;
-  const sampleNet = formatKZ(Math.round(sampleGross * params.netFactor));
+  const feeExample = buildWithdrawalFeeExample(params.feePercent, formatKZ).text;
 
   return {
     taxas: [
-      `A taxa de saque é de ${params.feePercent}% sobre o valor bruto (fator líquido de ${params.netFactor}). Calculada oficialmente como: ${params.formula}. Sacando ${formatKZ(sampleGross)}, você recebe ${sampleNet} na sua conta bancária!`,
-      `Cobramos ${params.feePercent}% de taxa de processamento bancário. O valor líquido (${params.netFactor * 100}% do total) é exibido na tela antes da confirmação final.`,
-      `A retenção operacional é de ${params.feePercent}% do valor da retirada (${params.formula}). Tudo transparente e auditado!`,
-      `Taxa de serviço: ${params.feePercent}%. Se sacar ${formatKZ(sampleGross)}, recebe ${sampleNet} no banco. Simples e sem taxas ocultas.`,
-      `Trabalhamos com taxa real de ${params.feePercent}% (${params.formula}). Sem tarifas surpresa!`,
+      `Em cada retirada realizada, a retenção operacional é de ${params.feePercent}% do valor retirado. ${feeExample}`,
+      `A taxa de processamento é de ${params.feePercent}% sobre o valor da retirada. ${feeExample}`,
+      `A retenção operacional corresponde a ${params.feePercent}% do valor solicitado. ${feeExample}`,
+      `A taxa de serviço é de ${params.feePercent}% do valor retirado. ${feeExample}`,
+      `Em cada retirada, é descontada uma taxa operacional de ${params.feePercent}%. ${feeExample}`,
     ],
     atraso: [
       'Confira no /historico se o saque aparece como Aprovado ou Pendente. Se passou do prazo de 24 horas úteis, contate o suporte com um print.',
@@ -142,7 +142,7 @@ function buildDynamicResponses(params: WalletAssistantParams) {
       'Precisa cadastrar a sua conta? Use Adicionar conta bancária. Para consultar os dados cadastrados, escolha Consultar dados bancários.',
     ],
     como_sacar: [
-      `Para solicitar um saque, precisa ter uma conta bancária (IBAN) cadastrada e um Bot ativo. O valor mínimo é de ${minFmt} e a taxa é de ${params.feePercent}% (recebe ${params.netFactor * 100}% líquido). Digite /retirar para iniciar! 💸`,
+      `Para solicitar um saque, precisa ter uma conta bancária (IBAN) cadastrada e um Bot ativo. O valor mínimo é de ${minFmt} e a retenção operacional é de ${params.feePercent}% do valor retirado. Digite /retirar para iniciar! 💸`,
       `É fácil: tenha o banco cadastrado, solicite no horário de atendimento (${params.schedule}) e envie /retirar. 😊`,
       `Pode retirar o saldo disponível para a sua conta bancária (limites de ${minFmt} a ${maxFmt}). Envie /retirar para começar! 🚀`,
     ],

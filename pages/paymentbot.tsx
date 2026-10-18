@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as QRCode from 'qrcode';
 import {
@@ -33,10 +33,12 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedManager';
 import { recordChatActivity } from '../lib/chatActivity';
 import { PAYMENT_BOT_AVATAR } from '../lib/utils';
+import { clearLegacyPaymentBotStorage } from '../lib/legacyAssistantChatHistory';
 
 const MIN_RECHARGE = 3000;
 const MAX_RECHARGE = 500000;
-const CHAT_STORAGE_KEY = 'telegram_deposit_bot_v3';
+const LEGACY_RECHARGE_BANK_KEY = 'deposit_bot_current_bank';
+const RECHARGE_BANK_ID_KEY = 'deposit_bot_current_bank_id';
 const DEMO_MULTICAIXA_NUMBER = '928809034';
 const DEMO_MULTICAIXA_ENTITY = 'MCX';
 const DEMO_MULTICAIXA_REFERENCE = 'DEMO';
@@ -49,14 +51,15 @@ const rechargeSession = {
     try {
       const id = localStorage.getItem('deposit_bot_recharge_id');
       const amtStr = localStorage.getItem('deposit_bot_current_amount');
-      const bankStr = localStorage.getItem('deposit_bot_current_bank');
+      const bankId = localStorage.getItem(RECHARGE_BANK_ID_KEY);
+      localStorage.removeItem(LEGACY_RECHARGE_BANK_KEY);
       return {
         rechargeId: id || null,
         amount: amtStr ? Number(amtStr) : null,
-        bank: bankStr ? JSON.parse(bankStr) : null,
+        bankId: bankId || null,
       };
     } catch {
-      return { rechargeId: null, amount: null, bank: null };
+      return { rechargeId: null, amount: null, bankId: null };
     }
   },
   set: (id: string | null, amount: number | null, bank: CollectionBank | null) => {
@@ -67,16 +70,22 @@ const rechargeSession = {
       if (amount !== null) localStorage.setItem('deposit_bot_current_amount', String(amount));
       else localStorage.removeItem('deposit_bot_current_amount');
 
-      if (bank) localStorage.setItem('deposit_bot_current_bank', JSON.stringify(bank));
-      else localStorage.removeItem('deposit_bot_current_bank');
-    } catch { }
+      if (bank) localStorage.setItem(RECHARGE_BANK_ID_KEY, bank.id);
+      else localStorage.removeItem(RECHARGE_BANK_ID_KEY);
+      localStorage.removeItem(LEGACY_RECHARGE_BANK_KEY);
+    } catch (error) {
+      logger.error('PaymentBot', 'Não foi possível atualizar a sessão local da recarga.', error);
+    }
   },
   clear: () => {
     try {
       localStorage.removeItem('deposit_bot_recharge_id');
       localStorage.removeItem('deposit_bot_current_amount');
-      localStorage.removeItem('deposit_bot_current_bank');
-    } catch { }
+      localStorage.removeItem(RECHARGE_BANK_ID_KEY);
+      localStorage.removeItem(LEGACY_RECHARGE_BANK_KEY);
+    } catch (error) {
+      logger.error('PaymentBot', 'Não foi possível limpar a sessão local da recarga.', error);
+    }
   }
 };
 
@@ -442,11 +451,31 @@ export default function PaymentBot() {
   const [userBalance, setUserBalance] = useState<number>(0);
   const [totalRecharges, setTotalRecharges] = useState<number>(0);
   const [collectionBanks, setCollectionBanks] = useState<CollectionBank[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const sensitiveBankValues = useMemo(
+    () => [
+      ...collectionBanks.flatMap((bank) => [bank.nome_banco, bank.nome_proprietario, bank.iban]),
+      ...messages.flatMap((message) => {
+        const payload = message.payload || {};
+        return [
+          payload.holderName,
+          payload.ownerName,
+          payload.nome_proprietario,
+          payload.bankName,
+          payload.iban,
+          ...(Array.isArray(payload.sensitiveValues) ? payload.sensitiveValues : []),
+          ...(Array.isArray(payload.banks)
+            ? payload.banks.flatMap((bank: CollectionBank) => [bank.nome_banco, bank.nome_proprietario, bank.iban])
+            : []),
+        ];
+      }),
+    ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0),
+    [collectionBanks, messages]
+  );
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
@@ -469,9 +498,10 @@ export default function PaymentBot() {
     label: shortLabel,
   }));
 
-  const [depositAmount, setDepositAmount] = useState<number | null>(() => rechargeSession.get().amount);
-  const [selectedBank, setSelectedBank] = useState<CollectionBank | null>(() => rechargeSession.get().bank);
-  const [activeRechargeId, setActiveRechargeId] = useState<string | null>(() => rechargeSession.get().rechargeId);
+  const [savedRechargeSession] = useState(() => rechargeSession.get());
+  const [depositAmount, setDepositAmount] = useState<number | null>(savedRechargeSession.amount);
+  const [selectedBank, setSelectedBank] = useState<CollectionBank | null>(null);
+  const [activeRechargeId, setActiveRechargeId] = useState<string | null>(savedRechargeSession.rechargeId);
   const awaitingProof = Boolean(activeRechargeId && selectedBank && depositAmount !== null);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -484,11 +514,7 @@ export default function PaymentBot() {
       showToast('Envia o comprovativo ou cancela o pedido antes de reiniciar a conversa.', 'error');
       return;
     }
-    try {
-      localStorage.removeItem(CHAT_STORAGE_KEY);
-    } catch (error) {
-      console.error('Não foi possível limpar o histórico local do Playment Bot:', error);
-    }
+    clearLegacyPaymentBotStorage();
     rechargeSession.clear();
     setDepositAmount(null);
     setSelectedBank(null);
@@ -506,19 +532,19 @@ export default function PaymentBot() {
     return () => cancelAnimationFrame(frame);
   }, [messages, isTyping]);
 
-  useEffect(() => {
-    if (messages.length > 0) {
-      try {
-        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
-      } catch (e) { }
-    }
-  }, [messages]);
-
   const handleScroll = () => {
     if (!mainChatRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = mainChatRef.current;
     setShowScrollDown(scrollHeight - scrollTop - clientHeight > 150);
   };
+
+  const fetchCollectionBanks = useCallback(async () => {
+    const { data, error } = await supabase.rpc('get_collection_banks_mcpn');
+    if (error) throw error;
+    if (!Array.isArray(data)) throw new Error('A consulta não devolveu uma lista válida de contas de depósito.');
+    setCollectionBanks(data);
+    return data as CollectionBank[];
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -559,36 +585,24 @@ export default function PaymentBot() {
         }
       } catch { }
 
-      const { data: banksData, error: banksError } = await supabase.rpc('get_collection_banks_mcpn');
-      if (!banksError && banksData && Array.isArray(banksData)) {
-        setCollectionBanks(banksData);
-        return banksData;
-      }
-      return [];
+      return await fetchCollectionBanks();
     } catch {
       return [];
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchCollectionBanks]);
 
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
     async function initChat() {
-      await fetchData();
-
-      try {
-        const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setMessages(parsed);
-            return;
-          }
-        }
-      } catch (e) { }
+      clearLegacyPaymentBotStorage();
+      const banks = await fetchData();
+      if (savedRechargeSession.bankId) {
+        setSelectedBank(banks.find((bank: CollectionBank) => bank.id === savedRechargeSession.bankId) || null);
+      }
 
       setIsTyping(true);
       setTimeout(() => {
@@ -605,7 +619,7 @@ export default function PaymentBot() {
     }
 
     initChat();
-  }, [fetchData]);
+  }, [fetchData, savedRechargeSession]);
 
   const botReply = useCallback((builder: () => ChatMessage, delay = 0) => {
     if (delay === 0) {
@@ -671,6 +685,11 @@ export default function PaymentBot() {
     async (amount: number, bank: CollectionBank) => {
       try {
         setIsTyping(true);
+        const banks = await fetchCollectionBanks();
+        const currentBank = banks.find((item) => item.id === bank.id);
+        if (!currentBank) {
+          throw new Error('Esta conta de depósito já não está disponível. Consulte novamente a lista de bancos.');
+        }
         let recId: string | null = null;
 
         try {
@@ -678,8 +697,8 @@ export default function PaymentBot() {
             body: {
               action: 'create_recharge',
               amount,
-              bank_id: bank.id,
-              bank_name: bank.nome_banco,
+              bank_id: currentBank.id,
+              bank_name: currentBank.nome_banco,
             },
           });
           if (!edgeErr && edgeRes?.rechargeId) {
@@ -690,7 +709,7 @@ export default function PaymentBot() {
         if (!recId) {
           const { data } = (await supabase.rpc('request_recharge_kz_mcpn', {
             p_amount: amount,
-            p_bank_id: bank.id,
+            p_bank_id: currentBank.id,
           })) as { data: any; error: any };
 
           recId = data?.recharge_id || data?.id || (data && typeof data === 'string' ? data : null);
@@ -715,14 +734,14 @@ export default function PaymentBot() {
 
         if (!recId) throw new Error('Não foi possível criar o pedido de recarga. Tenta novamente antes de fazer a transferência.');
         setActiveRechargeId(recId);
-        rechargeSession.set(recId, amount, bank);
+        rechargeSession.set(recId, amount, currentBank);
 
-        setSelectedBank(bank);
+        setSelectedBank(currentBank);
 
         botReply(() =>
           createBotMsg('deposit_instructions', undefined, {
             amount,
-            bank,
+            bank: currentBank,
             rechargeId: recId,
           })
         );
@@ -737,7 +756,7 @@ export default function PaymentBot() {
         );
       }
     },
-    [botReply, showToast]
+    [botReply, fetchCollectionBanks, showToast]
   );
 
   const selectProofFile = async (file: File) => {
@@ -855,7 +874,9 @@ export default function PaymentBot() {
         ));
       }
 
-      const bankName = selectedBank?.nome_banco || rechargeSession.get().bank?.nome_banco || collectionBanks[0]?.nome_banco || 'Depósito Bancário';
+      const currentBanks = await fetchCollectionBanks();
+      const bankId = selectedBank?.id || rechargeSession.get().bankId;
+      const bankName = currentBanks.find((bank) => bank.id === bankId)?.nome_banco || 'Depósito Bancário';
 
       let confirmedViaEdge = false;
       try {
@@ -1125,10 +1146,20 @@ export default function PaymentBot() {
       }
 
       if ((isSlashCmd && ['bancos', 'banco', 'contas'].includes(cleanCmd)) || nlp?.intent === 'banks') {
-        const banksText = collectionBanks.length > 0
-          ? collectionBanks.map((b, i) => `${i + 1}. ${b.nome_banco} | Titular: ${b.nome_proprietario} | IBAN: ${b.iban}`).join('\n')
-          : 'Nenhum banco disponível no momento.';
-        botReply(() => createBotMsg('text', `Bancos disponíveis para recarga:\n\n${banksText}\n\nPara iniciar um depósito, envie /depositar.`));
+        setIsTyping(true);
+        try {
+          const banks = await fetchCollectionBanks();
+          const bankNames = [...new Set(banks.map((bank) => bank.nome_banco.trim()).filter(Boolean))];
+          const banksText = bankNames.length > 0
+            ? bankNames.map((name, index) => `${index + 1}. ${name}`).join('\n')
+            : t('recharge.no_banks_available');
+          setIsTyping(false);
+          botReply(() => createBotMsg('text', `Bancos disponíveis para recarga:\n\n${banksText}\n\nPara iniciar um depósito, envie /depositar.`));
+        } catch (error) {
+          logger.error('PaymentBot', 'Não foi possível consultar as contas de depósito.', error);
+          setIsTyping(false);
+          botReply(() => createBotMsg('text', t('recharge.banks_query_failed')));
+        }
         return;
       }
 
@@ -1174,18 +1205,24 @@ export default function PaymentBot() {
 
         let histText = '';
         if (recentList && recentList.length > 0) {
-          const items = recentList.map((item: any, idx: number) => {
+          const items = recentList.map((item: any) => {
             const val = formatCurrency(Number(item.amount) || Number(item.valor) || 0, 'KZ');
             const { label: statusLabel } = formatStatus(item.status);
-            const dateStr = item.created_at
-              ? new Date(item.created_at).toLocaleDateString('pt-AO', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
-              : 'Recente';
+            const createdAt = item.created_at ? new Date(item.created_at) : null;
+            const dateStr = createdAt && !Number.isNaN(createdAt.getTime())
+              ? createdAt.toLocaleDateString('pt-AO', { day: 'numeric', month: 'long', year: 'numeric' })
+              : 'data não disponível';
+            const timeStr = createdAt && !Number.isNaN(createdAt.getTime())
+              ? createdAt.toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' })
+              : '';
             const bankStr = item.banco_origem || item.bank_name || 'Transferência';
-            return `${idx + 1}. ${val} | ${statusLabel} | ${dateStr} | ${bankStr}`;
-          }).join('\n');
-          histText = `Histórico de Depósitos (${recentList.length} registos):\n\n${items}\n\nPara fazer uma nova recarga, envie /depositar.`;
+            const timePhrase = timeStr ? `, às ${timeStr}` : '';
+            return `No dia ${dateStr}${timePhrase}, realizaste um depósito de ${val} pela via ${bankStr}, com estado ${statusLabel}.`;
+          }).join('\n\n');
+          const recordLabel = recentList.length === 1 ? 'depósito' : 'depósitos';
+          histText = `Encontrei ${recentList.length} ${recordLabel} no teu histórico. Seguem os registos mais recentes:\n\n${items}\n\nPara fazer uma nova recarga, envie /depositar.`;
         } else {
-          histText = 'Histórico de Depósitos:\nNenhum depósito registado na sua conta. Para recarregar, envie /depositar.';
+          histText = 'Não encontrei depósitos registados na tua conta. Para fazer uma recarga, envie /depositar.';
         }
         botReply(() => createBotMsg('text', histText));
         return;
@@ -1213,11 +1250,20 @@ export default function PaymentBot() {
           botReply(() => createBotMsg('text', amtValidation.errorText));
           return;
         }
-        setDepositAmount(nlp.amount);
-        botReply(() => createBotMsg('bank_selector',
-          `Olá, por favor, selecione o método de pagamento para concluir a transferência de ${formatCurrency(nlp.amount!, 'KZ')}.`,
-          { amount: nlp.amount, banks: collectionBanks }
-        ));
+        setIsTyping(true);
+        try {
+          const banks = await fetchCollectionBanks();
+          setDepositAmount(nlp.amount);
+          setIsTyping(false);
+          botReply(() => createBotMsg('bank_selector',
+            `Olá, por favor, selecione o método de pagamento para concluir a transferência de ${formatCurrency(nlp.amount!, 'KZ')}.`,
+            { amount: nlp.amount, banks }
+          ));
+        } catch (error) {
+          logger.error('PaymentBot', 'Não foi possível consultar as contas de depósito.', error);
+          setIsTyping(false);
+          botReply(() => createBotMsg('text', t('recharge.banks_query_failed')));
+        }
         return;
       }
 
@@ -1240,11 +1286,20 @@ export default function PaymentBot() {
           botReply(() => createBotMsg('text', numValidation.errorText));
           return;
         }
-        setDepositAmount(numericVal);
-        botReply(() => createBotMsg('bank_selector',
-          `Olá, por favor, selecione o método de pagamento para concluir a transferência de ${formatCurrency(numericVal, 'KZ')}.`,
-          { amount: numericVal, banks: collectionBanks }
-        ));
+        setIsTyping(true);
+        try {
+          const banks = await fetchCollectionBanks();
+          setDepositAmount(numericVal);
+          setIsTyping(false);
+          botReply(() => createBotMsg('bank_selector',
+            `Olá, por favor, selecione o método de pagamento para concluir a transferência de ${formatCurrency(numericVal, 'KZ')}.`,
+            { amount: numericVal, banks }
+          ));
+        } catch (error) {
+          logger.error('PaymentBot', 'Não foi possível consultar as contas de depósito.', error);
+          setIsTyping(false);
+          botReply(() => createBotMsg('text', t('recharge.banks_query_failed')));
+        }
         return;
       }
 
@@ -1273,6 +1328,7 @@ export default function PaymentBot() {
       restartConversation,
       awaitingProof,
       cancelActiveRecharge,
+      fetchCollectionBanks,
       t,
       session?.user.id,
     ]
@@ -1284,12 +1340,13 @@ export default function PaymentBot() {
         text={text}
         language={language}
         enabled={translateFullChats && language !== 'pt'}
+        sensitiveValues={sensitiveBankValues}
         renderFormatted={(localizedText) => (
           <BotFormattedText text={localizedText} onCommandClick={handleSendMessage} />
         )}
       />
     ),
-    [handleSendMessage, language, translateFullChats]
+    [handleSendMessage, language, sensitiveBankValues, translateFullChats]
   );
 
   return (
@@ -1563,7 +1620,12 @@ export default function PaymentBot() {
                     {msg.type === 'welcome' && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
                         <p>
-                          {t('recharge.bot_welcome')}
+                          <AutoTranslatedText
+                            text={t('recharge.bot_welcome')}
+                            language={language}
+                            enabled={translateFullChats}
+                            sensitiveValues={sensitiveBankValues}
+                          />
                         </p>
                       </div>
                     )}
@@ -1575,6 +1637,7 @@ export default function PaymentBot() {
                           text={msg.text}
                           language={language}
                           enabled={translateFullChats}
+                          sensitiveValues={sensitiveBankValues}
                           renderFormatted={(translated) => renderBotText(translated)}
                         />
                       </div>
@@ -1588,6 +1651,7 @@ export default function PaymentBot() {
                             text={msg.text}
                             language={language}
                             enabled={translateFullChats}
+                            sensitiveValues={sensitiveBankValues}
                             renderFormatted={(translated) => renderBotText(translated)}
                           />
                         )}
@@ -1613,6 +1677,7 @@ export default function PaymentBot() {
                             text={msg.text}
                             language={language}
                             enabled={translateFullChats}
+                            sensitiveValues={sensitiveBankValues}
                             renderFormatted={(translated) => renderBotText(translated)}
                           />
                         )}
@@ -1808,20 +1873,11 @@ export default function PaymentBot() {
                           {msg.payload.banks && msg.payload.banks.length > 0 ? (
                             msg.payload.banks.map((b: CollectionBank) => (
                               <div key={b.id} className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-[13px]">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-bold text-black text-[14px]">{b.nome_banco}</span>
-                                  <span className="text-[11px] text-[#25ae60] font-semibold bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
-                                    Disponível 24h
-                                  </span>
-                                </div>
-                                <p className="text-gray-600 text-[12.5px]">Titular: {b.nome_proprietario}</p>
-                                <p className="text-[#2481cc] font-mono text-[12px] mt-0.5 select-all break-all">
-                                  IBAN: {b.iban}
-                                </p>
+                                <span className="font-bold text-black text-[14px]">{b.nome_banco}</span>
                               </div>
                             ))
                           ) : (
-                            <p className="text-[13px] text-gray-600">{t('recharge.no_banks_registered')}</p>
+                            <p className="text-[13px] text-gray-600">{t('recharge.no_banks_available')}</p>
                           )}
                         </div>
                         <p className="text-[13px] text-gray-700">
@@ -1876,6 +1932,7 @@ export default function PaymentBot() {
                             text={msg.text}
                             language={language}
                             enabled={translateFullChats}
+                            sensitiveValues={sensitiveBankValues}
                             renderFormatted={(translated) => renderBotText(translated)}
                           />
                         )}

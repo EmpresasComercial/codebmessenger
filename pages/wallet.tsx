@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   MoreVertical, 
@@ -33,6 +33,7 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedManager';
 import AddBank from './AddBank';
 import { fetchWalletParams, getWalletAssistantResponse } from './walletAssistantCore';
+import { buildWithdrawalFeeExample } from './withdrawalFeeExample';
 import { recordChatActivity } from '../lib/chatActivity';
 import { WITHDRAWAL_BOT_AVATAR } from '../lib/utils';
 
@@ -185,6 +186,20 @@ export default function wallet() {
     hasBots: false,
     totalDailyIncome: 0,
   });
+  const sensitiveBankValues = useMemo(
+    () => [
+      info.bankName,
+      info.iban,
+      info.iban.slice(-4),
+      ...messages.flatMap((message) => [
+        message.payload?.holderName,
+        message.payload?.bankName,
+        message.payload?.iban,
+        ...(Array.isArray(message.payload?.sensitiveValues) ? message.payload.sensitiveValues : []),
+      ]),
+    ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0),
+    [info.bankName, info.iban, messages]
+  );
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -198,8 +213,8 @@ export default function wallet() {
   const [showQuickHints, setShowQuickHints] = useState(false);
 
   const quickReplies = [
-    { command: '/adicionar_banco', label: t('wallet.cmd_add_bank'), shortLabel: t('suggestion.add_bank') },
     { command: '/sacar', label: t('wallet.cmd_withdraw'), shortLabel: t('suggestion.withdraw') },
+    { command: '/adicionar_banco', label: t('wallet.cmd_add_bank'), shortLabel: t('suggestion.add_bank') },
     { command: '/saldo', label: t('wallet.cmd_balance'), shortLabel: t('suggestion.balance') },
     { command: '/banco', label: t('wallet.cmd_bank_details'), shortLabel: t('suggestion.bank') },
     { command: '/taxa', label: t('wallet.cmd_fees'), shortLabel: t('suggestion.fee') },
@@ -684,7 +699,17 @@ export default function wallet() {
         if (parsed.intent === 'withdraw' && parsed.amount) {
           const newAmt = parsed.amount;
           const fresh = await fetchData();
-          const curBal = fresh?.balance ?? info.balance;
+          if (!fresh) {
+            botReply(() => ({
+              id: 'bot-bank-refresh-error-' + Date.now(),
+              sender: 'bot',
+              time: nowTime(),
+              type: 'text',
+              text: 'Não foi possível consultar os seus dados bancários agora. Tente novamente dentro de instantes.',
+            }));
+            return;
+          }
+          const curBal = fresh.balance;
 
           if (newAmt > curBal) {
             botReply(() => ({
@@ -725,7 +750,7 @@ export default function wallet() {
             sender: 'bot',
             time: nowTime(),
             type: 'confirm_withdraw',
-            payload: { amount: newAmt, fee, net, bankName: info.bankName, iban: info.iban },
+            payload: { amount: newAmt, fee, net, bankName: fresh.bankName, iban: fresh.iban },
           }));
           return;
         }
@@ -828,13 +853,26 @@ export default function wallet() {
         setIsTyping(true);
         const freshData = await fetchData();
         setIsTyping(false);
-        const bal = freshData?.balance ?? info.balance;
+        if (!freshData) {
+          botReply(() => ({
+            id: 'bot-balance-refresh-error-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'Não foi possível consultar o seu saldo agora. Tente novamente dentro de instantes.',
+          }));
+          return;
+        }
+        const balanceText = `Seu saldo é de ${formatCurrency(freshData.balance, 'KZ')}.`;
+        const text = isWithdrawAllowed()
+          ? `${balanceText} Para fazer um saque, envie /retirar ou digite o valor (ex: sacar 500).`
+          : balanceText;
         botReply(() => ({
           id: 'bot-' + Date.now(),
           sender: 'bot',
           time: nowTime(),
           type: 'text',
-          text: `Seu saldo é de ${formatCurrency(bal, 'KZ')}. Para fazer um saque, envie /retirar ou digite o valor (ex: sacar 500).`,
+          text,
         }));
         return;
       }
@@ -850,6 +888,19 @@ export default function wallet() {
           time: nowTime(),
           type: 'text',
           text: formatHistoryAsText(history),
+          payload: {
+            sensitiveValues: history.flatMap((item: any) => [
+              item.banco_destino,
+              item.bank_name,
+              item.nome_proprietario,
+              item.owner_name,
+              item.holder_name,
+              item.recipient_name,
+              item.beneficiary_name,
+              item.iban_snapshot,
+              item.iban,
+            ]),
+          },
         }));
         return;
       }
@@ -943,12 +994,13 @@ export default function wallet() {
         } catch (error) {
           logger.error('wallet', 'Erro ao carregar respostas locais da Wallet:', error);
           setIsTyping(false);
+          const feeExample = buildWithdrawalFeeExample(FEE_PERCENT, (amount) => formatCurrency(amount, 'KZ')).text;
           botReply(() => ({
             id: 'bot-' + Date.now(),
             sender: 'bot',
             time: nowTime(),
             type: 'text',
-            text: `A taxa operacional é ${FEE_PERCENT}%. O valor mínimo é ${formatCurrency(MIN_WITHDRAW, 'KZ')} e o máximo é ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
+            text: `Em cada retirada realizada, a retenção operacional é de ${FEE_PERCENT}% do valor retirado. ${feeExample} O valor mínimo é ${formatCurrency(MIN_WITHDRAW, 'KZ')} e o máximo é ${formatCurrency(MAX_WITHDRAW, 'KZ')}.`,
           }));
         }
         return;
@@ -985,13 +1037,23 @@ export default function wallet() {
         setIsTyping(true);
         const fresh = await fetchData();
         setIsTyping(false);
-        const currentBal  = fresh?.balance     ?? info.balance;
-        const hasPending  = fresh?.hasPending  ?? info.hasPending;
-        const hasBank     = fresh?.hasBank     ?? info.hasBank;
-        const bankId      = fresh?.bankId      ?? info.bankId;
-        const bankName    = fresh?.bankName    ?? info.bankName;
-        const iban        = fresh?.iban        ?? info.iban;
-        const hasBots     = fresh?.hasBots     ?? info.hasBots;
+        if (!fresh) {
+          botReply(() => ({
+            id: 'bot-withdraw-refresh-error-' + Date.now(),
+            sender: 'bot',
+            time: nowTime(),
+            type: 'text',
+            text: 'Não foi possível consultar os seus dados para a retirada agora. Tente novamente dentro de instantes.',
+          }));
+          return;
+        }
+        const currentBal  = fresh.balance;
+        const hasPending  = fresh.hasPending;
+        const hasBank     = fresh.hasBank;
+        const bankId      = fresh.bankId;
+        const bankName    = fresh.bankName;
+        const iban        = fresh.iban;
+        const hasBots     = fresh.hasBots;
 
         // Validação 1: Pedido já em análise
         if (hasPending) {
@@ -1110,8 +1172,8 @@ export default function wallet() {
             amount: targetAmount,
             fee,
             net,
-            bankName: bankName || info.bankName,
-            iban: iban || info.iban,
+            bankName,
+            iban,
           },
         }));
         return;
@@ -1266,6 +1328,7 @@ export default function wallet() {
         text={text}
         language={language}
         enabled={translateFullChats && language !== 'pt'}
+        sensitiveValues={sensitiveBankValues}
         renderFormatted={renderFormattedText}
       />
     );
@@ -1548,7 +1611,12 @@ export default function wallet() {
                 {/* APRESENTAÇÃO / BOAS-VINDAS */}
                 {msg.type === 'welcome' && (
                   <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
-                    {t('wallet.welcome')}
+                    <AutoTranslatedText
+                      text={t('wallet.welcome')}
+                      language={language}
+                      enabled={translateFullChats}
+                      sensitiveValues={sensitiveBankValues}
+                    />
                   </div>
                 )}
 
@@ -1559,6 +1627,7 @@ export default function wallet() {
                       text={msg.text}
                       language={language}
                       enabled={translateFullChats}
+                      sensitiveValues={sensitiveBankValues}
                       renderFormatted={(translated) => renderBotText(translated)}
                     />
                   </div>
@@ -1579,6 +1648,7 @@ export default function wallet() {
                       text={msg.text}
                       language={language}
                       enabled={translateFullChats}
+                      sensitiveValues={sensitiveBankValues}
                       renderFormatted={(translated) => renderBotText(translated)}
                     />
                   </div>
@@ -1621,6 +1691,7 @@ export default function wallet() {
                         text={msg.text}
                         language={language}
                         enabled={translateFullChats}
+                        sensitiveValues={sensitiveBankValues}
                         renderFormatted={(translated) => renderBotText(translated)}
                       />
                     )}
@@ -1655,6 +1726,7 @@ export default function wallet() {
                         text={msg.text}
                         language={language}
                         enabled={translateFullChats}
+                        sensitiveValues={sensitiveBankValues}
                         renderFormatted={(translated) => renderBotText(translated)}
                       />
                     )}
@@ -1669,6 +1741,7 @@ export default function wallet() {
                         text={msg.text}
                         language={language}
                         enabled={translateFullChats}
+                        sensitiveValues={sensitiveBankValues}
                         renderFormatted={(translated) => renderBotText(translated)}
                       />
                     )}
@@ -1682,6 +1755,7 @@ export default function wallet() {
                       text={msg.text}
                       language={language}
                       enabled={translateFullChats}
+                      sensitiveValues={sensitiveBankValues}
                       renderFormatted={(translated) => renderBotText(translated)}
                     />
                   </div>

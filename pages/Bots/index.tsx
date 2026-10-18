@@ -271,15 +271,14 @@ export default function BusinessMessengerBotsChat() {
   const pendingReplyTimeouts = useRef<Set<number>>(new Set());
 
   const quickReplies = [
-    { shortcut: "/senha", text: t('bots.cmd_password'), shortLabel: t('suggestion.password') },
     { shortcut: "/bots", text: t('bots.cmd_catalog'), shortLabel: t('suggestion.bots') },
+    { shortcut: "/senha", text: t('bots.cmd_password'), shortLabel: t('suggestion.password') },
     { shortcut: "/meusbots", text: t('bots.cmd_my_bots'), shortLabel: t('suggestion.active_bots') },
     { shortcut: "/saldo", text: t('bots.cmd_balance'), shortLabel: t('suggestion.balance') },
     { shortcut: "/rendas", text: t('bots.cmd_income'), shortLabel: t('suggestion.income') },
     { shortcut: "/limites", text: t('bots.cmd_limits'), shortLabel: t('suggestion.limits') },
     { shortcut: "/cupons", text: t('bots.cmd_coupons'), shortLabel: t('suggestion.coupon') },
     { shortcut: "/ajuda", text: t('bots.cmd_help'), shortLabel: t('suggestion.help') },
-    { shortcut: "/limpar", text: t('bots.cmd_clear'), shortLabel: t('suggestion.clear') },
   ];
   const suggestedReplies = quickReplies.map(({ shortcut, shortLabel }) => ({
     shortcut,
@@ -929,7 +928,11 @@ export default function BusinessMessengerBotsChat() {
                 {msg.type === "welcome" && (
                   <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
                     <p className="text-[14px] text-[#1c1c1e]">
-                      Olá! Sou o assistente de bots do Teggram-X. Posso ajudar-te com os teus bots, o saldo e os rendimentos. Como posso ajudar?
+                      <AutoTranslatedText
+                        text="Olá! Sou o assistente de bots do Teggram-X. Posso ajudar-te com os teus bots, o saldo e os rendimentos. Como posso ajudar?"
+                        language={language}
+                        enabled={translateFullChats}
+                      />
                     </p>
                   </div>
                 )}
