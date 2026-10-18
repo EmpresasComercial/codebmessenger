@@ -157,7 +157,7 @@ html, body, * {
    ══════════════════════════════════════════════════════════════════ */
 
 /* 1. Botões a nível global (sem arredondamento) */
-button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn):not(.gallery-photo-button):not(.profile-save-button):not(.theme-apply-button):not(.invite-link-copy-button),
+button:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn):not(.gallery-photo-button):not(.profile-save-button):not(.theme-apply-button):not(.invite-link-copy-button):not(.help-faq-submit),
 [role="button"]:not([class*="rounded-full"]):not(.rounded-full):not(.btn-auth):not(.auth-input-btn),
 input[type="button"],
 input[type="submit"],
@@ -167,9 +167,17 @@ input[type="reset"],
   border-radius: 0px !important;
 }
 
+.help-faq-submit {
+  border-radius: 22px !important;
+}
+
+.help-faq-field {
+  border-radius: 22px !important;
+}
+
 /* 2. Campos de entrada (Inputs, Textareas, Selects - sem arredondamento) */
-input:not(.input-auth):not(.auth-field),
-textarea:not(.chat-composer-input),
+input:not(.input-auth):not(.auth-field):not(.help-faq-field),
+textarea:not(.chat-composer-input):not(.help-faq-field),
 select,
 .input-field,
 div:has(> input):not([class*="rounded-full"]):not(.input-auth-wrap):not(.auth-input-wrap),

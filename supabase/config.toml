@@ -98,6 +98,9 @@ openai_api_key = "env(OPENAI_API_KEY)"
 # are monitored, and you can view the emails that would have been sent from the web interface.
 [inbucket]
 enabled = true
+
+[functions.send-support-email]
+verify_jwt = true
 # Port to use for the email testing server web interface.
 port = 54324
 # Uncomment to expose additional ports for testing user applications that send emails.

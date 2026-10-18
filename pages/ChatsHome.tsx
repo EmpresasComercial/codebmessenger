@@ -6,7 +6,7 @@ export default function ChatsHome() {
   const { t } = useLanguage();
 
   return (
-    <div className="flex min-h-[calc(100dvh-60px)] w-full overflow-hidden bg-white dark:bg-[#17212b] md:h-[100dvh] md:min-h-0">
+    <div className="flex min-h-[calc(100dvh-60px)] w-full overflow-hidden bg-white dark:bg-[#17212b] md:h-[100dvh] md:min-h-0 select-none">
       <aside className="w-full min-w-0 md:w-[350px] md:shrink-0">
         <ChatsList embedded />
       </aside>
@@ -19,4 +19,3 @@ export default function ChatsHome() {
     </div>
   );
 }
-

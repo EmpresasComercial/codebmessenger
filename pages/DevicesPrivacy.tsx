@@ -336,7 +336,7 @@ export default function DevicesPrivacy() {
   const activeDeviceId = dbDeviceId || localDeviceId;
 
   return (
-    <div className="flex min-h-[100dvh] w-full flex-col bg-white dark:bg-[#0e1621] font-sans text-[#222] dark:text-[#f5f5f5]">
+    <div className="flex min-h-[100dvh] w-full flex-col bg-white dark:bg-[#0e1621] font-sans text-[#222] dark:text-[#f5f5f5] select-none">
       <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-[#e6e8eb] dark:border-white/10 bg-white dark:bg-[#0e1621] px-4">
         <div className="flex items-center gap-3">
           <button

@@ -237,7 +237,7 @@ export default function Profile() {
   }, [showBottomNavMenu]);
 
   return (
-    <div className="w-full min-h-screen bg-white dark:bg-[#17212b] font-sans text-black dark:text-white flex flex-col pb-24">
+    <div className="w-full min-h-screen bg-white dark:bg-[#17212b] font-sans text-black dark:text-white flex flex-col pb-24 select-none">
 
       <header ref={profileHeaderRef} className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-3 text-[#222222] dark:border-[#202b36] dark:bg-[#17212b] dark:text-white">
         <div className="flex items-center gap-2">
