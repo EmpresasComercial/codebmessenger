@@ -1,5 +1,5 @@
 // Service Worker para Teggram-X - Push Notifications & Offline Support
-const CACHE_NAME = 'business-messenger-shell-v10';
+const CACHE_NAME = 'business-messenger-shell-v11';
 
 // Assets fundamentais para o App abrir offline
 const STATIC_ASSETS = [
@@ -7,6 +7,8 @@ const STATIC_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/logo_tegx.jfif',
+  '/pwa-icon-192.png',
+  '/pwa-icon-512.png',
   '/notification-badge.svg',
   '/community-group-logo.svg',
   '/avatar_padrao_bm.jpg?v=2',
@@ -88,30 +90,43 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+function normalizeNotificationPhone(value) {
+  const cleaned = value.trim().replace(/[()]/g, '').replace(/^\s*00/, '+').replace(/[^\d+\s.-]/g, '').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return '';
+  const number = cleaned.replace(/^[\s.+-]+|[\s.+-]+$/g, '');
+  return number ? `+${number}` : '';
+}
+
+function parseEmbeddedSender(body) {
+  const match = body.match(/^\s*([^()\n:]{1,80}?)\s*\(\s*(\+?[\d\s().-]{6,24})\s*\)\s*:\s*/);
+  if (!match) return null;
+
+  const name = match[1].trim();
+  const phone = normalizeNotificationPhone(match[2]);
+  if (!name || !phone) return null;
+
+  return { name, phone, message: body.slice(match[0].length).trim() };
+}
+
 function formatNotification(data) {
-  const senderName = typeof data.senderName === 'string' ? data.senderName.trim() : '';
-  const senderPhone = typeof data.senderPhone === 'string' ? data.senderPhone.trim() : '';
-  const message = typeof data.message === 'string' ? data.message.trim() : '';
-
-  if (senderName && senderPhone) {
-    const phoneDigits = senderPhone.replace(/\D/g, '');
-    return {
-      title: `${senderName} +${phoneDigits}`,
-      body: message || data.body,
-    };
-  }
-
   const body = typeof data.body === 'string' ? data.body : '';
-  const senderLine = body.match(/^\s*([^()\n:]{1,80}?)\s*\(\s*(\+?[\d\s().-]{6,24})\s*\)\s*:\s*/);
-  if (!senderLine) {
+  const embeddedSender = parseEmbeddedSender(body);
+  const senderName = typeof data.senderName === 'string' ? data.senderName.trim() : '';
+  const senderPhone = typeof data.senderPhone === 'string'
+    ? normalizeNotificationPhone(data.senderPhone)
+    : '';
+  const name = senderName || embeddedSender?.name || '';
+  const phone = senderPhone || embeddedSender?.phone || '';
+
+  if (!name && !phone) {
     return { title: data.title, body };
   }
 
-  const sender = senderLine[1].trim();
-  const phone = `+${senderLine[2].replace(/\D/g, '')}`;
+  const title = [name, phone].filter(Boolean).join(' ');
+  const message = typeof data.message === 'string' ? data.message.trim() : '';
   return {
-    title: `${sender} ${phone}`,
-    body: body.slice(senderLine[0].length).trim(),
+    title: title || data.title,
+    body: message || embeddedSender?.message || body,
   };
 }
 

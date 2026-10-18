@@ -45,6 +45,7 @@ import ZoomSettingsModal from '../components/ZoomSettingsModal';
 import ThemeSettingsScreen from '../components/ThemeSettingsScreen';
 import { CHAT_ACTIVITY_EVENT, loadChatActivities, type ChatActivity } from '../lib/chatActivity';
 import { COMMUNITY_CHAT_AVATAR, DEFAULT_PROFILE_AVATAR, PAYMENT_BOT_AVATAR, WITHDRAWAL_BOT_AVATAR, getProfileAvatarUrl } from '../lib/utils';
+import { formatNotificationSenderTitle } from '../lib/notificationFormatting';
 
 const getMessageDetails = (message: any) => {
   let details = message?.detalhes;
@@ -336,6 +337,12 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     return parsed ? parsed.formatInternational() : rawPhone;
   };
 
+  const formatCommunityNotificationTitle = (profile: any) => {
+    const name = typeof profile?.nome_exibicao === 'string' ? profile.nome_exibicao.trim() : '';
+    const phone = formatSenderPhone(profile?.telefone, getProfileCountryCode(profile?.metadados));
+    return formatNotificationSenderTitle(name, phone);
+  };
+
   const previewText = (text: string, max = 40) => {
     if (!text) return '';
     if (text.length <= max) return text;
@@ -472,8 +479,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           }
         }
 
-        const senderName = profile?.nome_exibicao
-          || (profile?.telefone ? formatSenderPhone(profile.telefone, getProfileCountryCode(profile.metadados)) : 'Membro');
+        const senderTitle = formatCommunityNotificationTitle(profile);
         const messageText = typeof message.mensagem === 'string' ? message.mensagem.trim() : '';
         const body = hasPdfAttachment(message)
           ? 'Ficheiro: PDF'
@@ -481,10 +487,10 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         const registration = await navigator.serviceWorker.ready;
         if (!document.hidden) return;
 
-        await registration.showNotification(senderName, {
+        await registration.showNotification(senderTitle, {
           body: body.slice(0, 240),
           icon: COMMUNITY_CHAT_AVATAR,
-          badge: COMMUNITY_CHAT_AVATAR,
+          badge: '/notification-badge.svg',
           tag: `community-message-${messageId}`,
           data: { url: '/web' }
         });

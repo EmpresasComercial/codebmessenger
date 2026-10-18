@@ -5,16 +5,16 @@
   "description": "Teggram-X messaging and chat platform",
   "icons": [
     {
-      "src": "/logo_tegx.jfif",
-      "type": "image/jpeg",
+      "src": "/pwa-icon-192.png",
+      "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo_tegx.jfif",
-      "type": "image/jpeg",
+      "src": "/pwa-icon-512.png",
+      "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "start_url": "/",
