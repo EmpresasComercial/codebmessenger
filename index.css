@@ -169,11 +169,11 @@ input[type="reset"],
 
 /* 2. Campos de entrada (Inputs, Textareas, Selects - sem arredondamento) */
 input:not(.input-auth):not(.auth-field),
-textarea,
+textarea:not(.chat-composer-input),
 select,
 .input-field,
 div:has(> input):not([class*="rounded-full"]):not(.input-auth-wrap):not(.auth-input-wrap),
-div:has(> textarea):not([class*="rounded-full"]):not(.photo-preview-caption) {
+div:has(> textarea):not([class*="rounded-full"]):not(.photo-preview-caption):not(.chat-composer-field) {
   border-radius: 0px !important;
 }
 

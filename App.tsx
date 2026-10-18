@@ -165,10 +165,10 @@ export default function App() {
       }
     });
 
-    const iconUrl = '/logo_tegx.jfif?v=4';
+    const iconUrl = '/pwa-icon-192.png';
     let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-    link.type = 'image/jpeg';
+    link.type = 'image/png';
     link.href = iconUrl;
 
     let appleLink = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement;

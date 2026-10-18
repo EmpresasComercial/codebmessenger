@@ -7,6 +7,7 @@ export function formatNotificationSenderTitle(
   const normalizedPhone = rawPhone
     ?.replace(/[()]/g, '')
     .replace(/^\s*00/, '+')
+    .replace(/^\+\s*/, '+')
     .replace(/[^\d+\s.-]/g, '')
     .replace(/\s+/g, ' ')
     .trim();

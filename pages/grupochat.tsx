@@ -2195,7 +2195,7 @@ export default function grupochat() {
               </>
             )}
 
-            <div className={`flex min-w-0 flex-1 items-center bg-[#f1f2f4] ${isComposerExpanded && !voiceComposerActive ? 'rounded-[22px]' : 'rounded-full'} px-3 py-1.5 min-h-[46px] dark:bg-[#242f3d]`}>
+            <div className={`chat-composer-field flex min-w-0 flex-1 ${isComposerExpanded && !voiceComposerActive ? 'items-end' : 'items-center'} ${publicInput.length > 0 && !voiceComposerActive ? 'rounded-[12px]' : 'rounded-[22px]'} transition-[border-radius] duration-150 bg-[#f1f2f4] px-3 py-1.5 min-h-[46px] dark:bg-[#242f3d]`}>
               {!voiceComposerActive && <>
 
               {imagePreview && (
@@ -2252,7 +2252,7 @@ export default function grupochat() {
                   }
                 }}
                 placeholder={editingMessage ? "Editar mensagem..." : t('chat.message_placeholder')}
-                className="w-full min-h-[24px] min-w-0 px-1 py-1.5 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] [field-sizing:content] text-[#111111] placeholder:text-[#7b7b7b] font-normal leading-snug dark:text-white dark:placeholder:text-[#a0aab5]"
+                className="chat-composer-input w-full min-h-[24px] min-w-0 px-1 py-1.5 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] [field-sizing:content] text-[#111111] placeholder:text-[#7b7b7b] font-normal leading-snug dark:text-white dark:placeholder:text-[#a0aab5]"
                 rows={1}
               />
 

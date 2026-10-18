@@ -1428,7 +1428,7 @@ export default function PrivateChat() {
       >
         <div className="flex w-full items-end gap-2 px-3 py-2.5">
           {/* Pill flutuante */}
-          <div className={`flex min-w-0 flex-1 bg-[#f1f2f4] dark:bg-[#242f3d] ${isComposerExpanded ? 'rounded-[22px] items-end' : 'rounded-full items-center'} flex px-3 py-1.5 min-h-[46px]`}>
+          <div className={`chat-composer-field flex min-w-0 flex-1 bg-[#f1f2f4] dark:bg-[#242f3d] ${isComposerExpanded && !voiceComposerActive ? 'items-end' : 'items-center'} ${inputText.length > 0 && !voiceComposerActive ? 'rounded-[12px]' : 'rounded-[22px]'} transition-[border-radius] duration-150 px-3 py-1.5 min-h-[46px]`}>
             {/* Thumbnail da imagem selecionada */}
             {!voiceComposerActive && imagePreview && (
               <div className="relative mr-2 ml-1 shrink-0">
@@ -1484,7 +1484,7 @@ export default function PrivateChat() {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
               placeholder={replyTo ? t('chat.reply_placeholder') : t('chat.message_placeholder')}
-              className="w-full min-h-[24px] min-w-0 px-2 py-2 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
+              className="chat-composer-input w-full min-h-[24px] min-w-0 px-2 py-2 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
               rows={1}
             />}
 
