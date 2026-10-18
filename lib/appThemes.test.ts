@@ -107,6 +107,7 @@ test('non-default theme colors keep readable text contrast in light and dark mod
     assert.ok(contrastRatio('#17212b', theme.surface) >= 4.5, `${theme.id} light surface`);
     assert.ok(contrastRatio('#17212b', theme.chatBackground) >= 4.5, `${theme.id} light chat`);
     assert.ok(contrastRatio('#ffffff', theme.outgoingBubble) >= 4.5, `${theme.id} light outgoing bubble`);
+    assert.ok(contrastRatio('#17212b', theme.incomingBubble) >= 4.5, `${theme.id} light incoming bubble`);
     assert.ok(contrastRatio(theme.darkAccent, theme.darkChatBackground) >= 4.5, `${theme.id} dark accent`);
     assert.ok(contrastRatio('#ffffff', theme.darkOutgoingBubble) >= 4.5, `${theme.id} dark outgoing bubble`);
     assert.ok(contrastRatio('#ffffff', theme.darkIncomingBubble) >= 4.5, `${theme.id} dark incoming bubble`);

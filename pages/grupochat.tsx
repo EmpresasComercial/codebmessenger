@@ -539,7 +539,7 @@ const MessageItem = React.memo(({
                 stroke="none"
                 color="inherit"
               >
-                <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#1877f2] dark:fill-[#2b5278]" />
+                <path d="M0 20H9C4.5 20 1 16 0 8V20Z" style={{ fill: 'var(--tg-bubble-out, #1877f2)' }} />
               </svg>
             ) : (
               <svg
@@ -549,7 +549,7 @@ const MessageItem = React.memo(({
                 className="absolute pointer-events-none"
                 style={{ top: 0, left: -8, fill: 'currentColor' }}
               >
-                <path d="M9 0H0C4.5 0 8 4 9 12V0Z" className="fill-[#f5f5f5] dark:fill-[#182533]" />
+                <path d="M9 0H0C4.5 0 8 4 9 12V0Z" style={{ fill: 'var(--tg-bubble-in, #f5f5f5)' }} />
               </svg>
             )}
 
@@ -1902,7 +1902,7 @@ export default function grupochat() {
         <ChatsList embedded />
       </aside>
       <div 
-      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden bg-white transition-colors"
+      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden bg-white transition-colors dark:bg-[#0e1621] dark:text-gray-100"
       onContextMenu={(e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
@@ -2075,7 +2075,7 @@ export default function grupochat() {
             animate={{ opacity: 1, scale: 1 }} 
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={() => scrollToBottom()}
-            className="absolute bottom-[74px] right-4 w-10 h-10 bg-white text-gray-700 rounded-full shadow-lg flex items-center justify-center z-40 active:scale-90 transition-transform cursor-pointer border border-gray-100"
+            className="absolute bottom-[74px] right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-700 shadow-lg transition-transform active:scale-90 cursor-pointer dark:border-[#33465a] dark:bg-[#242f3d] dark:text-gray-200"
             aria-label="Rolar para o fundo"
           >
             <ArrowDown className="w-5 h-5 stroke-[2.2]" />
@@ -2095,7 +2095,7 @@ export default function grupochat() {
                 initial={{ height: 0, opacity: 0 }} 
                 animate={{ height: "auto", opacity: 1 }} 
                 exit={{ height: 0, opacity: 0 }}
-                className="bg-white/95 backdrop-blur-md border-l-[3px] border-[#2481cc] rounded-[14px] px-3 py-1.5 shadow-md flex justify-between items-center"
+                className="bg-white/95 backdrop-blur-md border-l-[3px] border-[#2481cc] rounded-[14px] px-3 py-1.5 shadow-md flex justify-between items-center dark:bg-[#24323f]"
               >
                 <div className="flex items-center gap-2 truncate flex-1 min-w-0">
                   <Pencil className="w-4 h-4 text-[#2481cc] shrink-0 stroke-[2.2]" />
@@ -2103,7 +2103,7 @@ export default function grupochat() {
                     <p className="text-[11px] font-bold text-[#2481cc] leading-tight">
                       Editar mensagem
                     </p>
-                    <p className="text-[11px] text-[#777777] truncate italic leading-tight">
+                    <p className="text-[11px] text-[#777777] truncate italic leading-tight dark:text-gray-300">
                       {editingMessage.mensagem || 'Foto'}
                     </p>
                   </div>
@@ -2117,7 +2117,7 @@ export default function grupochat() {
                       resetMessageInput();
                     }
                   }} 
-                  className="text-gray-400 hover:text-black p-1 cursor-pointer shrink-0"
+                  className="text-gray-400 hover:text-black p-1 cursor-pointer shrink-0 dark:hover:text-white"
                   title="Cancelar edição"
                 >
                   <X className="w-4 h-4 stroke-[2]" />
@@ -2130,13 +2130,13 @@ export default function grupochat() {
                 initial={{ height: 0, opacity: 0 }} 
                 animate={{ height: "auto", opacity: 1 }} 
                 exit={{ height: 0, opacity: 0 }}
-                className="bg-white/95 backdrop-blur-md border-l-[3px] border-[#2481cc] rounded-[14px] px-3 py-1.5 shadow-md flex justify-between items-center"
+                className="bg-white/95 backdrop-blur-md border-l-[3px] border-[#2481cc] rounded-[14px] px-3 py-1.5 shadow-md flex justify-between items-center dark:bg-[#24323f]"
               >
                 <div className="truncate flex-1">
                   <p className="text-[11px] font-bold text-[#2481cc]">
                     A responder a {getSenderLabel(replyTo.perfil)}
                   </p>
-                  <p className="text-[11px] text-[#777777] truncate italic">
+                  <p className="text-[11px] text-[#777777] truncate italic dark:text-gray-300">
                     <AutoTranslatedText
                       text={replyTo.mensagem}
                       language={language}
@@ -2148,7 +2148,7 @@ export default function grupochat() {
                 <button 
                   type="button" 
                   onClick={() => setReplyTo(null)} 
-                  className="text-gray-400 hover:text-black p-1 cursor-pointer"
+                  className="text-gray-400 hover:text-black p-1 cursor-pointer dark:hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -2179,8 +2179,8 @@ export default function grupochat() {
                     PDF
                   </span>
                   <span className="flex min-w-0 flex-col">
-                    <span className="text-[9px] text-gray-500">Ficheiro: {formatFileSize(pdfPreview.sizeBytes)}</span>
-                    <span className="truncate text-[11px] text-gray-600">{pdfPreview.name}</span>
+                    <span className="text-[9px] text-gray-500 dark:text-gray-300">Ficheiro: {formatFileSize(pdfPreview.sizeBytes)}</span>
+                    <span className="truncate text-[11px] text-gray-600 dark:text-gray-200">{pdfPreview.name}</span>
                   </span>
                   <button
                     type="button"
@@ -2351,7 +2351,7 @@ export default function grupochat() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ type: "spring", stiffness: 350, damping: 30 }}
-            className="fixed inset-0 z-[250] flex flex-col select-none"
+            className="fixed inset-0 z-[250] flex flex-col select-none text-gray-900"
             style={{ backgroundColor: '#efeff4' }}
           >
             {/* ── Header: × Group Info [icon] ── */}
@@ -2371,7 +2371,7 @@ export default function grupochat() {
               >
                 <X className="w-5 h-5 stroke-[2.5]" />
               </button>
-              <span className="text-[17px] font-semibold text-[#111] dark:text-white tracking-tight">
+              <span className="text-[17px] font-semibold text-[#111] tracking-tight">
                 Detalhes grupo
               </span>
               <div

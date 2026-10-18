@@ -415,7 +415,7 @@ const BotFormattedText = React.memo(function BotFormattedText({
                 return (
                   <code
                     key={pIdx}
-                    className="font-mono text-[12px] bg-gray-100 px-1 py-0.5 rounded text-[#2481cc]"
+                    className="font-mono text-[12px] bg-gray-100 px-1 py-0.5 rounded text-[#2481cc] dark:bg-[#242f3d]"
                   >
                     {part.slice(1, -1)}
                   </code>
@@ -1384,13 +1384,13 @@ export default function PaymentBot() {
 
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="text-[16px] font-semibold text-black tracking-tight truncate leading-[1.15] mt-0.5">
+              <h1 className="text-[16px] font-semibold text-black tracking-tight truncate leading-[1.15] mt-0.5 dark:text-white">
                 {VERIFIED_MANAGER_DISPLAY_PHONE}
               </h1>
               {isVerifiedManagerPhone(VERIFIED_MANAGER_PHONE) && <VerifiedBadge className="h-4 w-4 mt-0.5" />}
             </div>
             <span
-              className={`mt-0.5 flex items-center gap-1 text-[14px] font-bold leading-[1.2] ${isTyping ? 'text-[#707579]' : 'text-[#25ae60]'}`}
+              className={`mt-0.5 flex items-center gap-1 text-[14px] font-bold leading-[1.2] ${isTyping ? 'text-[#707579] dark:text-[#a3adb8]' : 'text-[#25ae60]'}`}
               aria-live="polite"
             >
               {isTyping ? t('chat.typing') : t('chat.online_now')}
@@ -1415,7 +1415,7 @@ export default function PaymentBot() {
 
           {showMenuDropdown && (
             <div
-              className="absolute right-0 top-12 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 text-[13.5px] text-gray-800 animate-in fade-in zoom-in-95 duration-100"
+              className="absolute right-0 top-12 z-50 w-52 rounded-xl border border-gray-100 bg-white py-1 text-[13.5px] text-gray-800 shadow-xl animate-in fade-in zoom-in-95 duration-100 dark:border-[#33465a] dark:bg-[#17212b] dark:text-gray-100"
               style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
             >
               <button
@@ -1423,7 +1423,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/saldo');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <Wallet className="w-4 h-4 text-[#3390ec]" />
                 <span>{t('recharge.check_balance')}</span>
@@ -1433,7 +1433,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/depositar');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <Send className="w-4 h-4 text-[#25ae60]" />
                 <span>{t('recharge.start_deposit')}</span>
@@ -1443,7 +1443,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/bancos');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <Building2 className="w-4 h-4 text-[#e67e22]" />
                 <span>{t('recharge.available_banks')}</span>
@@ -1453,7 +1453,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/horario');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <Clock className="w-4 h-4 text-[#3498db]" />
                 <span>{t('recharge.schedule')}</span>
@@ -1463,7 +1463,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/historico');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <FileText className="w-4 h-4 text-[#8e44ad]" />
                 <span>{t('recharge.history_title')}</span>
@@ -1473,18 +1473,18 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/total_deposito');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <BarChart3 className="w-4 h-4 text-[#10b981]" />
                 <span>{t('recharge.total_deposits')}</span>
               </button>
-              <div className="h-px bg-gray-100 my-1" />
+              <div className="h-px bg-gray-100 my-1 dark:bg-[#33465a]" />
               <button
                 onClick={() => {
                   setShowMenuDropdown(false);
                   handleSendMessage('/limpar');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2.5 cursor-pointer"
+                className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2.5 cursor-pointer dark:hover:bg-red-950/30 dark:text-red-400"
               >
                 <RotateCcw className="w-4 h-4 text-red-500" />
                 <span>{t('recharge.clear_conversation')}</span>
@@ -1557,10 +1557,10 @@ export default function PaymentBot() {
                           </span>
                         )}
                         <span className="flex min-w-0 flex-col">
-                          <span className="text-[11px] font-medium text-gray-500">
+                          <span className="text-[11px] font-medium text-white/80">
                             Ficheiro: {formatFileSize(msg.attachment.sizeBytes)}
                           </span>
-                          <span className="max-w-full truncate text-[13px] font-medium text-gray-900">
+                          <span className="max-w-full truncate text-[13px] font-medium text-white">
                             {msg.attachment.name}
                           </span>
                         </span>
@@ -1585,7 +1585,7 @@ export default function PaymentBot() {
                     height="20"
                     viewBox="0 0 9 20"
                     className="absolute"
-                    style={{ bottom: 0, right: -8, fill: '#1877f2' }}
+                    style={{ bottom: 0, right: -8, fill: 'var(--tg-bubble-out, #1877f2)' }}
                   >
                     <path d="M0 20H9C4.5 20 1 16 0 8V20Z" />
                   </svg>
@@ -1607,7 +1607,7 @@ export default function PaymentBot() {
                     height="20"
                     viewBox="0 0 9 20"
                     className="absolute"
-                    style={{ top: 0, left: -8, fill: '#f5f5f5' }}
+                    style={{ top: 0, left: -8, fill: 'var(--tg-bubble-in, #f5f5f5)' }}
                   >
                     <path d="M9 0H0C4.5 0 8 4 9 12V0Z" />
                   </svg>
@@ -1618,7 +1618,7 @@ export default function PaymentBot() {
                   >
                     {/* APRESENTAÇÃO INICIAL / BOAS-VINDAS */}
                     {msg.type === 'welcome' && (
-                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                         <p>
                           <AutoTranslatedText
                             text={t('recharge.bot_welcome')}
@@ -1632,7 +1632,7 @@ export default function PaymentBot() {
 
                     {/* TEXTO BOT PADRÃO */}
                     {msg.type === 'text' && msg.text && (
-                      <div className="text-[14px] text-black leading-relaxed font-normal">
+                      <div className="text-[14px] leading-relaxed font-normal text-black dark:text-gray-100">
                         <AutoTranslatedText
                           text={msg.text}
                           language={language}
@@ -1645,7 +1645,7 @@ export default function PaymentBot() {
 
                     {/* SELETOR DE VALORES RÁPIDOS */}
                     {msg.type === 'amount_selector' && (
-                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                         {msg.text && (
                           <AutoTranslatedText
                             text={msg.text}
@@ -1671,7 +1671,7 @@ export default function PaymentBot() {
 
                     {/* SELETOR DE BANCOS DISPONÍVEIS */}
                     {msg.type === 'bank_selector' && msg.payload && (
-                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                         {msg.text && (
                           <AutoTranslatedText
                             text={msg.text}
@@ -1687,14 +1687,14 @@ export default function PaymentBot() {
                               <button
                                 key={b.id}
                                 onClick={() => createRechargeOrder(msg.payload.amount, b)}
-                                className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
+                                className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer dark:text-gray-100"
                               >
                                 <span>{b.nome_banco}</span>
                                 <span className="text-[12px] text-[#3390ec]">{t('recharge.select_bank')}</span>
                               </button>
                             ))
                           ) : (
-                            <p className="py-1.5 text-[13px] text-gray-600">{t('recharge.no_banks_available')}</p>
+                            <p className="py-1.5 text-[13px] text-gray-600 dark:text-gray-300">{t('recharge.no_banks_available')}</p>
                           )}
                           <button
                             type="button"
@@ -1704,7 +1704,7 @@ export default function PaymentBot() {
                               entity: DEMO_MULTICAIXA_ENTITY,
                               reference: DEMO_MULTICAIXA_REFERENCE,
                             }))}
-                            className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
+                            className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer dark:text-gray-100"
                           >
                             <span>{t('recharge.multicaixa_express')}</span>
                             <span className="text-[11px] font-medium text-[#25ae60] text-right">{t('recharge.demo_available')}</span>
@@ -1716,7 +1716,7 @@ export default function PaymentBot() {
                               address: DEMO_USDT_ADDRESS,
                               network: 'TRON (TRC20)',
                             }))}
-                            className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer"
+                            className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer dark:text-gray-100"
                           >
                             <span>{t('recharge.usdt_wallet')}</span>
                             <span className="text-[11px] font-medium text-[#25ae60] text-right">{t('recharge.demo_available')}</span>
@@ -1726,7 +1726,7 @@ export default function PaymentBot() {
                     )}
 
                     {msg.type === 'deposit_instructions' && msg.payload && (
-                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                         <p className="font-bold text-[15px] text-[#2481cc] mb-2">
                           Dados para transferência
                         </p>
@@ -1736,7 +1736,7 @@ export default function PaymentBot() {
                               Por favor, conclua a transferência para <strong className="font-bold text-[#2481cc]">{msg.payload.bank?.nome_proprietario || 'Conta Oficial'}</strong>
                               {' '}no banco <strong className="font-bold text-[#2481cc]">{msg.payload.bank?.nome_banco}</strong>, no valor de{' '}
                               <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                                <strong className="text-[#dc2626] text-[15px]">{formatCurrency(msg.payload.amount, 'KZ')}</strong>
+                                <strong className="text-[#dc2626] text-[15px] dark:text-red-400">{formatCurrency(msg.payload.amount, 'KZ')}</strong>
                                 <button
                                   type="button"
                                   onClick={() => copyToClipboard(String(msg.payload.amount), true)}
@@ -1770,7 +1770,7 @@ export default function PaymentBot() {
                             </button>
                           </div>
                         </div>
-                        <p className="mt-2 text-[13px] text-gray-800 leading-normal italic">
+                        <p className="mt-2 text-[13px] text-gray-800 leading-normal italic dark:text-gray-200">
                           Dirija-se a um ATM ou use o aplicativo do seu banco para concluir a transferência.
                           {' '}Depois, envie aqui uma captura do comprovativo.
                         </p>
@@ -1788,7 +1788,7 @@ export default function PaymentBot() {
                           <p>{t('recharge.entity')}: <strong>{msg.payload.entity}</strong></p>
                           <p>{t('recharge.demo_reference')}: <strong>{msg.payload.reference}</strong></p>
                           <div className="flex items-center gap-2">
-                            <p>{t('recharge.payment_amount')}: <strong className="text-[#dc2626]">{formatCurrency(msg.payload.amount, 'KZ')}</strong></p>
+                            <p>{t('recharge.payment_amount')}: <strong className="text-[#dc2626] dark:text-red-400">{formatCurrency(msg.payload.amount, 'KZ')}</strong></p>
                             <button
                               type="button"
                               onClick={() => copyToClipboard(String(msg.payload.amount), true)}
@@ -1823,7 +1823,7 @@ export default function PaymentBot() {
                           />
                         </div>
                         <p className="flex items-center gap-2">
-                          <span>{t('recharge.payment_amount')}: <strong className="text-[#dc2626]">{formatCurrency(msg.payload.amount, 'KZ')}</strong></span>
+                          <span>{t('recharge.payment_amount')}: <strong className="text-[#dc2626] dark:text-red-400">{formatCurrency(msg.payload.amount, 'KZ')}</strong></span>
                           <button
                             type="button"
                             onClick={() => copyToClipboard(String(msg.payload.amount), true)}
@@ -1852,11 +1852,11 @@ export default function PaymentBot() {
                     )}
 
                     {msg.type === 'proof_success' && msg.payload && (
-                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                         <p className="font-bold text-[15px] text-[#25ae60] mb-1.5">
                           Recebido com muito sucesso! 🎉🥳
                         </p>
-                        <p className="text-[13.5px] text-gray-800 leading-normal">
+                        <p className="text-[13.5px] text-gray-800 leading-normal dark:text-gray-200">
                           O teu comprovativo foi recebido e enviado para conferência. Depois da aprovação, o valor de{' '}
                           <strong>{formatCurrency(msg.payload.amount || 0, 'KZ')}</strong> ficará disponível no saldo.
                           Acompanha o estado em <strong>/historico</strong>; quando aparecer como aprovado, confirma o saldo com <strong>/saldo</strong>.
@@ -1865,29 +1865,29 @@ export default function PaymentBot() {
                     )}
 
                     {msg.type === 'banks_list' && msg.payload && (
-                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                         <p className="font-bold text-[15px] text-[#2481cc] mb-2">
                           🏦 {t('recharge.available_banks')}
                         </p>
                         <div className="space-y-2 my-2">
                           {msg.payload.banks && msg.payload.banks.length > 0 ? (
                             msg.payload.banks.map((b: CollectionBank) => (
-                              <div key={b.id} className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-[13px]">
-                                <span className="font-bold text-black text-[14px]">{b.nome_banco}</span>
+                              <div key={b.id} className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-[13px] dark:bg-[#242f3d] dark:border-[#33465a]">
+                                <span className="font-bold text-black text-[14px] dark:text-gray-100">{b.nome_banco}</span>
                               </div>
                             ))
                           ) : (
-                            <p className="text-[13px] text-gray-600">{t('recharge.no_banks_available')}</p>
+                            <p className="text-[13px] text-gray-600 dark:text-gray-300">{t('recharge.no_banks_available')}</p>
                           )}
                         </div>
-                        <p className="text-[13px] text-gray-700">
+                        <p className="text-[13px] text-gray-700 dark:text-gray-300">
                           Quando quiser iniciar seu depósito, envie /depositar 😊
                         </p>
                       </div>
                     )}
 
                     {msg.type === 'history_list' && msg.payload && (
-                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                         <p className="font-bold text-[15px] text-[#2481cc] mb-1.5">
                           📑 Seus Últimos Depósitos:
                         </p>
@@ -1898,13 +1898,13 @@ export default function PaymentBot() {
                               return (
                                 <div
                                   key={idx}
-                                  className="p-2 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-between text-[13px]"
+                                  className="p-2 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-between text-[13px] dark:bg-[#242f3d] dark:border-[#33465a]"
                                 >
                                   <div>
-                                    <span className="font-semibold text-black">
+                                    <span className="font-semibold text-black dark:text-gray-100">
                                       {formatCurrency(Number(item.amount) || Number(item.valor) || 0, 'KZ')}
                                     </span>
-                                    <span className="text-[11px] text-gray-500 block">
+                                    <span className="text-[11px] text-gray-500 block dark:text-gray-300">
                                       {item.created_at
                                         ? new Date(item.created_at).toLocaleDateString('pt-AO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
                                         : 'Recente'}
@@ -1918,7 +1918,7 @@ export default function PaymentBot() {
                             })}
                           </div>
                         ) : (
-                          <p className="text-[13px] text-gray-600">
+                          <p className="text-[13px] text-gray-600 dark:text-gray-300">
                             Você ainda não possui nenhum depósito registrado 😊
                           </p>
                         )}
@@ -1926,7 +1926,7 @@ export default function PaymentBot() {
                     )}
 
                     {msg.type === 'deposit_summary' && (
-                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                      <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                         {msg.text && (
                           <AutoTranslatedText
                             text={msg.text}
@@ -1939,7 +1939,7 @@ export default function PaymentBot() {
                       </div>
                     )}
 
-                    <div className="flex justify-end mt-1 text-[11px] text-[#8a8a8a] font-normal select-none">
+                    <div className="flex justify-end mt-1 text-[11px] font-normal text-[#8a8a8a] select-none dark:text-gray-400">
                       <span>{msg.time}</span>
                     </div>
                   </div>
@@ -1983,11 +1983,11 @@ export default function PaymentBot() {
 
         {awaitingProof && !isTyping && (
           <div className="mb-2 flex items-center gap-2 px-1">
-            <div className="flex items-center gap-1.5 rounded-[16px] rounded-bl-[3px] bg-white px-3.5 py-2 shadow-xs">
+            <div className="flex items-center gap-1.5 rounded-[16px] rounded-bl-[3px] bg-white px-3.5 py-2 shadow-xs dark:bg-[#182533]">
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#707579]" style={{ animationDelay: '0ms' }} />
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#707579]" style={{ animationDelay: '150ms' }} />
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#707579]" style={{ animationDelay: '300ms' }} />
-              <span className="ml-1 text-[11.5px] text-[#707579]">{t('recharge.waiting_for_proof')}</span>
+              <span className="ml-1 text-[11.5px] text-[#707579] dark:text-gray-300">{t('recharge.waiting_for_proof')}</span>
             </div>
           </div>
         )}
@@ -1995,7 +1995,7 @@ export default function PaymentBot() {
         {isTyping && (
           <div className="flex items-center gap-2 mb-2 px-1">
             <div
-              className="bg-white rounded-[16px] rounded-bl-[3px] px-3.5 py-2 flex items-center gap-1.5 shadow-xs"
+              className="bg-white rounded-[16px] rounded-bl-[3px] px-3.5 py-2 flex items-center gap-1.5 shadow-xs dark:bg-[#182533]"
             >
               <span
                 className="w-1.5 h-1.5 rounded-full bg-[#707579] animate-bounce"
@@ -2009,7 +2009,7 @@ export default function PaymentBot() {
                 className="w-1.5 h-1.5 rounded-full bg-[#707579] animate-bounce"
                 style={{ animationDelay: '300ms' }}
               />
-              <span className="text-[11.5px] text-[#707579] ml-1">Payments Bot {t('chat.typing')}</span>
+              <span className="text-[11.5px] text-[#707579] ml-1 dark:text-gray-300">Payments Bot {t('chat.typing')}</span>
             </div>
           </div>
         )}
@@ -2020,7 +2020,7 @@ export default function PaymentBot() {
       {showScrollDown && (
         <button
           onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
-          className="absolute right-3.5 bottom-16 w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[#707579] hover:bg-gray-50 active:scale-95 transition-all z-20 cursor-pointer shadow-md"
+          className="absolute right-3.5 bottom-16 w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[#707579] hover:bg-gray-50 active:scale-95 transition-all z-20 cursor-pointer shadow-md dark:bg-[#242f3d] dark:border-[#33465a] dark:text-gray-200 dark:hover:bg-[#2d3a49]"
         >
           <ChevronDown className="w-5 h-5" />
         </button>

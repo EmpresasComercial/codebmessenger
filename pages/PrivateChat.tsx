@@ -835,7 +835,7 @@ export default function PrivateChat() {
         <ChatsList embedded />
       </aside>
       <div 
-      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden bg-white transition-colors dark:bg-[#0e1621]"
+      className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden bg-white transition-colors dark:bg-[#0e1621] dark:text-gray-100"
       onContextMenu={(e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
@@ -935,7 +935,7 @@ export default function PrivateChat() {
 
       {showContactProfile && (
         <div
-          className="fixed inset-0 z-[250] flex flex-col select-none"
+          className="fixed inset-0 z-[250] flex flex-col select-none text-gray-900"
           style={{ backgroundColor: '#efeff4' }}
           onClick={() => setShowContactProfile(false)}
         >
@@ -1148,7 +1148,7 @@ export default function PrivateChat() {
                         stroke="none"
                         color="inherit"
                       >
-                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#1877f2] dark:fill-[#2b5278]" />
+                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" style={{ fill: 'var(--tg-bubble-out, #1877f2)' }} />
                       </svg>
                     ) : (
                       <svg
@@ -1158,7 +1158,7 @@ export default function PrivateChat() {
                         className="absolute pointer-events-none"
                         style={{ bottom: 0, left: -8, transform: 'scaleX(-1)', fill: 'currentColor' }}
                       >
-                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" className="fill-[#f5f5f5] dark:fill-[#182533]" />
+                        <path d="M0 20H9C4.5 20 1 16 0 8V20Z" style={{ fill: 'var(--tg-bubble-in, #f5f5f5)' }} />
                       </svg>
                     )}
 
@@ -1410,7 +1410,7 @@ export default function PrivateChat() {
                 />
               </p>
             </div>
-            <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600 p-1">
+            <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600 p-1 dark:hover:text-gray-200">
               <X className="w-4 h-4" />
             </button>
           </div>

@@ -1379,7 +1379,7 @@ export default function wallet() {
               {isVerifiedManagerPhone(VERIFIED_MANAGER_PHONE) && <VerifiedBadge className="h-4 w-4 mt-0.5" />}
             </div>
             <span
-              className={`mt-0.5 flex items-center gap-1 text-[14px] font-semibold leading-[1.2] ${isTyping ? 'text-[#707579]' : 'text-[#25ae60]'}`}
+              className={`mt-0.5 flex items-center gap-1 text-[14px] font-semibold leading-[1.2] ${isTyping ? 'text-[#707579] dark:text-[#a3adb8]' : 'text-[#25ae60]'}`}
               aria-live="polite"
             >
               {isTyping ? t('chat.typing') : t('chat.online_now')}
@@ -1580,7 +1580,7 @@ export default function wallet() {
                     height="20"
                     viewBox="0 0 9 20"
                     className="absolute"
-                    style={{ bottom: 0, right: -8, fill: '#1877f2' }}
+                    style={{ bottom: 0, right: -8, fill: 'var(--tg-bubble-out, #1877f2)' }}
                   >
                     <path d="M0 20H9C4.5 20 1 16 0 8V20Z" />
                   </svg>
@@ -1600,7 +1600,7 @@ export default function wallet() {
                   height="20"
                   viewBox="0 0 9 20"
                   className="absolute"
-                  style={{ top: 0, left: -8, fill: '#f5f5f5' }}
+                  style={{ top: 0, left: -8, fill: 'var(--tg-bubble-in, #f5f5f5)' }}
                 >
                   <path d="M9 0H0C4.5 0 8 4 9 12V0Z" />
                 </svg>
@@ -1610,7 +1610,7 @@ export default function wallet() {
                 >
                 {/* APRESENTAÇÃO / BOAS-VINDAS */}
                 {msg.type === 'welcome' && (
-                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                     <AutoTranslatedText
                       text={t('wallet.welcome')}
                       language={language}
@@ -1622,7 +1622,7 @@ export default function wallet() {
 
                 {/* TEXTO BOT PADRÃO COM FORMATAÇÃO */}
                 {msg.type === 'text' && msg.text && (
-                  <div className="text-[14px] text-black leading-relaxed font-normal">
+                  <div className="text-[14px] text-black leading-relaxed font-normal dark:text-gray-100">
                     <AutoTranslatedText
                       text={msg.text}
                       language={language}
@@ -1634,7 +1634,7 @@ export default function wallet() {
                 )}
 
                 {(msg.type === 'bank_saved' || msg.type === 'bank_details') && msg.payload && (
-                  <div className="text-[14px] leading-relaxed text-black">
+                  <div className="text-[14px] leading-relaxed text-black dark:text-gray-100">
                     {msg.payload.intro}{' '}
                     <strong className="font-semibold text-[#2481cc]">{msg.payload.holderName}</strong>, entidade bancária{' '}
                     <strong className="font-semibold text-[#2481cc]">{msg.payload.bankName}</strong>, número de referência{' '}
@@ -1643,7 +1643,7 @@ export default function wallet() {
                 )}
 
                 {msg.type === 'confirm_delete_bank' && msg.text && (
-                  <div className="text-[14px] text-black leading-relaxed font-normal">
+                  <div className="text-[14px] text-black leading-relaxed font-normal dark:text-gray-100">
                     <AutoTranslatedText
                       text={msg.text}
                       language={language}
@@ -1656,11 +1656,11 @@ export default function wallet() {
 
                 {/* RESUMO DE CONFIRMAÇÃO DE RETIRADA */}
                 {msg.type === 'confirm_withdraw' && msg.payload && (
-                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                     <p className="font-bold text-[15px] text-[#2481cc] mb-2">
                       Perfeito! Dá uma conferida no seu resumo: 📋
                     </p>
-                    <p className="text-[13.5px] text-gray-800">
+                    <p className="text-[13.5px] text-gray-800 dark:text-gray-200">
                       • <strong>{t('withdraw.amount')}:</strong> {formatCurrency(msg.payload.amount, 'KZ')}
                       <br />
                       • <strong>{t('wallet.operational_fee')}:</strong> -{formatCurrency(msg.payload.fee, 'KZ')}
@@ -1677,7 +1677,7 @@ export default function wallet() {
                         {msg.payload.iban}
                       </code>
                     </p>
-                    <p className="mt-2 text-[13px] text-gray-600">
+                    <p className="mt-2 text-[13px] text-gray-600 dark:text-gray-300">
                       Está tudo certinho? É só clicar em <strong>{t('common.confirm')}</strong> abaixo! 😊
                     </p>
                   </div>
@@ -1685,7 +1685,7 @@ export default function wallet() {
 
                 {/* SELETOR RÁPIDO DE VALORES */}
                 {msg.type === 'amount_selector' && (
-                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                     {msg.text && (
                       <AutoTranslatedText
                         text={msg.text}
@@ -1720,7 +1720,7 @@ export default function wallet() {
 
                 {/* ALERTA: SEM BANCO VINCULADO */}
                 {msg.type === 'no_bank' && (
-                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                     {msg.text && (
                       <AutoTranslatedText
                         text={msg.text}
@@ -1735,7 +1735,7 @@ export default function wallet() {
 
                 {/* ALERTA: SEM BOTS ATIVOS */}
                 {msg.type === 'no_bots' && (
-                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal">
+                  <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                     {msg.text && (
                       <AutoTranslatedText
                         text={msg.text}
@@ -1750,7 +1750,7 @@ export default function wallet() {
 
                 {/* HISTÓRICO REAL EM TEXTO NORMAL SEM SUBCARDS */}
                 {msg.type === 'history_list' && msg.text && (
-                  <div className="text-[14px] text-black leading-relaxed font-normal">
+                  <div className="text-[14px] text-black leading-relaxed font-normal dark:text-gray-100">
                     <AutoTranslatedText
                       text={msg.text}
                       language={language}
@@ -1761,7 +1761,7 @@ export default function wallet() {
                   </div>
                 )}
 
-                <div className="flex justify-end mt-1 text-[11px] text-[#8a8a8a] font-normal select-none">
+                <div className="flex justify-end mt-1 text-[11px] text-[#8a8a8a] font-normal select-none dark:text-gray-400">
                   <span>{msg.time}</span>
                 </div>
               </div>
@@ -1839,7 +1839,7 @@ export default function wallet() {
         {isTyping && (
           <div className="flex items-center gap-2 mb-2 px-1">
             <div
-              className="bg-white rounded-[16px] rounded-bl-[3px] px-3.5 py-2 flex items-center gap-1.5"
+              className="bg-white rounded-[16px] rounded-bl-[3px] px-3.5 py-2 flex items-center gap-1.5 dark:bg-[#182533]"
               style={{ boxShadow: '0 1px 2px rgba(16,35,47,0.15)' }}
             >
               <span
@@ -1854,7 +1854,7 @@ export default function wallet() {
                 className="w-1.5 h-1.5 rounded-full bg-[#707579] animate-bounce"
                 style={{ animationDelay: '300ms' }}
               />
-              <span className="text-[11.5px] text-[#707579] ml-1">{t('wallet.typing')}</span>
+              <span className="text-[11.5px] text-[#707579] ml-1 dark:text-gray-300">{t('wallet.typing')}</span>
             </div>
           </div>
         )}
@@ -1865,7 +1865,7 @@ export default function wallet() {
       {showScrollDown && (
         <button
           onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
-          className="absolute right-3.5 bottom-16 w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[#707579] hover:bg-gray-50 active:scale-95 transition-all z-20 cursor-pointer shadow-md"
+          className="absolute right-3.5 bottom-16 w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[#707579] hover:bg-gray-50 active:scale-95 transition-all z-20 cursor-pointer shadow-md dark:bg-[#242f3d] dark:border-[#33465a] dark:text-gray-200 dark:hover:bg-[#2d3a49]"
         >
           <ChevronDown className="w-5 h-5" />
         </button>

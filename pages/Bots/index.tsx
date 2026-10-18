@@ -168,7 +168,7 @@ function PurchasedBotCountdown({ dataInicio }: { dataInicio: string }) {
   }, [dataInicio]);
 
   return (
-    <span className="font-mono text-[12px] font-bold text-[#2481cc] tabular-nums bg-[#e8f4fd] px-1.5 py-0.5 rounded">
+    <span className="font-mono text-[12px] font-bold text-[#2481cc] tabular-nums bg-[#e8f4fd] px-1.5 py-0.5 rounded dark:bg-[#10283b] dark:text-[#83cdf4]">
       {formatCountdown(sec)}
     </span>
   );
@@ -184,7 +184,7 @@ function BotBubble({ children, time }: { children: React.ReactNode; time: string
           height="20"
           viewBox="0 0 9 20"
           className="absolute"
-          style={{ top: 0, left: -8, fill: "#f5f5f5" }}
+          style={{ top: 0, left: -8, fill: "var(--tg-bubble-in, #f5f5f5)" }}
         >
           <path d="M9 0H0C4.5 0 8 4 9 12V0Z" />
         </svg>
@@ -194,7 +194,7 @@ function BotBubble({ children, time }: { children: React.ReactNode; time: string
         >
           {children}
           <div className="flex justify-end mt-1">
-            <span className="text-[11px] text-[#8a8a8a] select-none">{time}</span>
+            <span className="text-[11px] text-[#8a8a8a] select-none dark:text-gray-400">{time}</span>
           </div>
         </div>
       </div>
@@ -225,7 +225,7 @@ function UserBubble({ text, time }: { text: string; time: string }) {
           height="20"
           viewBox="0 0 9 20"
           className="absolute"
-          style={{ bottom: 0, right: -8, fill: "#1877f2" }}
+          style={{ bottom: 0, right: -8, fill: "var(--tg-bubble-out, #1877f2)" }}
         >
           <path d="M0 20H9C4.5 20 1 16 0 8V20Z" />
         </svg>
@@ -722,7 +722,7 @@ export default function BusinessMessengerBotsChat() {
         <span key={lIdx}>
           {parts.map((part, pIdx) =>
             part.startsWith("/") ? (
-              <span key={pIdx} onClick={() => handleSendMessage(part)} className="text-[#1a7ac7] underline cursor-pointer">{part}</span>
+              <span key={pIdx} onClick={() => handleSendMessage(part)} className="text-[#1a7ac7] underline cursor-pointer dark:text-[#83cdf4]">{part}</span>
             ) : part
           )}
           {lIdx < arr.length - 1 && <br />}
@@ -882,7 +882,7 @@ export default function BusinessMessengerBotsChat() {
               </span>
             </h1>
             <span
-              className={`mt-0.5 flex items-center gap-1 truncate text-[12.5px] font-normal leading-[1.15] ${isTyping ? 'text-[#707579]' : 'text-[#25ae60]'}`}
+              className={`mt-0.5 flex items-center gap-1 truncate text-[12.5px] font-normal leading-[1.15] ${isTyping ? 'text-[#707579] dark:text-[#a3adb8]' : 'text-[#25ae60]'}`}
               aria-live="polite"
             >
               {isTyping ? t('chat.typing') : t('chat.online_now')}
@@ -926,8 +926,8 @@ export default function BusinessMessengerBotsChat() {
             <React.Fragment key={msg.id}>
               <BotBubble time={msg.time}>
                 {msg.type === "welcome" && (
-                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
-                    <p className="text-[14px] text-[#1c1c1e]">
+                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal dark:text-gray-100">
+                    <p className="text-[14px] text-[#1c1c1e] dark:text-gray-100">
                       <AutoTranslatedText
                         text="Olá! Sou o assistente de bots do Teggram-X. Posso ajudar-te com os teus bots, o saldo e os rendimentos. Como posso ajudar?"
                         language={language}
@@ -938,16 +938,16 @@ export default function BusinessMessengerBotsChat() {
                 )}
 
                 {msg.type === "my_bots" && (
-                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
+                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal dark:text-gray-100">
                     <p className="font-bold text-[14.5px] mb-1.5">Bots em Execução ({msg.payload?.bots?.length || 0}):</p>
                     {!msg.payload?.bots || msg.payload.bots.length === 0 ? (
-                      <p className="text-[#3a3a3c]">{t('bots.no_active_bots')} /bots {t('bots.open_catalog')}</p>
+                      <p className="text-[#3a3a3c] dark:text-gray-300">{t('bots.no_active_bots')} /bots {t('bots.open_catalog')}</p>
                     ) : (
                       <div className="space-y-3">
                         {msg.payload.bots.map((bot: PurchasedBotItem, idx: number) => (
                           <div key={bot.id || idx} className="text-[13.5px] border-b border-gray-100 pb-2.5 last:border-0 last:pb-0">
-                            <p className="font-bold text-[#1c1c1e] mb-0.5">{idx + 1}. {displayBotName(bot.produto_nome)} <span className="text-[#25ae60] text-[12px] font-semibold">● Ativo</span></p>
-                            <p className="text-[#3a3a3c] text-[13px] space-y-0.5">
+                            <p className="font-bold text-[#1c1c1e] mb-0.5 dark:text-gray-100">{idx + 1}. {displayBotName(bot.produto_nome)} <span className="text-[#25ae60] text-[12px] font-semibold">● Ativo</span></p>
+                            <p className="text-[#3a3a3c] text-[13px] space-y-0.5 dark:text-gray-300">
                               ID: <span className="font-mono text-[12px]">{bot.id?.slice(0, 8).toUpperCase()}</span><br />
                               Renda Diária: <span className="text-[#25ae60] font-semibold">+{formatCurrency(bot.renda_diaria, "KZ")}/dia</span><br />
                               Valor Pago: {formatCurrency(bot.preco_pago, "KZ")}<br />
@@ -968,18 +968,18 @@ export default function BusinessMessengerBotsChat() {
                 )}
 
                 {msg.type === "catalog" && (
-                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
+                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal dark:text-gray-100">
                     <p className="font-bold text-[14.5px] mb-2">{t('bots.available')}</p>
                     <div className="space-y-2">
                       {msg.payload?.products?.map((prod: ProductItem, idx: number) => (
                         <div key={prod.id || idx} className="flex items-center gap-2 border-b border-gray-100 py-2 last:border-0 dark:border-gray-700">
-                          <div className="min-w-0 flex-1 text-[12.5px] leading-snug text-[#3a3a3c]">
-                            <p className="break-words font-semibold text-[#1c1c1e]">{displayBotName(prod.nome)}</p>
-                            <p className="mt-0.5 text-[11.5px] text-[#707579]">
-                              {t('bots.price')}: <span className="font-semibold text-[#1c1c1e]">{formatCurrency(prod.preco, "KZ")}</span> · {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(prod.renda_diaria, "KZ")}</span>
+                          <div className="min-w-0 flex-1 text-[12.5px] leading-snug text-[#3a3a3c] dark:text-gray-300">
+                            <p className="break-words font-semibold text-[#1c1c1e] dark:text-gray-100">{displayBotName(prod.nome)}</p>
+                            <p className="mt-0.5 text-[11.5px] text-[#707579] dark:text-gray-400">
+                              {t('bots.price')}: <span className="font-semibold text-[#1c1c1e] dark:text-gray-100">{formatCurrency(prod.preco, "KZ")}</span> · {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(prod.renda_diaria, "KZ")}</span>
                             </p>
-                            <p className="text-[11.5px] text-[#707579]">
-                              {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e]">{prod.duracao_dias} {t('common.days')}</span> · {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7]">{formatCurrency(prod.renda_diaria * prod.duracao_dias, "KZ")}</span>
+                            <p className="text-[11.5px] text-[#707579] dark:text-gray-400">
+                              {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e] dark:text-gray-100">{prod.duracao_dias} {t('common.days')}</span> · {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7] dark:text-[#83cdf4]">{formatCurrency(prod.renda_diaria * prod.duracao_dias, "KZ")}</span>
                             </p>
                           </div>
                           <button
@@ -998,15 +998,15 @@ export default function BusinessMessengerBotsChat() {
 
                 {msg.type === "single_bot" && msg.payload?.product && (
                   <div className="flex items-center gap-2">
-                    <div className="min-w-0 flex-1 text-[12.5px] leading-snug text-[#3a3a3c]">
-                      <p className="break-words font-semibold text-[#1c1c1e]">{displayBotName(msg.payload.product.nome)}</p>
-                      <p className="mt-0.5 text-[11.5px] text-[#707579]">
-                        {t('bots.price')}: <span className="font-semibold text-[#1c1c1e]">{formatCurrency(msg.payload.product.preco, "KZ")}</span> · {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(msg.payload.product.renda_diaria, "KZ")}</span>
+                    <div className="min-w-0 flex-1 text-[12.5px] leading-snug text-[#3a3a3c] dark:text-gray-300">
+                      <p className="break-words font-semibold text-[#1c1c1e] dark:text-gray-100">{displayBotName(msg.payload.product.nome)}</p>
+                      <p className="mt-0.5 text-[11.5px] text-[#707579] dark:text-gray-400">
+                        {t('bots.price')}: <span className="font-semibold text-[#1c1c1e] dark:text-gray-100">{formatCurrency(msg.payload.product.preco, "KZ")}</span> · {t('bots.income')}: <span className="font-medium text-[#25ae60]">{formatCurrency(msg.payload.product.renda_diaria, "KZ")}</span>
                       </p>
-                      <p className="text-[11.5px] text-[#707579]">
-                        {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e]">{msg.payload.product.duracao_dias} {t('common.days')}</span> · {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7]">{formatCurrency(msg.payload.product.renda_diaria * msg.payload.product.duracao_dias, "KZ")}</span>
+                      <p className="text-[11.5px] text-[#707579] dark:text-gray-400">
+                        {t('bots.cycle')}: <span className="font-semibold text-[#1c1c1e] dark:text-gray-100">{msg.payload.product.duracao_dias} {t('common.days')}</span> · {t('bots.total_revenue')}: <span className="font-medium text-[#1a7ac7] dark:text-[#83cdf4]">{formatCurrency(msg.payload.product.renda_diaria * msg.payload.product.duracao_dias, "KZ")}</span>
                       </p>
-                      <p className="text-[11.5px] text-[#707579]">{t('bots.limit')}: {msg.payload.boughtCount}/{msg.payload.maxLimit}</p>
+                      <p className="text-[11.5px] text-[#707579] dark:text-gray-400">{t('bots.limit')}: {msg.payload.boughtCount}/{msg.payload.maxLimit}</p>
                     </div>
                     <button
                       type="button"
@@ -1020,20 +1020,20 @@ export default function BusinessMessengerBotsChat() {
                 )}
 
                 {msg.type === "purchase_success" && (
-                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal">
+                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed font-normal dark:text-gray-100">
                     <p className="font-bold text-[#25ae60] text-[14.5px] mb-1">{t('bots.activated_successfully')}</p>
-                    <p className="mb-1 text-[#3a3a3c]">{t('bots.activation_key')} (HTTP API):</p>
-                    <div className="bg-[#e8f4fd] rounded-[8px] px-2.5 py-1 font-mono text-[12.5px] text-[#1a7ac7] select-all my-1.5">
+                    <p className="mb-1 text-[#3a3a3c] dark:text-gray-300">{t('bots.activation_key')} (HTTP API):</p>
+                    <div className="bg-[#e8f4fd] rounded-[8px] px-2.5 py-1 font-mono text-[12.5px] text-[#1a7ac7] select-all my-1.5 dark:bg-[#10283b] dark:text-[#83cdf4]">
                       {t('bots.activation_key_unavailable')}
                     </div>
-                    <p className="text-[13px] text-[#8a8a8e]">
-                      {t('bots.bot_prefix')} <span className="font-semibold text-[#1c1c1e]">{displayBotName(msg.payload?.product?.nome || "Bot")}</span> {t('bots.active_income_prefix')} <span className="font-semibold text-[#25ae60]">+{formatCurrency(msg.payload?.product?.renda_diaria, "KZ")}</span> {t('bots.daily_credit_suffix')}
+                    <p className="text-[13px] text-[#8a8a8e] dark:text-gray-400">
+                      {t('bots.bot_prefix')} <span className="font-semibold text-[#1c1c1e] dark:text-gray-100">{displayBotName(msg.payload?.product?.nome || "Bot")}</span> {t('bots.active_income_prefix')} <span className="font-semibold text-[#25ae60]">+{formatCurrency(msg.payload?.product?.renda_diaria, "KZ")}</span> {t('bots.daily_credit_suffix')}
                     </p>
                   </div>
                 )}
 
                 {msg.type === "text" && (
-                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed whitespace-pre-line font-normal">
+                  <div className="text-[14px] text-[#1c1c1e] leading-relaxed whitespace-pre-line font-normal dark:text-gray-100">
                     <AutoTranslatedText
                       text={msg.text || ""}
                       language={language}
@@ -1062,7 +1062,7 @@ export default function BusinessMessengerBotsChat() {
       </main>
 
       {showScrollDown && (
-        <button onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" })} className="absolute right-3.5 bottom-20 w-10 h-10 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-[#8a8a8e] hover:bg-gray-50 active:scale-95 transition-all z-20 cursor-pointer">
+        <button onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" })} className="absolute right-3.5 bottom-20 w-10 h-10 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-[#8a8a8e] hover:bg-gray-50 active:scale-95 transition-all z-20 cursor-pointer dark:bg-[#242f3d] dark:border-[#33465a] dark:text-gray-200 dark:hover:bg-[#2d3a49]">
           <ChevronDown className="w-5 h-5" />
         </button>
       )}
