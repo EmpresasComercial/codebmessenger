@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -874,15 +874,13 @@ export default function grupochat() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('chat_gruop')
-        .delete()
-        .eq('id', msgId)
-        .eq('uid_emissor', user.id)
-        .select('id')
-        .maybeSingle();
+      const { error } = await (supabase as any)
+        .rpc('get_chat_messages_mcpn', {
+          p_group: 'community',
+          p_delete_id: msgId,
+        });
 
-      if (error || !data) {
+      if (error) {
         showToast('Mensagem não apagada', 'error');
         return;
       }
@@ -1065,20 +1063,31 @@ export default function grupochat() {
     if (isFetchingRef.current && !isInitial) return;
     isFetchingRef.current = true;
     try {
-      const { data, error } = await supabase
-        .from('chat_gruop')
-        .select('*')
-        .order('data_registrada', { ascending: false })
-        .limit(60);
+      const { data, error } = await (supabase as any)
+        .rpc('get_chat_messages_mcpn', {
+          p_group: 'community',
+          p_limit: 60,
+        });
       if (error) throw error;
       if (data) {
-        // 1. Atualizar mensagens IMEDIATAMENTE na tela sem esperar perfis
-        const dataWithPhones = data.map((m: any) => ({
+        (data as any[]).forEach((m: any) => {
+          if (m.uid_emissor && !phoneCache[m.uid_emissor]) {
+            phoneCache[m.uid_emissor] = {
+              telefone: m.telefone || null,
+              nome_exibicao: m.nome_exibicao || null,
+              avatarUrl: m.uid_emissor === user?.id ? getProfileAvatarUrl(user?.user_metadata) : '',
+              countryCode: getProfileCountryCode({ country_code: m.detalhes?.sender_country_code }),
+            };
+          }
+        });
+
+        // 1. Atualizar mensagens IMEDIATAMENTE com perfil enriquecido via RPC
+        const dataWithPhones = (data as any[]).map((m: any) => ({
           ...m,
           perfil: {
             ...phoneCache[m.uid_emissor],
-            telefone: phoneCache[m.uid_emissor]?.telefone || "Telefone Desconhecido",
-            nome_exibicao: phoneCache[m.uid_emissor]?.nome_exibicao || "Membro",
+            telefone: m.telefone || phoneCache[m.uid_emissor]?.telefone || "Telefone Desconhecido",
+            nome_exibicao: m.nome_exibicao || phoneCache[m.uid_emissor]?.nome_exibicao || "Membro",
             avatarUrl: phoneCache[m.uid_emissor]?.avatarUrl
               || (m.uid_emissor === user?.id ? getProfileAvatarUrl(user?.user_metadata) : ''),
             countryCode: phoneCache[m.uid_emissor]?.countryCode
@@ -1113,49 +1122,6 @@ export default function grupochat() {
         });
 
         if (isInitial) scrollToBottom("auto");
-
-        // 2. Buscar perfis novos em background de forma não bloqueante
-        const uncachedIds = Array.from(new Set(data.map((m: any) => m.uid_emissor).filter((id: string) => id && !phoneCache[id])));
-        if (uncachedIds.length > 0) {
-          (async () => {
-            try {
-              const { data: profiles } = await supabase
-                .from('sys_t500')
-                .select('*')
-                .in('id', uncachedIds);
-              if (profiles && profiles.length > 0) {
-                profiles.forEach((p: any) => {
-                  phoneCache[p.id] = {
-                    telefone: p.telefone || null,
-                    nome_exibicao: p.nome_exibicao || null,
-                    avatarUrl: getProfileAvatarUrl(p),
-                    countryCode: getProfileCountryCode(p.metadados),
-                  };
-                });
-                setPublicMessages(prev => prev.map(m => {
-                  const profile = phoneCache[m.uid_emissor];
-                  const enrichedProfile = profile && {
-                    ...profile,
-                    countryCode: profile.countryCode
-                      || getProfileCountryCode({ country_code: m.detalhes?.sender_country_code }),
-                  };
-                  if (profile && (
-                    m.perfil?.nome_exibicao !== profile.nome_exibicao
-                    || m.perfil?.telefone !== profile.telefone
-                    || m.perfil?.avatarUrl !== profile.avatarUrl
-                    || m.perfil?.countryCode !== enrichedProfile.countryCode
-                  )) {
-                    return {
-                      ...m,
-                      perfil: enrichedProfile
-                    };
-                  }
-                  return m;
-                }));
-              }
-            } catch {}
-          })();
-        }
       }
     } catch (err) {
       console.error("Não foi possível carregar mensagens:", err);
@@ -1201,9 +1167,8 @@ export default function grupochat() {
     let isActive = true;
 
     const loadRegisteredUserCount = async () => {
-      const { count, error } = await supabase
-        .from('sys_t500')
-        .select('id', { count: 'exact', head: true });
+      const { data, error } = await (supabase as any)
+        .rpc('get_sender_phone_mcpn', { p_get_count: true });
 
       if (error) {
         console.error("Não foi possível carregar o total de utilizadores:", error);
@@ -1211,7 +1176,9 @@ export default function grupochat() {
         return;
       }
 
-      if (isActive && count !== null) setRegisteredUserCount(count);
+      if (isActive && data?.count !== undefined && data?.count !== null) {
+        setRegisteredUserCount(Number(data.count));
+      }
     };
 
     void loadRegisteredUserCount();
@@ -1311,18 +1278,15 @@ export default function grupochat() {
           if (data && data.id) { 
             const senderProfile = phoneCache[data.uid_emissor] || null;
             if (!senderProfile && data.uid_emissor) {
-              supabase
-                .from('sys_t500')
-                .select('*')
-                .eq('id', data.uid_emissor)
-                .maybeSingle()
-                .then(({ data: prof }) => {
-                  if (prof) {
+              (supabase as any)
+                .rpc('get_sender_phone_mcpn', { p_uid: data.uid_emissor, p_detailed: true })
+                .then(({ data: prof }: any) => {
+                  if (prof && prof.id) {
                     const resolvedProfile: SenderProfile = {
                       telefone: prof.telefone || null,
                       nome_exibicao: prof.nome_exibicao || null,
-                      avatarUrl: getProfileAvatarUrl(prof),
-                      countryCode: getProfileCountryCode(prof.metadados),
+                      avatarUrl: '',
+                      countryCode: getProfileCountryCode({ country_code: data.detalhes?.sender_country_code }),
                     };
                     phoneCache[data.uid_emissor] = resolvedProfile;
                     setPublicMessages(prev => prev.map(m => m.uid_emissor === data.uid_emissor
@@ -1552,13 +1516,13 @@ export default function grupochat() {
 
       setIsSending(true);
       try {
-        const { error } = await supabase
-          .from("chat_gruop")
-          .update({
-            mensagem: tempMsg,
-            detalhes: updatedDetalhes
-          })
-          .eq("id", msgIdToEdit);
+        const { error } = await (supabase as any)
+          .rpc('get_chat_messages_mcpn', {
+            p_group: 'community',
+            p_edit_id: msgIdToEdit,
+            p_send_message: tempMsg,
+            p_detalhes: updatedDetalhes,
+          });
 
         if (error) {
           console.error('[CommunityChat] Erro ao editar mensagem:', error);
@@ -1639,16 +1603,18 @@ export default function grupochat() {
         hasVoiceMessage: Boolean(voiceAttachment),
         captionLength: messageText.length,
       });
-      const { data: insertedMsg, error } = await supabase
-        .from("chat_gruop")
-        .insert([payload])
-        .select()
-        .single();
+      const { data: insertedMsgList, error } = await (supabase as any)
+        .rpc('get_chat_messages_mcpn', {
+          p_group: 'community',
+          p_send_message: tempMsg || " ",
+          p_detalhes: detalhes,
+        });
 
       if (error) {
         console.error('[CommunityChat] Erro insert:', error.code, error.message, error.details, error.hint);
         throw error;
       }
+      const insertedMsg = Array.isArray(insertedMsgList) ? insertedMsgList[0] : insertedMsgList;
       if (insertedMsg) {
         setPublicMessages(prev => {
           const updated = prev.map(m => m.id === tempId ? {
@@ -1747,10 +1713,12 @@ export default function grupochat() {
 
       (async () => {
         try {
-          const { error } = await supabase
-            .from('chat_gruop')
-            .update({ detalhes: updatedDetalhes })
-            .eq('id', messageId);
+          const { error } = await (supabase as any)
+            .rpc('get_chat_messages_mcpn', {
+              p_group: 'community',
+              p_edit_id: messageId,
+              p_detalhes: updatedDetalhes,
+            });
           if (error) console.error('[CommunityChat] Erro ao salvar reação:', error);
         } catch (err: any) {
           console.error('[CommunityChat] Falha ao persistir reação:', err);

@@ -575,12 +575,9 @@ export default function PaymentBot() {
         if (accData && accData.length > 0) {
           setTotalRecharges(Number((accData[0] as any).total_recarregado ?? 0));
         } else {
-          const { data: recData } = await supabase.from('paymentbot').select('valor, status');
-          if (recData) {
-            const sum = recData
-              .filter((r: any) => r.status === 'aprovado' || r.status === 'concluido')
-              .reduce((acc: number, cur: any) => acc + (Number(cur.valor) || 0), 0);
-            setTotalRecharges(sum);
+          const { data: summaryData } = await supabase.rpc('get_my_recharges_summary_mcpn');
+          if (summaryData?.success) {
+            setTotalRecharges(Number(summaryData.total_aprovado) || 0);
           }
         }
       } catch { }
@@ -715,19 +712,9 @@ export default function PaymentBot() {
           recId = data?.recharge_id || data?.id || (data && typeof data === 'string' ? data : null);
 
           if (!recId) {
-            const { data: userAuth } = await supabase.auth.getUser();
-            if (userAuth?.user) {
-              const { data: latest } = await supabase
-                .from('paymentbot')
-                .select('id')
-                .eq('user_id', userAuth.user.id)
-                .eq('status', 'pendente')
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-              if (latest?.id) {
-                recId = latest.id;
-              }
+            const { data: latestPending } = await supabase.rpc('get_my_latest_pending_recharge_mcpn');
+            if (Array.isArray(latestPending) && latestPending.length > 0 && latestPending[0]?.id) {
+              recId = latestPending[0].id;
             }
           }
         }
@@ -954,19 +941,7 @@ export default function PaymentBot() {
         return data.slice(0, 10);
       }
 
-      const { data: userAuth } = await supabase.auth.getUser();
-      if (userAuth?.user?.id) {
-        const { data: tableData } = await supabase
-          .from('paymentbot')
-          .select('*')
-          .eq('user_id', userAuth.user.id)
-          .order('created_at', { ascending: false })
-          .limit(10);
-        if (Array.isArray(tableData) && tableData.length > 0) {
-          return tableData;
-        }
-      }
-
+      // Se necessário histórico geral consolidado via função de sistema
       const { data: genData } = await supabase.rpc('get_general_history_mcpn');
       if (Array.isArray(genData)) {
         const filtered = genData.filter((item: any) => item.type === 'recargas');
@@ -990,12 +965,11 @@ export default function PaymentBot() {
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_my_recharges_mcpn');
       if (!rpcError && Array.isArray(rpcData)) {
         recharges = rpcData;
-      } else if (userData?.user?.id) {
-        const { data: tableData } = await supabase
-          .from('paymentbot')
-          .select('*')
-          .eq('user_id', userData.user.id);
-        if (tableData) recharges = tableData;
+      } else {
+        const { data: sumData } = await supabase.rpc('get_my_recharges_summary_mcpn');
+        if (sumData?.recharges && Array.isArray(sumData.recharges)) {
+          recharges = sumData.recharges;
+        }
       }
 
       const sorted = [...recharges].sort((a, b) => {

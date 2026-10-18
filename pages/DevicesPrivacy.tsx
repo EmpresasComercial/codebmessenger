@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 import { getDeviceId } from '../lib/device';
-import { COUNTRIES, detectCountryFromPhone } from '../lib/countries';
+import { COUNTRIES } from '../lib/countries';
 import { logger } from '../lib/logger';
 import {
   ShieldAlert,
@@ -170,17 +170,13 @@ export default function DevicesPrivacy() {
   const deviceInfo = getDeviceInfo(t);
 
   const [dbDeviceId, setDbDeviceId] = useState<string>('');
-  const [phone, setPhone] = useState<string>('');
+  const [countryCode, setCountryCode] = useState<string>('');
   const [currentIp, setCurrentIp] = useState<string>('');
   const [sessions, setSessions] = useState<AuditSession[]>([]);
   const accountCountry = useMemo(() => {
-    const normalizedPhone = phone.trim().startsWith('+')
-      ? phone.trim()
-      : `+${phone.replace(/\D/g, '')}`;
-    const countryFromPhone = detectCountryFromPhone(normalizedPhone).country;
-    const metadataCountryCode = session?.user.user_metadata?.country_code;
-    const country = countryFromPhone || COUNTRIES.find(
-      (item) => item.code === metadataCountryCode,
+    const code = countryCode || session?.user.user_metadata?.country_code || 'AO';
+    const country = COUNTRIES.find(
+      (item) => item.code.toUpperCase() === code.toUpperCase(),
     );
 
     if (!country) return t('devices.country_unavailable');
@@ -191,7 +187,7 @@ export default function DevicesPrivacy() {
     } catch {
       return country.name;
     }
-  }, [language, phone, session?.user.user_metadata, t]);
+  }, [language, countryCode, session?.user.user_metadata?.country_code, t]);
 
   const fetchDeviceData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -205,67 +201,29 @@ export default function DevicesPrivacy() {
         return;
       }
 
-      // 1. Registra a atividade da sessão atual no backend
-      try {
-        const { data: actData } = await (supabase.rpc as any)('record_device_activity_mcpn', {
-          p_device_id: localDeviceId,
-          p_details: {
-            os: deviceInfo.os,
-            browser: deviceInfo.browser,
-            platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown',
-            screen: typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : 'unknown',
-          },
-        });
-        if ((actData as any)?.ip) {
-          setCurrentIp((actData as any).ip);
-        }
-      } catch (actErr) {
-        logger.warn('DevicesPrivacy', 'Erro ao sincronizar sessão:', actErr);
-      }
+      // Uma única chamada RPC: regista atividade + busca dados de dispositivo e sessões
+      const { data, error } = await (supabase.rpc as any)('get_my_devices_sessions_mcpn', {
+        p_device_id: localDeviceId,
+        p_details: {
+          os: deviceInfo.os,
+          browser: deviceInfo.browser,
+          platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown',
+          screen: typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : 'unknown',
+        },
+      });
 
-      // 2. Busca dados de dispositivo e sessões via RPC segura
-      const { data, error } = await (supabase.rpc as any)('get_my_devices_sessions_mcpn');
-
-      if (!error && Array.isArray(data) && data.length > 0) {
-        const row = data[0];
-        setDbDeviceId(row.current_device_id || localDeviceId);
-        setPhone(row.telefone || '');
-        if (Array.isArray(row.sessions)) {
-          setSessions(row.sessions);
+      if (!error && data) {
+        const row = Array.isArray(data) ? data[0] : data;
+        if (row) {
+          setDbDeviceId(row.current_device_id || localDeviceId);
+          if (row.country_code) setCountryCode(row.country_code);
+          if (row.current_ip) setCurrentIp(row.current_ip);
+          if (Array.isArray(row.sessions)) {
+            setSessions(row.sessions);
+          }
         }
       } else {
-        // Fallback: consulta direta caso a RPC retorne vazio
-        const { data: userAcc } = await supabase
-          .from('sys_t500')
-          .select('metadados, telefone')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (userAcc) {
-          const meta = userAcc.metadados as Record<string, any> | null;
-          setDbDeviceId(meta?.device_id || localDeviceId);
-          setPhone(userAcc.telefone || '');
-        }
-
-        const { data: auditRows } = await supabase
-          .from('ip_audit_mcpn')
-          .select('id, ip_address, action_type, success, details, created_at')
-          .eq('usuario_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(15);
-
-        if (Array.isArray(auditRows)) {
-          setSessions(
-            auditRows.map((r: any) => ({
-              id: r.id,
-              ip_address: typeof r.ip_address === 'string' ? r.ip_address.replace(/\/32$/, '') : 'IP Seguro',
-              action_type: r.action_type || 'Sessão',
-              success: Boolean(r.success),
-              details: r.details,
-              created_at: r.created_at,
-            }))
-          );
-        }
+        logger.warn('DevicesPrivacy', 'RPC retornou vazio ou erro:', error);
       }
     } catch (err: any) {
       logger.error('DevicesPrivacy', 'Falha ao carregar dispositivos:', err);

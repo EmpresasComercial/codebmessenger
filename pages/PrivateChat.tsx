@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -262,45 +262,23 @@ export default function PrivateChat() {
     isFetchingRef.current = true;
     try {
       const { data, error } = await (supabase as any)
-        .from('sys_t110')
-        .select('*')
-        .or(`and(remetente_id.eq.${user.id},destinatario_id.eq.${contactId}),and(remetente_id.eq.${contactId},destinatario_id.eq.${user.id})`)
-        .order('created_at', { ascending: true })
-        .limit(150);
+        .rpc('get_chat_messages_mcpn', {
+          p_user1: user.id,
+          p_user2: contactId,
+          p_limit: 150,
+          p_offset: 0,
+          p_mark_as_read: true,
+        });
 
       if (error) throw error;
 
-      const serverMessages = data || [];
-      const unreadIncomingMessages = serverMessages.filter((message: Message) =>
-        message.remetente_id === contactId &&
-        message.destinatario_id === user.id &&
-        (message.lida === false || getMessageDetails(message.detalhes).lida === false)
-      );
-      const readMessageIds = new Set<string>();
-
-      await Promise.all(unreadIncomingMessages.map(async (message: Message) => {
-        const details = getMessageDetails(message.detalhes);
-        const { error: readError } = await (supabase as any)
-          .from('sys_t110')
-          .update({ detalhes: { ...details, lida: true } })
-          .eq('id', message.id)
-          .eq('destinatario_id', user.id);
-
-        if (readError) {
-          console.error(`Não foi possível marcar a mensagem ${message.id} como lida:`, readError);
-          return;
-        }
-        readMessageIds.add(message.id);
+      const serverMessages = (data || []).map((message: any) => ({
+        ...message,
+        lida: true,
+        detalhes: { ...getMessageDetails(message.detalhes), lida: true },
       }));
 
-      const messagesWithReadState = serverMessages.map((message: Message) => {
-        if (!readMessageIds.has(message.id)) return message;
-        return {
-          ...message,
-          lida: true,
-          detalhes: { ...getMessageDetails(message.detalhes), lida: true },
-        };
-      });
+      const messagesWithReadState = serverMessages;
 
       setMessages(prev => {
         const pendingLocal = prev.filter(m =>
@@ -456,22 +434,19 @@ export default function PrivateChat() {
     let isMounted = true;
     (async () => {
       try {
-        const { data, error } = await supabase
-          .from('sys_t500')
-          .select('*')
-          .eq('id', contactId)
-          .maybeSingle();
+        const { data, error } = await (supabase as any)
+          .rpc('get_sender_phone_mcpn', { p_uid: contactId, p_detailed: true });
 
-        if (!isMounted || error || !data) return;
+        if (!isMounted || error || !data || !data.id) return;
 
         const row = data as any;
         const nextProfile = {
-          name: row.nome_exibicao || row.nome || row.display_name || row.telefone || contactDisplayName || rawContactPhone || 'Contato',
+          name: row.nome_exibicao || row.telefone || contactDisplayName || rawContactPhone || 'Contato',
           phone: row.telefone || rawContactPhone || 'Não informado',
           avatarUrl: getProfileAvatarUrl(row),
-          hierarchy: row.nivel || row.level || row.hierarquia || row.hierarchy || contactLevel || 'L1',
-          invitedAt: row.data_convite || row.invited_at || row.convidado_em || row.invite_date || null,
-          registeredAt: row.data_cadastro || row.registered_at || row.criado_em || row.created_at || row.createdAt || null,
+          hierarchy: row.nivel || contactLevel || 'L1',
+          invitedAt: row.invited_at || null,
+          registeredAt: row.registered_at || null,
         };
 
         setContactDisplayName(nextProfile.name);
@@ -684,20 +659,26 @@ export default function PrivateChat() {
           ...(attachmentDetails || {})
         }
       };
-      console.log('[PrivateChat] Enviando para sys_t110:', {
+      console.log('[PrivateChat] Enviando mensagem via get_chat_messages_mcpn:', {
         hasImage: Boolean(imageToSend),
         hasDocument: Boolean(pdfToSend),
         hasVoiceMessage: Boolean(voiceAttachment),
         messageLength: msg.length,
       });
-      const { data: inserted, error } = await (supabase as any)
-        .from('sys_t110')
-        .insert([payload])
-        .select()
-        .single();
+      const { data: insertedList, error } = await (supabase as any)
+        .rpc('get_chat_messages_mcpn', {
+          p_user1: user.id,
+          p_user2: contactId,
+          p_send_message: msg,
+          p_detalhes: {
+            lida: false,
+            ...(attachmentDetails || {})
+          }
+        });
       if (error) {
         throw error;
       }
+      const inserted = Array.isArray(insertedList) ? insertedList[0] : insertedList;
       if (!inserted) {
         throw new Error('A persistência não confirmou a mensagem.');
       }

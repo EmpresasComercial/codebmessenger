@@ -1,4 +1,4 @@
-﻿export const zhTranslations: Record<string, string> = {
+export const zhTranslations: Record<string, string> = {
   'about.title': '简介',
   'about.who_we_are_title': '关于我们',
   'about.africa_title': 'Teggram-X 在非洲',
@@ -240,7 +240,6 @@
   'home.news': '新闻',
   'home.secure': '安全',
   'home.servers': '服务器',
-  'home.social_proof': '提款凭证',
   'home.support_btn': '联系支持',
   'home.support_cta': '联系我们的 Teggram-X Partner 官方支持团队，全天候为您服务。',
   'home.users': '用户',

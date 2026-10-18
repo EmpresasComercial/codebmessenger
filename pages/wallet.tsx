@@ -437,27 +437,16 @@ export default function wallet() {
 
   const fetchRecentHistory = useCallback(async () => {
     try {
-      // 1. Tenta buscar via RPC oficial de retiradas do usuário
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_my_withdrawals_mcpn');
+      // 1. Busca via RPC oficial otimizada de retiradas do usuário
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_my_withdrawals_mcpn', {
+        p_limit: 10,
+        p_offset: 0
+      });
       if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
-        return rpcData.slice(0, 10);
+        return rpcData;
       }
 
-      // 2. Busca pelo user_id autenticado diretamente na tabela retiradas_mcpn
-      const { data: userAuth } = await supabase.auth.getUser();
-      if (userAuth?.user?.id) {
-        const { data: tableData } = await supabase
-          .from('retiradas_mcpn')
-          .select('*')
-          .eq('user_id', userAuth.user.id)
-          .order('created_at', { ascending: false })
-          .limit(10);
-        if (Array.isArray(tableData) && tableData.length > 0) {
-          return tableData;
-        }
-      }
-
-      // 3. Fallback via histórico geral filtrando apenas 'retiradas'
+      // 2. Fallback via histórico geral filtrando apenas 'retiradas'
       const { data: genData } = await supabase.rpc('get_general_history_mcpn');
       if (Array.isArray(genData)) {
         const filtered = genData.filter((item: any) => item.type === 'retiradas');

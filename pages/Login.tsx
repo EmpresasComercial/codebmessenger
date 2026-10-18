@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 import { AsYouType, validatePhoneNumberLength, type CountryCode } from 'libphonenumber-js/max';
 import { Eye, EyeOff, Loader2, ChevronDown, ChevronLeft, Fingerprint } from 'lucide-react';
 import {
@@ -13,6 +14,29 @@ import {
   detectCountryFromPhone,
 } from '../lib/countries';
 import CountryModal from '../components/CountryModal';
+
+async function getFunctionErrorDetails(error: unknown): Promise<{ message: string; status?: number }> {
+  let message = error instanceof Error ? error.message : '';
+  let status: number | undefined;
+
+  if (error && typeof error === 'object' && 'context' in error && error.context instanceof Response) {
+    status = error.context.status;
+    try {
+      const body: unknown = await error.context.clone().json();
+      if (body && typeof body === 'object') {
+        if ('message' in body && typeof body.message === 'string') {
+          message = body.message;
+        } else if ('error' in body && typeof body.error === 'string') {
+          message = body.error;
+        }
+      }
+    } catch {
+      // Keep the SDK message when the function response is not JSON.
+    }
+  }
+
+  return { message, status };
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -129,20 +153,26 @@ export default function Login() {
       }
 
       if (error) {
+        const details = await getFunctionErrorDetails(error);
+        logger.error('Login', 'auth-proxy request failed', {
+          status: details.status,
+          message: details.message,
+        });
+
         if (
-          error.message?.includes('COUNTRY_MISMATCH') ||
-          error.message?.includes('pertence a outro país')
+          details.message.includes('COUNTRY_MISMATCH') ||
+          details.message.includes('pertence a outro país')
         ) {
           showToast(getPhoneNumberErrorMessage(selectedCountry), 'error');
         } else if (
-          error.message?.includes('Introduza um número de telefone válido') ||
-          error.message?.includes('Invalid phone number')
+          details.message.includes('Introduza um número de telefone válido') ||
+          details.message.includes('Invalid phone number')
         ) {
           showToast(getPhoneNumberErrorMessage(selectedCountry), 'error');
-        } else if (error.message?.includes('Invalid login credentials')) {
+        } else if (details.message.includes('Invalid login credentials')) {
           showToast(t('auth.password_error_wrong'), 'error');
         } else {
-          showToast(error.message || t('auth.login_error'), 'error');
+          showToast(t('auth.login_error'), 'error');
         }
         setIsSubmitting(false);
         return;
@@ -160,8 +190,9 @@ export default function Login() {
       } else {
         showToast(t('auth.login_error'), 'error');
       }
-    } catch (err: any) {
-      showToast(err.message || t('common.connection_error'), 'error');
+    } catch (err: unknown) {
+      logger.error('Login', 'Login could not be completed', err);
+      showToast(t('auth.login_error'), 'error');
     } finally {
       setIsSubmitting(false);
     }

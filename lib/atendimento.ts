@@ -24,20 +24,15 @@ export async function getAtendimentoLinks(): Promise<AtendimentoLinks | null> {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('atendimento_links')
-      .select('links')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const { data, error } = await (supabase.rpc as any)('get_atendimento_links_mcpn');
 
     if (error) {
       logger.error('atendimento', 'Erro ao consultar atendimento_links:', error);
       return cachedLinks;
     }
 
-    if (data?.links && typeof data.links === 'object') {
-      cachedLinks = data.links as AtendimentoLinks;
+    if (data && typeof data === 'object') {
+      cachedLinks = data as AtendimentoLinks;
       cacheTimestamp = now;
       return cachedLinks;
     }

@@ -609,41 +609,7 @@ export type Database = {
           },
         ]
       }
-      social_proofs_mcpn: {
-        Row: {
-          conteudo: Json
-          created_at: string
-          id: string
-          status: string
-          user_id: string
-          valor: number
-        }
-        Insert: {
-          conteudo?: Json
-          created_at?: string
-          id?: string
-          status?: string
-          user_id: string
-          valor: number
-        }
-        Update: {
-          conteudo?: Json
-          created_at?: string
-          id?: string
-          status?: string
-          user_id?: string
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_social_proof_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "sys_t500"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+
       usdt_config_mcpn: {
         Row: {
           ativo: boolean | null
@@ -802,17 +768,7 @@ export type Database = {
         Returns: undefined
       }
       generate_invite_code: { Args: never; Returns: string }
-      get_approved_social_proofs_mcpn: {
-        Args: never
-        Returns: {
-          comentario: string
-          created_at: string
-          id: string
-          imagem_url: string
-          user_id: string
-          valor: number
-        }[]
-      }
+
       get_available_products_mcpn: {
         Args: never
         Returns: {
@@ -845,6 +801,10 @@ export type Database = {
           nome_banco: string
           nome_proprietario: string
         }[]
+      }
+      get_atendimento_links_mcpn: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_collection_banks_mcpn: {
         Args: never
@@ -1041,10 +1001,7 @@ export type Database = {
         }
         Returns: Json
       }
-      submit_social_proof_mcpn: {
-        Args: { p_comentario: string; p_imagem_url: string; p_valor: number }
-        Returns: Json
-      }
+
       submit_support_feedback_mcpn: {
         Args: { p_mensagem: string }
         Returns: Json

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
@@ -32,41 +32,30 @@ export default function ContactsInvite() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [settingsRes, linksRes, accountRes, authUserRes] = await Promise.all([
-          supabase.rpc('get_my_settings_data_mcpn'),
-          supabase.from('atendimento_links').select('links').maybeSingle(),
-          supabase.rpc('get_my_account_data'),
-          supabase.auth.getUser()
-        ]);
-
-        let code = '';
-        if (settingsRes.data && settingsRes.data.length > 0 && settingsRes.data[0].invite_code) {
-          code = settingsRes.data[0].invite_code;
-        }
-        if (!code && accountRes.data && accountRes.data.length > 0) {
-          code = (accountRes.data[0] as any)?.codigo_meu_refferal || '';
-        }
-        if (!code && authUserRes.data?.user?.id) {
-          const { data: userRow } = await supabase
-            .from('sys_t500')
-            .select('codigo_meu_refferal')
-            .eq('id', authUserRes.data.user.id)
-            .maybeSingle();
-          if (userRow?.codigo_meu_refferal) code = userRow.codigo_meu_refferal;
-        }
-        if (code) setInviteCode(code);
-
-        const linksObj = linksRes.data?.links as Record<string, any> | null;
-        const appLink = linksObj?.app_atualizado || linksObj?.link_app_atualizado;
-        if (appLink) {
-          let raw = String(appLink).trim().replace(/\/$/, '');
-          if (raw && !/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
-          // Replace links using the old join-t.me domain with the official telegramas.cc domain.
-          if (raw.includes('join-t.me')) {
-            raw = 'https://www.telegramas.cc';
+        const { data: inviteData, error: inviteErr } = await supabase.rpc('get_invite_page_data_mcpn');
+        
+        if (!inviteErr && inviteData?.success) {
+          if (inviteData.invite_code) {
+            setInviteCode(inviteData.invite_code);
           }
-          if (raw) setBaseUrl(raw);
-        } else if (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')) {
+          if (inviteData.app_link) {
+            setBaseUrl(inviteData.app_link);
+          }
+          return;
+        }
+
+        // Fallback resiliente usando RPCs oficiais sem acesso direto a tabelas
+        const { data: settingsData } = await supabase.rpc('get_my_settings_data_mcpn');
+        if (settingsData && settingsData.length > 0 && settingsData[0].invite_code) {
+          setInviteCode(settingsData[0].invite_code);
+        } else {
+          const { data: accData } = await supabase.rpc('get_my_account_data');
+          if (accData && accData.length > 0 && (accData[0] as any)?.codigo_meu_refferal) {
+            setInviteCode((accData[0] as any).codigo_meu_refferal);
+          }
+        }
+
+        if (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')) {
           setBaseUrl(window.location.origin);
         } else {
           setBaseUrl('https://www.telegramas.cc');

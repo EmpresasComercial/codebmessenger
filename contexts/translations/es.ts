@@ -1,4 +1,4 @@
-﻿export const esTranslations: Record<string, string> = {
+export const esTranslations: Record<string, string> = {
   'about.title': 'Introducción',
   'about.who_we_are_title': 'Quienes somos',
   'about.africa_title': 'Teggram-X en África',
@@ -235,7 +235,6 @@
   'home.news': 'Noticias',
   'home.secure': 'Seguro',
   'home.servers': 'Servidores',
-  'home.social_proof': 'Pruebas de botín',
   'home.support_btn': 'Acceso a soporte',
   'home.support_cta': 'Habla con nuestro soporte oficial Teggram-X Partner disponible las 24 horas del día.',
   'home.users': 'Usuarios',
