@@ -19,6 +19,7 @@ import {
 import { useToast } from '../components/Toast';
 import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
 import ChatAttachmentPicker from '../components/ChatAttachmentPicker';
+import ChatsList from './ChatsList';
 import PhotoPreviewModal from '../components/PhotoPreviewModal';
 import AutoTranslatedText from '../components/AutoTranslatedText';
 import { supabase } from '../lib/supabase';
@@ -453,6 +454,7 @@ export default function PaymentBot() {
   const [copiedIban, setCopiedIban] = useState(false);
 
   const quickReplies = [
+    { shortcut: '/limpar', text: t('recharge.clear_conversation'), shortLabel: t('suggestion.clear') },
     { shortcut: '/depositar', text: t('recharge.cmd_deposit'), shortLabel: t('suggestion.recharge') },
     { shortcut: '/saldo', text: t('recharge.cmd_balance'), shortLabel: t('suggestion.balance') },
     { shortcut: '/bancos', text: t('recharge.cmd_banks'), shortLabel: t('suggestion.banks') },
@@ -474,7 +476,7 @@ export default function PaymentBot() {
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const hasInitialized = useRef(false);
 
   const restartConversation = useCallback(() => {
@@ -1030,7 +1032,13 @@ export default function PaymentBot() {
 
       recordChatActivity(session?.user.id, 'deposit-bot');
       setMessages((prev) => [...prev, userMsg]);
-      if (!textToSend) setInputText('');
+      if (!textToSend) {
+        setInputText('');
+        if (inputRef.current) {
+          inputRef.current.style.height = '24px';
+          inputRef.current.style.overflowY = 'hidden';
+        }
+      }
 
       const cleanCmd = rawInput.toLowerCase().replace(/^\//, '').trim();
 
@@ -1286,17 +1294,21 @@ export default function PaymentBot() {
 
   return (
     <div
-      className="w-full h-[100dvh] flex flex-col overflow-hidden select-none transition-colors !bg-none !bg-white dark:!bg-[#0e1621]"
+      className="relative flex h-[100dvh] w-full overflow-hidden select-none transition-colors !bg-none !bg-white dark:!bg-[#0e1621]"
       style={{ 
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Roboto', 'Segoe UI', sans-serif",
         backgroundColor: '#afc8af',
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2372a072' stroke-width='1.2' opacity='0.45'%3E%3Ccircle cx='30' cy='28' r='10'/%3E%3Cpath d='M22 20L19 13L25 19'/%3E%3Cpath d='M38 20L41 13L35 19'/%3E%3Ccircle cx='26' cy='25' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='34' cy='25' r='1.5' fill='%2372a072'/%3E%3Cpath d='M30 31L28 33L30 32L32 33Z'/%3E%3Cpath d='M19 27L24 28'/%3E%3Cpath d='M41 27L36 28'/%3E%3Cpath d='M164 15L167 7L170 15L178 15L172 20L174 28L167 23L160 28L162 20L156 15Z'/%3E%3Cpath d='M95 52C95 44 84 38 84 49C84 58 95 67 95 67C95 67 106 58 106 49C106 38 95 44 95 52Z'/%3E%3Ccircle cx='20' cy='112' r='7'/%3E%3Ccircle cx='10' cy='103' r='3.5'/%3E%3Ccircle cx='30' cy='103' r='3.5'/%3E%3Ccircle cx='14' cy='97' r='3'/%3E%3Ccircle cx='26' cy='97' r='3'/%3E%3Crect x='150' cy='100' width='26' height='19' rx='2'/%3E%3Crect x='148' y='93' width='30' height='9' rx='2'/%3E%3Cline x1='163' y1='93' x2='163' y2='119'/%3E%3Cpath d='M159 93C156 87 163 84 163 93'/%3E%3Cpath d='M167 93C170 87 163 84 163 93'/%3E%3Ccircle cx='163' cy='162' r='10'/%3E%3Cpath d='M155 154L152 146L158 153'/%3E%3Cpath d='M171 154L174 146L168 153'/%3E%3Ccircle cx='159' cy='160' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='167' cy='160' r='1.5' fill='%2372a072'/%3E%3Cpath d='M163 164L161 166L163 165L165 166Z'/%3E%3Cpath d='M152 162L158 163'/%3E%3Cpath d='M174 162L168 163'/%3E%3Cpath d='M57 143C57 138 51 135 51 140C51 145 57 150 57 150C57 150 63 145 63 140C63 135 57 138 57 143Z'/%3E%3Cpath d='M140 44C140 39 134 36 134 41C134 46 140 51 140 51C140 51 146 46 146 41C146 36 140 39 140 44Z'/%3E%3Cpath d='M64 72L66 64L68 72L76 72L70 77L72 85L66 81L60 85L62 77L56 72Z'/%3E%3Cpath d='M127 134L129 126L131 134L139 134L133 139L135 147L129 143L123 147L125 139L119 134Z'/%3E%3Cpath d='M95 110L95 128'/%3E%3Ccircle cx='92' cy='129' r='4'/%3E%3Cpath d='M95 110L106 106L106 120'/%3E%3Ccircle cx='103' cy='121' r='4'/%3E%3C/g%3E%3C/svg%3E")`
       }}
     >
+      <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
+        <ChatsList embedded />
+      </aside>
+      <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <header className="sticky top-0 z-40 flex h-[68px] w-full shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-3 sm:px-4 select-none pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
         <button
           onClick={() => navigate(-1)}
-          className="flex h-10 w-8 shrink-0 items-center justify-center text-black pointer-events-auto dark:text-white"
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-black pointer-events-auto dark:text-white md:hidden"
           aria-label={t('common.back')}
         >
           <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
@@ -1430,7 +1442,7 @@ export default function PaymentBot() {
         ref={mainChatRef}
         onScroll={handleScroll}
         onClick={() => setShowMenuDropdown(false)}
-        className="tg-theme-chat-canvas flex-1 overflow-y-auto bg-white px-2.5 pt-2 pb-40 space-y-4 relative select-text dark:bg-[#0e1621]"
+        className="tg-theme-chat-canvas min-h-0 flex-1 overflow-y-auto bg-white px-2.5 pt-2 pb-40 space-y-4 relative select-text dark:bg-[#0e1621]"
       >
         <div className="flex justify-center my-1 select-none">
           <span
@@ -1958,10 +1970,10 @@ export default function PaymentBot() {
       )}
 
       {/* ── FOOTER FLUTUANTE IDÊNTICO AO OFFICIAL CHANNEL ── */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 flex justify-center bg-white px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:bg-[#17212b]">
+      <footer className="absolute bottom-0 left-0 right-0 z-40 flex justify-center bg-white px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:bg-[#17212b]">
         <div className="flex w-full max-w-[650px] flex-col gap-2 pointer-events-auto">
           {!awaitingProof && depositAmount === null && (
-            <div className="w-full border-b border-[#e5e5e5] pb-4 dark:border-[#27313d]">
+            <div className="w-full pb-4">
               {!messages.some((message) => message.sender === 'user') && (
                 <p className="mb-3 text-center text-[14px] font-normal leading-5 text-[#707579] dark:text-[#a3adb8]">
                   {t('chat.suggestion_prompt')}
@@ -1983,24 +1995,23 @@ export default function PaymentBot() {
           )}
           <div className="flex w-full items-center gap-2 pt-1">
             {/* Campo de composição */}
-            <div className="flex min-h-[46px] min-w-0 flex-1 items-center rounded-full bg-[#f1f2f4] px-2.5 dark:bg-[#242f3d]">
-              <button
-                type="button"
-                onClick={restartConversation}
-                className="shrink-0 p-1 text-[#1877f2] transition-colors"
-                title="Reiniciar conversa"
-                aria-label="Reiniciar conversa"
-              >
-                <RotateCcw className="w-5 h-5" />
-              </button>
+            <div className={`chat-composer-field flex min-h-[46px] min-w-0 flex-1 items-center ${inputText.length > 0 ? 'rounded-[12px]' : 'rounded-[22px]'} bg-[#f1f2f4] px-2.5 transition-[border-radius] duration-150 dark:bg-[#242f3d]`}>
               {/* Campo de texto */}
-              <input
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
+                rows={1}
+                enterKeyHint="enter"
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  e.target.style.height = 'auto';
+                  const maxHeight = 120;
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, maxHeight)}px`;
+                  e.target.style.overflowY = e.target.scrollHeight > maxHeight ? 'auto' : 'hidden';
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    if (window.matchMedia('(pointer: coarse)').matches) return;
                     e.preventDefault();
                     handleSendMessage();
                   }
@@ -2012,7 +2023,7 @@ export default function PaymentBot() {
                     ? 'Nome do banco...'
                     : t('chat.message_placeholder')
                 }
-                className="flex-1 min-w-0 w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
+                className="chat-composer-input max-h-[120px] min-h-[24px] min-w-0 flex-1 resize-none overflow-y-hidden bg-transparent px-1 py-1 text-[16px] leading-snug font-normal text-black outline-none dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400"
               />
 
               <button
@@ -2038,6 +2049,7 @@ export default function PaymentBot() {
           </div>
         </div>
       </footer>
+      </div>
 
       {showAttachmentPicker && (
         <ChatAttachmentPicker

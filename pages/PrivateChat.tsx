@@ -11,8 +11,8 @@ import {
   Loader2, 
   Phone, 
   MoreVertical, 
-  Camera,
   Mic,
+  Paperclip,
   Zap,
   Reply,
   Copy,
@@ -38,6 +38,7 @@ import { isVerifiedManagerPhone } from '../lib/verifiedManager';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { renderMessageWithAllowedLinks } from '../lib/allowedMessageLinks';
 import { COMMUNITY_CHAT_AVATAR, DEFAULT_PROFILE_AVATAR, getProfileAvatarUrl } from '../lib/utils';
+import { useChatVisualViewport } from '../lib/useChatVisualViewport';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
@@ -163,6 +164,7 @@ export default function PrivateChat() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const chatViewportRef = useChatVisualViewport<HTMLDivElement>();
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
@@ -828,7 +830,7 @@ export default function PrivateChat() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-white dark:bg-[#0e1621]">
+    <div ref={chatViewportRef} className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-white dark:bg-[#0e1621]">
       <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
         <ChatsList embedded />
       </aside>
@@ -1417,7 +1419,7 @@ export default function PrivateChat() {
 
       {/* ── BARRA DE MENSAGEM FLUTUANTE ── */}
       <div
-        className={`absolute left-0 right-0 flex justify-center border-t border-[#e5e5e5] bg-white dark:border-[#27313d] dark:bg-[#17212b] ${showAttachmentPicker ? 'z-[320]' : 'z-40'}`}
+        className={`absolute left-0 right-0 flex justify-center bg-white dark:bg-[#17212b] ${showAttachmentPicker ? 'z-[320]' : 'z-40'}`}
         style={{
           bottom: showAttachmentPicker ? 'calc(min(220px, 45dvh) + 6px)' : 0,
           paddingLeft: 'max(12px, env(safe-area-inset-left, 12px))',
@@ -1481,8 +1483,13 @@ export default function PrivateChat() {
                 setIsComposerExpanded(nextHeight > 46);
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  if (window.matchMedia('(pointer: coarse)').matches) return;
+                  e.preventDefault();
+                  handleSend();
+                }
               }}
+              enterKeyHint="enter"
               placeholder={replyTo ? t('chat.reply_placeholder') : t('chat.message_placeholder')}
               className="chat-composer-input w-full min-h-[24px] min-w-0 px-2 py-2 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
               rows={1}
@@ -1496,7 +1503,7 @@ export default function PrivateChat() {
               title={t('attachment.open')}
               aria-label={t('attachment.open')}
             >
-              <Camera className="tg-theme-icon w-5 h-5" />
+              <Paperclip className="tg-theme-icon w-5 h-5" />
             </button>}
             <VoiceMessageComposer
               ref={voiceComposerRef}

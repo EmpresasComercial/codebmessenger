@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "../components/Toast";
 import { cn, DEFAULT_PROFILE_AVATAR, getProfileAvatarUrl } from "../lib/utils";
+import { useChatVisualViewport } from "../lib/useChatVisualViewport";
 import { 
   ChevronLeft, 
   X, 
@@ -28,6 +29,8 @@ import {
   Trash2,
   ChevronRight,
   Loader2,
+  Mic,
+  Paperclip,
   FileText,
   Link2,
 } from 'lucide-react';
@@ -909,6 +912,7 @@ export default function grupochat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const chatViewportRef = useChatVisualViewport<HTMLDivElement>();
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
@@ -1893,7 +1897,7 @@ export default function grupochat() {
   })).values());
 
   return (
-    <div className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-white dark:bg-[#0e1621]">
+    <div ref={chatViewportRef} className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-white dark:bg-[#0e1621]">
       <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
         <ChatsList embedded />
       </aside>
@@ -2081,7 +2085,7 @@ export default function grupochat() {
 
       <div
         ref={composerRef}
-        className={`fixed left-0 right-0 flex justify-center border-t border-[#e5e5e5] bg-white px-3 py-2.5 pb-[calc(10px+env(safe-area-inset-bottom,0px))] dark:border-[#27313d] dark:bg-[#17212b] md:absolute ${showAttachmentPicker ? 'z-[320]' : 'bottom-0 z-40'}`}
+        className={`fixed left-0 right-0 flex justify-center bg-white px-3 py-2.5 pb-[calc(10px+env(safe-area-inset-bottom,0px))] dark:bg-[#17212b] md:absolute ${showAttachmentPicker ? 'z-[320]' : 'bottom-0 z-40'}`}
         style={{ bottom: showAttachmentPicker ? 'calc(min(220px, 45dvh) + 6px)' : undefined }}
       >
         <div className="flex w-full flex-col gap-1.5">
@@ -2153,48 +2157,6 @@ export default function grupochat() {
           </AnimatePresence>
 
           <div className="flex items-end gap-2">
-            {!voiceComposerActive && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowAttachmentPicker(true)}
-                  disabled={isSending}
-                  className="flex h-10 w-9 shrink-0 items-center justify-center text-[#1877f2] active:scale-90"
-                  title={t('attachment.open')}
-                  aria-label={t('attachment.open')}
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="h-[25px] w-[25px]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <rect x="2.5" y="3.5" width="19" height="17" rx="2.5" stroke="currentColor" strokeWidth="2.4" />
-                    <circle cx="8.5" cy="9" r="1.7" fill="currentColor" />
-                    <path d="m4.5 18 5.1-5.1a1.7 1.7 0 0 1 2.4 0l1.3 1.3 1.8-1.8a1.7 1.7 0 0 1 2.4 0l2 2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void voiceComposerRef.current?.mainAction()}
-                  disabled={isSending}
-                  className="flex h-10 w-9 shrink-0 items-center justify-center text-[#1877f2] active:scale-90 disabled:opacity-50"
-                  title={t('chat.voice_record')}
-                  aria-label={t('chat.voice_record')}
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="h-[25px] w-[25px]"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
-                    <path d="M17 11a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z" />
-                  </svg>
-                </button>
-              </>
-            )}
-
             <div className={`chat-composer-field flex min-w-0 flex-1 ${isComposerExpanded && !voiceComposerActive ? 'items-end' : 'items-center'} ${publicInput.length > 0 && !voiceComposerActive ? 'rounded-[12px]' : 'rounded-[22px]'} transition-[border-radius] duration-150 bg-[#f1f2f4] px-3 py-1.5 min-h-[46px] dark:bg-[#242f3d]`}>
               {!voiceComposerActive && <>
 
@@ -2242,6 +2204,7 @@ export default function grupochat() {
                 }}
                 onKeyDown={(e) => { 
                   if (e.key === 'Enter' && !e.shiftKey) { 
+                    if (window.matchMedia('(pointer: coarse)').matches) return;
                     e.preventDefault(); 
                     handleSend(); 
                   } else if (e.key === 'Escape' && editingMessage) {
@@ -2251,11 +2214,22 @@ export default function grupochat() {
                     resetMessageInput();
                   }
                 }}
+                enterKeyHint="enter"
                 placeholder={editingMessage ? "Editar mensagem..." : t('chat.message_placeholder')}
                 className="chat-composer-input w-full min-h-[24px] min-w-0 px-1 py-1.5 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] [field-sizing:content] text-[#111111] placeholder:text-[#7b7b7b] font-normal leading-snug dark:text-white dark:placeholder:text-[#a0aab5]"
                 rows={1}
               />
 
+              <button
+                type="button"
+                onClick={() => setShowAttachmentPicker(true)}
+                disabled={isSending}
+                className="shrink-0 cursor-pointer p-1 text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50"
+                title={t('attachment.open')}
+                aria-label={t('attachment.open')}
+              >
+                <Paperclip className="tg-theme-icon h-5 w-5 -rotate-45" />
+              </button>
               </>}
               <VoiceMessageComposer
                 ref={voiceComposerRef}
@@ -2285,16 +2259,20 @@ export default function grupochat() {
             {!voiceComposerActive && <button
               type="button"
               onClick={() => {
-                if (editingMessage || publicInput.trim() || imagePreview || pdfPreview) void handleSend();
+                if (editingMessage || publicInput.trim() || imagePreview || pdfPreview) {
+                  void handleSend();
+                } else {
+                  void voiceComposerRef.current?.mainAction();
+                }
               }}
-              disabled={isSending || (!publicInput.trim() && !imagePreview && !pdfPreview)}
+              disabled={isSending}
               className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50"
-              title={editingMessage ? "Salvar alterações" : t('common.send')}
-              aria-label={editingMessage ? "Salvar alterações" : t('common.send')}
+              title={editingMessage ? "Salvar alterações" : publicInput.trim() || imagePreview || pdfPreview ? t('common.send') : t('chat.voice_record')}
+              aria-label={editingMessage ? "Salvar alterações" : publicInput.trim() || imagePreview || pdfPreview ? t('common.send') : t('chat.voice_record')}
             >
               {editingMessage ? (
                 <Check className="h-6 w-6 stroke-[2.5]" />
-              ) : (
+              ) : publicInput.trim() || imagePreview || pdfPreview ? (
                 <svg
                   aria-hidden="true"
                   className="h-[27px] w-[27px]"
@@ -2303,6 +2281,8 @@ export default function grupochat() {
                 >
                   <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
                 </svg>
+              ) : (
+                <Mic className="tg-theme-icon h-5 w-5" />
               )}
             </button>}
           </div>
