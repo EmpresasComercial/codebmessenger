@@ -11,7 +11,6 @@ import {
   Loader2, 
   Phone, 
   MoreVertical, 
-  Paperclip, 
   Camera,
   Mic,
   Zap,
@@ -26,6 +25,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
+import PhotoPreviewModal from '../components/PhotoPreviewModal';
+import ChatAttachmentPicker from '../components/ChatAttachmentPicker';
 import { VoiceMessageComposer, VoiceMessagePlayer, type VoiceMessageComposerHandle } from '../components/VoiceMessage';
 import { deleteVoiceMessage, uploadVoiceMessage } from '../lib/voiceMessages';
 import AutoTranslatedText from '../components/AutoTranslatedText';
@@ -164,17 +165,16 @@ export default function PrivateChat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
   const [pdfPreview, setPdfPreview] = useState<{ name: string; url: string; sizeBytes: number } | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const selectPrivatePhoto = (file: File | undefined) => {
     if (!file) return;
-    e.target.value = '';
     if (!file.type.startsWith('image/')) {
       showToast(t('chat.image_invalid'), 'error');
       return;
@@ -183,23 +183,25 @@ export default function PrivateChat() {
       showToast(t('chat.image_too_large'), 'error');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      if (typeof ev.target?.result !== 'string') {
-        showToast(t('chat.image_open_failed'), 'error');
-        return;
-      }
-      setImagePreview(ev.target.result);
-      setPdfPreview(null);
-    };
-    reader.onerror = () => showToast(t('chat.image_open_failed'), 'error');
-    reader.readAsDataURL(file);
+    setImagePreview(URL.createObjectURL(file));
+    setSelectedImageFile(file);
+    setSelectedPdfFile(null);
+    setPdfPreview(null);
   };
 
-  const handlePdfSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  useEffect(() => {
+    if (!imagePreview?.startsWith('blob:')) return;
+    return () => URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
+
+  const closeImagePreview = () => {
+    setImagePreview(null);
+    setSelectedImageFile(null);
+    setSelectedPdfFile(null);
+  };
+
+  const handlePdfSelect = async (file: File | undefined) => {
     if (!file) return;
-    e.target.value = '';
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
       showToast(t('chat.pdf_invalid_type'), 'error');
       return;
@@ -220,17 +222,10 @@ export default function PrivateChat() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== 'string') {
-        showToast(t('chat.pdf_open_failed'), 'error');
-        return;
-      }
-      setPdfPreview({ name: file.name, url: reader.result, sizeBytes: file.size });
-      setImagePreview(null);
-    };
-    reader.onerror = () => showToast(t('chat.pdf_open_failed'), 'error');
-    reader.readAsDataURL(file);
+    setSelectedPdfFile(file);
+    setPdfPreview(null);
+    setImagePreview(null);
+    setSelectedImageFile(null);
   };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
@@ -586,13 +581,25 @@ export default function PrivateChat() {
   };
 
   // ── Send Message ──────────────────────────────────────────────────────
-  const handleSend = async (overrideText?: string, voiceAttachment?: VoiceAttachment) => {
-    const textToSend = overrideText !== undefined ? overrideText : inputText;
-    if ((!textToSend.trim() && !imagePreview && !pdfPreview && !voiceAttachment) || !user || !contactId || isSending) return;
+  const handleSend = async (
+    overrideText?: string,
+    voiceAttachment?: VoiceAttachment,
+    attachmentOverride?: {
+      type: 'image' | 'document';
+      dataUrl: string;
+      caption: string;
+      name: string;
+      sizeBytes: number;
+    }
+  ) => {
+    const textToSend = attachmentOverride?.caption ?? (overrideText !== undefined ? overrideText : inputText);
+    const imageToSend = attachmentOverride?.type === 'image' ? attachmentOverride.dataUrl : imagePreview;
+    if ((!textToSend.trim() && !imageToSend && !pdfPreview && !voiceAttachment && !attachmentOverride) || !user || !contactId || isSending) return;
 
     const msg = textToSend.trim() || (voiceAttachment ? t('chat.voice_message') : '');
-    const imageToSend = imagePreview;
-    const pdfToSend = pdfPreview;
+    const pdfToSend = attachmentOverride?.type === 'document'
+      ? { name: attachmentOverride.name, url: attachmentOverride.dataUrl, sizeBytes: attachmentOverride.sizeBytes }
+      : pdfPreview;
     const attachmentDetails = imageToSend
       ? { imagem_url: imageToSend, tipo_midia: 'imagem' }
       : pdfToSend
@@ -613,6 +620,8 @@ export default function PrivateChat() {
 
     setInputText('');
     setImagePreview(null);
+    setSelectedImageFile(null);
+    setSelectedPdfFile(null);
     setPdfPreview(null);
     setReplyTo(null);
     setIsComposerExpanded(false);
@@ -673,7 +682,12 @@ export default function PrivateChat() {
           ...(attachmentDetails || {})
         }
       };
-      console.log('[PrivateChat] Enviando para sys_t110:', payload);
+      console.log('[PrivateChat] Enviando para sys_t110:', {
+        hasImage: Boolean(imageToSend),
+        hasDocument: Boolean(pdfToSend),
+        hasVoiceMessage: Boolean(voiceAttachment),
+        messageLength: msg.length,
+      });
       const { data: inserted, error } = await (supabase as any)
         .from('sys_t110')
         .insert([payload])
@@ -1403,8 +1417,9 @@ export default function PrivateChat() {
 
       {/* ── BARRA DE MENSAGEM FLUTUANTE ── */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-40 flex justify-center border-t border-[#e5e5e5] bg-white dark:border-[#27313d] dark:bg-[#17212b]"
+        className={`absolute left-0 right-0 flex justify-center border-t border-[#e5e5e5] bg-white dark:border-[#27313d] dark:bg-[#17212b] ${showAttachmentPicker ? 'z-[320]' : 'z-40'}`}
         style={{
+          bottom: showAttachmentPicker ? 'calc(min(220px, 45dvh) + 6px)' : 0,
           paddingLeft: 'max(12px, env(safe-area-inset-left, 12px))',
           paddingRight: 'max(12px, env(safe-area-inset-right, 12px))',
           paddingBottom: 'max(10px, env(safe-area-inset-bottom, 10px))',
@@ -1473,38 +1488,13 @@ export default function PrivateChat() {
               rows={1}
             />}
 
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageSelect}
-              accept="image/*"
-              className="hidden"
-            />
-            <input
-              type="file"
-              ref={pdfInputRef}
-              onChange={handlePdfSelect}
-              accept="application/pdf,.pdf"
-              className="hidden"
-            />
-
             {!voiceComposerActive && <button
               type="button"
-              onClick={() => pdfInputRef.current?.click()}
+              onClick={() => setShowAttachmentPicker(true)}
               disabled={voiceComposerActive}
               className="shrink-0 cursor-pointer p-1 text-[#1877f2] transition-transform active:scale-90"
-              title={t('chat.attach_pdf')}
-              aria-label={t('chat.attach_pdf')}
-            >
-              <Paperclip className="tg-theme-icon w-5 h-5" />
-            </button>}
-            {!voiceComposerActive && <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={voiceComposerActive}
-              className="shrink-0 cursor-pointer p-1 text-[#1877f2] transition-transform active:scale-90"
-              title={t('chat.choose_photo')}
-              aria-label={t('chat.choose_photo')}
+              title={t('attachment.open')}
+              aria-label={t('attachment.open')}
             >
               <Camera className="tg-theme-icon w-5 h-5" />
             </button>}
@@ -1552,6 +1542,60 @@ export default function PrivateChat() {
           </button>
         </div>
       </div>
+
+      {showAttachmentPicker && (
+        <ChatAttachmentPicker
+          translate={t}
+          maxImageSizeBytes={5 * 1024 * 1024}
+          onClose={() => setShowAttachmentPicker(false)}
+          onSelectImage={selectPrivatePhoto}
+          onSelectDocument={(file) => void handlePdfSelect(file)}
+          onError={showToast}
+        />
+      )}
+
+      {selectedPdfFile && (
+        <PhotoPreviewModal
+          key={`document:${selectedPdfFile.name}:${selectedPdfFile.size}:${selectedPdfFile.lastModified}`}
+          file={selectedPdfFile}
+          type="document"
+          translate={t}
+          disabled={isSending}
+          onCaptionChange={() => sendTypingBroadcast()}
+          onReplace={(file) => void handlePdfSelect(file)}
+          onCancel={closeImagePreview}
+          onSend={async (dataUrl, caption) => {
+            await handleSend(undefined, undefined, {
+              type: 'document',
+              dataUrl,
+              caption,
+              name: selectedPdfFile.name,
+              sizeBytes: selectedPdfFile.size,
+            });
+          }}
+        />
+      )}
+
+      {selectedImageFile && (
+        <PhotoPreviewModal
+          key={`${selectedImageFile.name}:${selectedImageFile.size}:${selectedImageFile.lastModified}`}
+          file={selectedImageFile}
+          translate={t}
+          disabled={isSending}
+          onCaptionChange={() => sendTypingBroadcast()}
+          onReplace={selectPrivatePhoto}
+          onCancel={closeImagePreview}
+          onSend={async (dataUrl, caption) => {
+            await handleSend(undefined, undefined, {
+              type: 'image',
+              dataUrl,
+              caption,
+              name: selectedImageFile.name,
+              sizeBytes: selectedImageFile.size,
+            });
+          }}
+        />
+      )}
 
       {/* ── Modal de Zoom da Imagem (Visualização Completa) ── */}
       {zoomedImage && (

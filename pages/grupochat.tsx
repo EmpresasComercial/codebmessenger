@@ -34,6 +34,8 @@ import {
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import ChatsList from "./ChatsList";
 import PdfDownloadCard, { formatFileSize } from "../components/PdfDownloadCard";
+import PhotoPreviewModal from "../components/PhotoPreviewModal";
+import ChatAttachmentPicker from "../components/ChatAttachmentPicker";
 import { VoiceMessageComposer, VoiceMessagePlayer, type VoiceMessageComposerHandle } from "../components/VoiceMessage";
 import { deleteVoiceMessage, uploadVoiceMessage } from "../lib/voiceMessages";
 import AutoTranslatedText from "../components/AutoTranslatedText";
@@ -179,52 +181,6 @@ const formatDateLabel = (dateStr: string) => {
   if (days === 0) return "Hoje";
   if (days === 1) return "Ontem";
   return d.toLocaleDateString("pt-PT", { day: "numeric", month: "long" });
-};
-
-const compressImage = (file: File, maxWidth = 1280, maxHeight = 1280, quality = 0.75): Promise<string> => {
-  return new Promise((resolve) => {
-    if (!file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.readAsDataURL(file);
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth || height > maxHeight) {
-          if (width > height) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          } else {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(e.target?.result as string);
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = () => resolve(e.target?.result as string);
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => resolve('');
-    reader.readAsDataURL(file);
-  });
 };
 
 const phoneCache: Record<string, SenderProfile> = {};
@@ -774,6 +730,8 @@ export default function grupochat() {
   const typingChannelRef = useRef<any>(null);
   const groupListTypingChannelRef = useRef<any>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
   const [pdfPreview, setPdfPreview] = useState<{ name: string; url: string; sizeBytes: number } | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
@@ -952,10 +910,36 @@ export default function grupochat() {
   const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   // IDs de mensagens com reações em voo (impede o realtime de sobrescrever estado otimista)
   const pendingReactionIds = useRef<Set<number>>(new Set());
+
+  const resizeMessageInput = useCallback((textarea: HTMLTextAreaElement) => {
+    const maxHeight = 120;
+
+    if (CSS.supports('field-sizing', 'content')) {
+      textarea.style.height = '';
+    } else {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+    }
+
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    setIsComposerExpanded(textarea.scrollHeight > 46);
+  }, []);
+
+  const resetMessageInput = useCallback(() => {
+    if (!inputRef.current) return;
+    inputRef.current.value = '';
+    inputRef.current.style.height = '';
+    inputRef.current.style.overflowY = 'hidden';
+    setIsComposerExpanded(false);
+  }, []);
+
+  useEffect(() => {
+    if (inputRef.current) resizeMessageInput(inputRef.current);
+  }, [publicInput, resizeMessageInput]);
 
   useEffect(() => {
     const composer = composerRef.current;
@@ -1461,10 +1445,8 @@ export default function grupochat() {
     return null;
   };
 
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const selectGroupPhoto = (file: File | undefined) => {
     if (!file) return;
-    e.target.value = "";
     if (!file.type.startsWith('image/')) {
       showToast("Selecione uma imagem válida.", "error");
       return;
@@ -1473,29 +1455,14 @@ export default function grupochat() {
       showToast("Máximo 10MB.", "error");
       return;
     }
-    try {
-      const compressed = await compressImage(file, 1280, 1280, 0.75);
-      setImagePreview(compressed);
-      setPdfPreview(null);
-    } catch {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (typeof ev.target?.result === 'string') {
-          setImagePreview(ev.target.result);
-          setPdfPreview(null);
-        } else {
-          showToast("Não foi possível abrir a imagem selecionada.", "error");
-        }
-      };
-      reader.onerror = () => showToast("Não foi possível abrir a imagem selecionada.", "error");
-      reader.readAsDataURL(file);
-    }
+    setImagePreview(URL.createObjectURL(file));
+    setSelectedImageFile(file);
+    setSelectedPdfFile(null);
+    setPdfPreview(null);
   };
 
-  const handlePdfSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handlePdfSelect = async (file: File | undefined) => {
     if (!file) return;
-    e.target.value = "";
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
       showToast("Selecione um documento PDF.", "error");
       return;
@@ -1516,28 +1483,40 @@ export default function grupochat() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== 'string') {
-        showToast("Não foi possível abrir o PDF selecionado.", "error");
-        return;
-      }
-      setPdfPreview({ name: file.name, url: reader.result, sizeBytes: file.size });
-      setImagePreview(null);
-    };
-    reader.onerror = () => {
-      showToast("Não foi possível abrir o PDF selecionado.", "error");
-    };
-    reader.readAsDataURL(file);
+    setSelectedPdfFile(file);
+    setPdfPreview(null);
+    setImagePreview(null);
+    setSelectedImageFile(null);
   };
 
-  const handleSend = async (voiceAttachment?: VoiceAttachment) => {
-    if (!user || (!publicInput.trim() && !imagePreview && !pdfPreview && !voiceAttachment)) return;
-    if (publicInput.trim()) {
-      const err = validateMessage(publicInput.trim());
+  const closeImagePreview = () => {
+    setImagePreview(null);
+    setSelectedImageFile(null);
+    setSelectedPdfFile(null);
+  };
+
+  useEffect(() => {
+    if (!imagePreview?.startsWith('blob:')) return;
+    return () => URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
+
+  const handleSend = async (
+    voiceAttachment?: VoiceAttachment,
+    attachmentOverride?: {
+      type: 'image' | 'document';
+      dataUrl: string;
+      caption: string;
+      name: string;
+      sizeBytes: number;
+    }
+  ) => {
+    const messageText = attachmentOverride?.caption ?? publicInput;
+    if (!user || (!messageText.trim() && !imagePreview && !pdfPreview && !voiceAttachment && !attachmentOverride)) return;
+    if (messageText.trim()) {
+      const err = validateMessage(messageText.trim());
       if (err) { showToast(err, "error"); return; }
     }
-    const tempMsg = publicInput.trim() || (voiceAttachment ? t('chat.voice_message') : '');
+    const tempMsg = messageText.trim() || (voiceAttachment ? t('chat.voice_message') : '');
 
     // ── Fluxo de Edição de Mensagem Existente ──
     if (editingMessage) {
@@ -1553,12 +1532,7 @@ export default function grupochat() {
 
       setEditingMessage(null);
       setPublicInput("");
-      setIsComposerExpanded(false);
-      if (inputRef.current) {
-        inputRef.current.value = "";
-        inputRef.current.style.height = "auto";
-        inputRef.current.style.overflowY = "hidden";
-      }
+      resetMessageInput();
 
       // Atualização otimista local imediata
       setPublicMessages(prev => prev.map(m => {
@@ -1597,8 +1571,10 @@ export default function grupochat() {
       return;
     }
 
-    const tempImg = imagePreview;
-    const tempPdf = pdfPreview;
+    const tempImg = attachmentOverride?.type === 'image' ? attachmentOverride.dataUrl : imagePreview;
+    const tempPdf = attachmentOverride?.type === 'document'
+      ? { name: attachmentOverride.name, url: attachmentOverride.dataUrl, sizeBytes: attachmentOverride.sizeBytes }
+      : pdfPreview;
     const tempReply = replyTo;
     const detalhes: Record<string, any> = {};
     if (typeof user?.user_metadata?.country_code === "string") {
@@ -1623,14 +1599,13 @@ export default function grupochat() {
     }
 
     setPublicInput("");
-    setIsComposerExpanded(false);
     setImagePreview(null);
+    setSelectedImageFile(null);
+    setSelectedPdfFile(null);
     setPdfPreview(null);
     setReplyTo(null);
+    resetMessageInput();
     if (inputRef.current) {
-      inputRef.current.value = "";
-      inputRef.current.style.height = "auto";
-      inputRef.current.style.overflowY = "hidden";
       inputRef.current.focus();
     }
 
@@ -1654,7 +1629,12 @@ export default function grupochat() {
         mensagem: tempMsg || " ",
         detalhes,
       };
-      console.log('[CommunityChat] Enviando para chat_gruop:', payload);
+      console.log('[CommunityChat] Enviando para chat_gruop:', {
+        hasImage: Boolean(tempImg),
+        hasDocument: Boolean(tempPdf),
+        hasVoiceMessage: Boolean(voiceAttachment),
+        captionLength: messageText.length,
+      });
       const { data: insertedMsg, error } = await supabase
         .from("chat_gruop")
         .insert([payload])
@@ -1844,12 +1824,7 @@ export default function grupochat() {
         setTimeout(() => {
           if (inputRef.current) {
             inputRef.current.focus();
-            inputRef.current.style.height = "auto";
-            const maxHeight = 120;
-            const nextHeight = Math.min(inputRef.current.scrollHeight, maxHeight);
-            inputRef.current.style.height = `${nextHeight}px`;
-            inputRef.current.style.overflowY = inputRef.current.scrollHeight > maxHeight ? "auto" : "hidden";
-            setIsComposerExpanded(nextHeight > 46);
+            resizeMessageInput(inputRef.current);
             inputRef.current.selectionStart = inputRef.current.value.length;
             inputRef.current.selectionEnd = inputRef.current.value.length;
           }
@@ -2104,8 +2079,12 @@ export default function grupochat() {
         )}
       </AnimatePresence>
 
-      <div className="absolute bottom-0 left-0 right-0 z-40 flex justify-center border-t border-[#e5e5e5] bg-white px-3 py-2.5 dark:border-[#27313d] dark:bg-[#17212b]">
-        <div ref={composerRef} className="flex w-full flex-col gap-1.5">
+      <div
+        ref={composerRef}
+        className={`fixed left-0 right-0 flex justify-center border-t border-[#e5e5e5] bg-white px-3 py-2.5 pb-[calc(10px+env(safe-area-inset-bottom,0px))] dark:border-[#27313d] dark:bg-[#17212b] md:absolute ${showAttachmentPicker ? 'z-[320]' : 'bottom-0 z-40'}`}
+        style={{ bottom: showAttachmentPicker ? 'calc(min(220px, 45dvh) + 6px)' : undefined }}
+      >
+        <div className="flex w-full flex-col gap-1.5">
           <AnimatePresence>
             {editingMessage && (
               <motion.div 
@@ -2131,8 +2110,7 @@ export default function grupochat() {
                     setEditingMessage(null);
                     setPublicInput("");
                     if (inputRef.current) {
-                      inputRef.current.value = "";
-                      inputRef.current.style.height = "auto";
+                      resetMessageInput();
                     }
                   }} 
                   className="text-gray-400 hover:text-black p-1 cursor-pointer shrink-0"
@@ -2175,29 +2153,15 @@ export default function grupochat() {
           </AnimatePresence>
 
           <div className="flex items-end gap-2">
-            <input 
-              type="file" 
-              accept="image/*,application/pdf,.pdf"
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={(event) => {
-                const file = event.currentTarget.files?.[0];
-                if (file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
-                  void handlePdfSelect(event);
-                } else {
-                  void handleImageSelect(event);
-                }
-              }}
-            />
-
             {!voiceComposerActive && (
               <>
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => setShowAttachmentPicker(true)}
+                  disabled={isSending}
                   className="flex h-10 w-9 shrink-0 items-center justify-center text-[#1877f2] active:scale-90"
-                  title="Escolher foto"
-                  aria-label="Escolher foto"
+                  title={t('attachment.open')}
+                  aria-label={t('attachment.open')}
                 >
                   <svg
                     aria-hidden="true"
@@ -2273,12 +2237,7 @@ export default function grupochat() {
                 disabled={voiceComposerActive}
                 onChange={(e) => {
                   setPublicInput(e.target.value);
-                  e.target.style.height = "auto";
-                  const maxHeight = 120;
-                  const nextHeight = Math.min(e.target.scrollHeight, maxHeight);
-                  e.target.style.height = `${nextHeight}px`;
-                  e.target.style.overflowY = e.target.scrollHeight > maxHeight ? "auto" : "hidden";
-                  setIsComposerExpanded(nextHeight > 46);
+                  resizeMessageInput(e.currentTarget);
                   sendTypingBroadcast();
                 }}
                 onKeyDown={(e) => { 
@@ -2289,16 +2248,11 @@ export default function grupochat() {
                     e.preventDefault();
                     setEditingMessage(null);
                     setPublicInput("");
-                    setIsComposerExpanded(false);
-                    if (inputRef.current) {
-                      inputRef.current.value = "";
-                      inputRef.current.style.height = "auto";
-                      inputRef.current.style.overflowY = "hidden";
-                    }
+                    resetMessageInput();
                   }
                 }}
                 placeholder={editingMessage ? "Editar mensagem..." : t('chat.message_placeholder')}
-                className="w-full min-h-[24px] min-w-0 px-1 py-1.5 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] text-[#111111] placeholder:text-[#7b7b7b] font-normal leading-snug dark:text-white dark:placeholder:text-[#a0aab5]"
+                className="w-full min-h-[24px] min-w-0 px-1 py-1.5 text-[16px] bg-transparent resize-none overflow-y-hidden outline-none max-h-[120px] [field-sizing:content] text-[#111111] placeholder:text-[#7b7b7b] font-normal leading-snug dark:text-white dark:placeholder:text-[#a0aab5]"
                 rows={1}
               />
 
@@ -2354,6 +2308,60 @@ export default function grupochat() {
           </div>
         </div>
       </div>
+
+      {showAttachmentPicker && (
+        <ChatAttachmentPicker
+          translate={t}
+          maxImageSizeBytes={10 * 1024 * 1024}
+          onClose={() => setShowAttachmentPicker(false)}
+          onSelectImage={selectGroupPhoto}
+          onSelectDocument={(file) => void handlePdfSelect(file)}
+          onError={showToast}
+        />
+      )}
+
+      {selectedPdfFile && (
+        <PhotoPreviewModal
+          key={`document:${selectedPdfFile.name}:${selectedPdfFile.size}:${selectedPdfFile.lastModified}`}
+          file={selectedPdfFile}
+          type="document"
+          translate={t}
+          disabled={isSending}
+          onCaptionChange={() => sendTypingBroadcast()}
+          onReplace={(file) => void handlePdfSelect(file)}
+          onCancel={closeImagePreview}
+          onSend={async (dataUrl, caption) => {
+            await handleSend(undefined, {
+              type: 'document',
+              dataUrl,
+              caption,
+              name: selectedPdfFile.name,
+              sizeBytes: selectedPdfFile.size,
+            });
+          }}
+        />
+      )}
+
+      {selectedImageFile && (
+        <PhotoPreviewModal
+          key={`${selectedImageFile.name}:${selectedImageFile.size}:${selectedImageFile.lastModified}`}
+          file={selectedImageFile}
+          translate={t}
+          disabled={isSending}
+          onCaptionChange={() => sendTypingBroadcast()}
+          onReplace={selectGroupPhoto}
+          onCancel={closeImagePreview}
+          onSend={async (dataUrl, caption) => {
+            await handleSend(undefined, {
+              type: 'image',
+              dataUrl,
+              caption,
+              name: selectedImageFile.name,
+              sizeBytes: selectedImageFile.size,
+            });
+          }}
+        />
+      )}
 
       <AnimatePresence>
         {showInfo && (

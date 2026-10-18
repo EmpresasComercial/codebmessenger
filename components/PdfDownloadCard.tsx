@@ -3,6 +3,7 @@ import { Download } from 'lucide-react';
 import { useToast } from './Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { logger } from '../lib/logger';
+import PdfFileIcon from './PdfFileIcon';
 
 interface PdfDownloadCardProps {
   name: string;
@@ -58,23 +59,6 @@ export default function PdfDownloadCard({
     const objectUrl = downloadedObjectUrlRef.current;
     if (objectUrl) window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
   }, []);
-
-  const PdfLogo = (
-    <svg viewBox="0 0 64 64" className="h-full w-full rounded-[12px]" aria-hidden="true">
-      <path d="M11 0h34l19 19v34a11 11 0 0 1-11 11H11A11 11 0 0 1 0 53V11A11 11 0 0 1 11 0Z" fill="#eef1f5" />
-      <path d="M45 0v15a4 4 0 0 0 4 4h15" fill="#d6dce5" />
-      <path
-        d="M29 10c3.5 6.5-2.5 19.5-10 28-4.5 5-7.5 8.5-5.5 10.5 2.5 2.5 8.5-2 14.5-10 6-8 10.5-18 8.5-23.5-1-3-4.5-3.5-5.5-.5-1.5 4 3 13.5 8 19.5 4 5 10 8 13 6 2.5-1.5 1-4.5-3-5.5-6-1.5-17 1-27.5 5"
-        fill="none"
-        stroke="#ed1c2e"
-        strokeWidth="3.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M0 43h64v10a11 11 0 0 1-11 11H11A11 11 0 0 1 0 53V43Z" fill="#ed1c2e" />
-      <text x="32" y="57" textAnchor="middle" fill="#fff" fontFamily="Arial, sans-serif" fontSize="14" fontWeight="700">PDF</text>
-    </svg>
-  );
 
   const handleDownload = async () => {
     if (downloaded && downloadedObjectUrlRef.current) {
@@ -170,7 +154,7 @@ export default function PdfDownloadCard({
       className={`relative flex shrink-0 items-center justify-center overflow-hidden ${roundedShape} text-white transition-transform active:scale-95 disabled:cursor-default ${iconSize}`}
       title={disabled ? t('pdf.upload_pending') : t('pdf.download_title').replace('{name}', name)}
     >
-      {PdfLogo}
+      <PdfFileIcon />
       {!downloaded && (
         <span className={`absolute inset-0 flex flex-col items-center justify-center gap-0.5 ${roundedShape} bg-black/35`}>
           {!isDownloading && (

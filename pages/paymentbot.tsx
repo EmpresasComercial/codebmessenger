@@ -14,11 +14,12 @@ import {
   Clock,
   FileText,
   RotateCcw,
-  Camera,
   BarChart3,
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import PdfDownloadCard, { formatFileSize } from '../components/PdfDownloadCard';
+import ChatAttachmentPicker from '../components/ChatAttachmentPicker';
+import PhotoPreviewModal from '../components/PhotoPreviewModal';
 import AutoTranslatedText from '../components/AutoTranslatedText';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currency';
@@ -260,40 +261,6 @@ function parseDepositNaturalLanguage(rawInput: string): {
   return { intent: 'unknown' };
 }
 
-const compressImage = async (file: File): Promise<Blob> => {
-  // Se não for imagem ou já tiver menos de 1MB, não comprime
-  if (!file.type.startsWith('image/') || file.size <= 1024 * 1024) return file;
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.src = url;
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const canvas = document.createElement('canvas');
-      let { width, height } = img;
-      const MAX = 1200;
-      if (width > MAX || height > MAX) {
-        if (width > height) {
-          height = Math.round((height * MAX) / width);
-          width = MAX;
-        } else {
-          width = Math.round((width * MAX) / height);
-          height = MAX;
-        }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (ctx) ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob((b) => resolve(b || file), 'image/jpeg', 0.8);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(file);
-    };
-  });
-};
-
 interface CollectionBank {
   id: string;
   nome_banco: string;
@@ -481,6 +448,8 @@ export default function PaymentBot() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
+  const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
+  const [selectedProofFile, setSelectedProofFile] = useState<File | null>(null);
   const [copiedIban, setCopiedIban] = useState(false);
 
   const quickReplies = [
@@ -506,9 +475,6 @@ export default function PaymentBot() {
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const fileDocInputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
 
   const restartConversation = useCallback(() => {
@@ -772,32 +738,64 @@ export default function PaymentBot() {
     [botReply, showToast]
   );
 
-  const handleUploadProof = async (file: File) => {
-    if (!file) return;
-
+  const selectProofFile = async (file: File) => {
     const isImage = file.type.startsWith('image/');
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     if (!isImage && !isPdf) {
-      showToast('Envia o comprovativo como imagem ou PDF.', 'error');
+      showToast(t('recharge.proof_invalid_type'), 'error');
       return;
     }
     if (!awaitingProof || !(activeRechargeId || rechargeSession.get().rechargeId)) {
-      showToast('Inicia uma recarga e seleciona o método de pagamento antes de enviar o comprovativo.', 'error');
+      showToast(t('recharge.proof_not_available'), 'error');
       return;
     }
     if (isUploading) return;
 
-    let imageUrl: string | undefined;
+    if (isPdf) {
+      if (file.size > 10 * 1024 * 1024) {
+        showToast(t('chat.pdf_too_large'), 'error');
+        return;
+      }
+      try {
+        const signature = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+        if (new TextDecoder().decode(signature) !== '%PDF-') {
+          showToast(t('chat.pdf_invalid'), 'error');
+          return;
+        }
+      } catch {
+        showToast(t('chat.pdf_validation_failed'), 'error');
+        return;
+      }
+    }
+
+    setSelectedProofFile(file);
+  };
+
+  const handleUploadProof = async (file: File, preparedDataUrl: string, caption: string): Promise<boolean> => {
+    if (!file) return false;
+
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isImage && !isPdf) {
+      showToast(t('recharge.proof_invalid_type'), 'error');
+      return false;
+    }
+    if (!awaitingProof || !(activeRechargeId || rechargeSession.get().rechargeId)) {
+      showToast(t('recharge.proof_not_available'), 'error');
+      return false;
+    }
+    if (isUploading) return false;
+
+    let preparedImage: Blob | undefined;
     if (isImage) {
-      imageUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === 'string') resolve(reader.result);
-          else reject(new Error('Não foi possível carregar a imagem selecionada.'));
-        };
-        reader.onerror = () => reject(new Error('Não foi possível carregar a imagem selecionada.'));
-        reader.readAsDataURL(file);
-      });
+      try {
+        preparedImage = await (await fetch(preparedDataUrl)).blob();
+        if (!preparedImage.type.startsWith('image/')) throw new Error('A imagem preparada é inválida.');
+      } catch (error) {
+        logger.error('PaymentBot', 'Could not prepare the selected proof image:', error);
+        showToast(t('recharge.proof_prepare_failed'), 'error');
+        return false;
+      }
     }
 
     const userImgMsgId = 'usr-proof-' + Date.now();
@@ -805,8 +803,8 @@ export default function PaymentBot() {
       id: userImgMsgId,
       sender: 'user',
       time: nowTime(),
-      text: isPdf ? '' : 'Comprovativo de depósito anexado 📸',
-      imageUrl,
+      text: caption.trim() || (isPdf ? '' : 'Comprovativo de depósito anexado 📸'),
+      imageUrl: isImage ? preparedDataUrl : undefined,
       ...(!isImage ? {
         attachment: {
           name: file.name,
@@ -832,10 +830,14 @@ export default function PaymentBot() {
         throw new Error('Não foi possível identificar o pedido de recarga. Por favor, envie /depositar para reiniciar.');
       }
 
-      const fileExt = isPdf ? 'pdf' : (file.name.split('.').pop()?.toLowerCase() || (isImage ? 'jpg' : 'bin'));
-      const mimeType = isPdf ? 'application/pdf' : (isImage ? 'image/jpeg' : (file.type || 'application/octet-stream'));
+      const mimeType = isPdf ? 'application/pdf' : (preparedImage?.type || file.type || 'image/jpeg');
+      const fileExt = isPdf
+        ? 'pdf'
+        : mimeType === 'image/jpeg'
+          ? 'jpg'
+          : (file.name.split('.').pop()?.toLowerCase() || 'img');
 
-      const uploadPayload = isImage ? await compressImage(file) : file;
+      const uploadPayload = isImage ? preparedImage! : file;
       const fileName = `${userData.user.id}/${targetRechargeId}_${Date.now()}.${fileExt}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -896,6 +898,8 @@ export default function PaymentBot() {
       setSelectedBank(null);
       setActiveRechargeId(null);
       rechargeSession.clear();
+      setSelectedProofFile(null);
+      return true;
     } catch (err: any) {
       setIsTyping(false);
       showToast(err.message || 'Erro ao enviar comprovativo.', 'error');
@@ -905,6 +909,7 @@ export default function PaymentBot() {
           'Erro ao enviar comprovativo: ' + (err.message || 'Falha de conexão.') + ' Tente anexar novamente ou envie /depositar.'
         )
       );
+      return false;
     } finally {
       setIsUploading(false);
     }
@@ -1288,16 +1293,6 @@ export default function PaymentBot() {
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%2372a072' stroke-width='1.2' opacity='0.45'%3E%3Ccircle cx='30' cy='28' r='10'/%3E%3Cpath d='M22 20L19 13L25 19'/%3E%3Cpath d='M38 20L41 13L35 19'/%3E%3Ccircle cx='26' cy='25' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='34' cy='25' r='1.5' fill='%2372a072'/%3E%3Cpath d='M30 31L28 33L30 32L32 33Z'/%3E%3Cpath d='M19 27L24 28'/%3E%3Cpath d='M41 27L36 28'/%3E%3Cpath d='M164 15L167 7L170 15L178 15L172 20L174 28L167 23L160 28L162 20L156 15Z'/%3E%3Cpath d='M95 52C95 44 84 38 84 49C84 58 95 67 95 67C95 67 106 58 106 49C106 38 95 44 95 52Z'/%3E%3Ccircle cx='20' cy='112' r='7'/%3E%3Ccircle cx='10' cy='103' r='3.5'/%3E%3Ccircle cx='30' cy='103' r='3.5'/%3E%3Ccircle cx='14' cy='97' r='3'/%3E%3Ccircle cx='26' cy='97' r='3'/%3E%3Crect x='150' cy='100' width='26' height='19' rx='2'/%3E%3Crect x='148' y='93' width='30' height='9' rx='2'/%3E%3Cline x1='163' y1='93' x2='163' y2='119'/%3E%3Cpath d='M159 93C156 87 163 84 163 93'/%3E%3Cpath d='M167 93C170 87 163 84 163 93'/%3E%3Ccircle cx='163' cy='162' r='10'/%3E%3Cpath d='M155 154L152 146L158 153'/%3E%3Cpath d='M171 154L174 146L168 153'/%3E%3Ccircle cx='159' cy='160' r='1.5' fill='%2372a072'/%3E%3Ccircle cx='167' cy='160' r='1.5' fill='%2372a072'/%3E%3Cpath d='M163 164L161 166L163 165L165 166Z'/%3E%3Cpath d='M152 162L158 163'/%3E%3Cpath d='M174 162L168 163'/%3E%3Cpath d='M57 143C57 138 51 135 51 140C51 145 57 150 57 150C57 150 63 145 63 140C63 135 57 138 57 143Z'/%3E%3Cpath d='M140 44C140 39 134 36 134 41C134 46 140 51 140 51C140 51 146 46 146 41C146 36 140 39 140 44Z'/%3E%3Cpath d='M64 72L66 64L68 72L76 72L70 77L72 85L66 81L60 85L62 77L56 72Z'/%3E%3Cpath d='M127 134L129 126L131 134L139 134L133 139L135 147L129 143L123 147L125 139L119 134Z'/%3E%3Cpath d='M95 110L95 128'/%3E%3Ccircle cx='92' cy='129' r='4'/%3E%3Cpath d='M95 110L106 106L106 120'/%3E%3Ccircle cx='103' cy='121' r='4'/%3E%3C/g%3E%3C/svg%3E")`
       }}
     >
-      <input type="file" ref={photoInputRef} accept="image/*" className="hidden"
-        onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUploadProof(file); e.target.value = ''; }}
-      />
-      <input type="file" ref={fileDocInputRef} accept="application/pdf,.pdf" className="hidden"
-        onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUploadProof(file); e.target.value = ''; }}
-      />
-      <input type="file" ref={fileInputRef} accept="image/*,.pdf" className="hidden"
-        onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUploadProof(file); e.target.value = ''; }}
-      />
-
       <header className="sticky top-0 z-40 flex h-[68px] w-full shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-3 sm:px-4 select-none pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
         <button
           onClick={() => navigate(-1)}
@@ -1883,11 +1878,11 @@ export default function PaymentBot() {
                   {msg.type === 'deposit_instructions' && msg.payload && (
                     <div className="w-full flex flex-col items-center justify-center gap-[2px] mt-[2px] select-none">
                       <button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => setShowAttachmentPicker(true)}
                         disabled={isUploading}
                         className="bg-[#6b7b8a] bg-opacity-70 hover:bg-opacity-85 text-white px-4 py-2.5 text-[14px] font-medium active:scale-[0.99] transition-all disabled:opacity-50 w-full flex items-center justify-center gap-1.5 cursor-pointer rounded-none"
                       >
-                        {isUploading ? '⏳ Enviando...' : '📷 Enviar Comprovativo'}
+                        {isUploading ? '⏳' : `📷 ${t('recharge.proof_label')}`}
                       </button>
                       <button
                         onClick={() => handleSendMessage('/cancelar')}
@@ -2020,24 +2015,15 @@ export default function PaymentBot() {
                 className="flex-1 min-w-0 w-0 px-1 py-1 text-[16px] bg-transparent outline-none text-black dark:text-white placeholder:text-[#7b7b7b] dark:placeholder:text-gray-400 font-normal leading-snug"
               />
 
-              {/* 📎 Ícone de Ficheiros */}
               <button
                 type="button"
-                onClick={() => fileDocInputRef.current?.click()}
+                onClick={() => setShowAttachmentPicker(true)}
+                disabled={isUploading}
                 className="shrink-0 rounded-full p-1.5 text-[#1877f2] transition-all hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 cursor-pointer ml-1"
                 title={t('recharge.proof_label')}
+                aria-label={t('attachment.open')}
               >
                 <Paperclip className="w-5 h-5 -rotate-45" />
-              </button>
-
-              {/* 📷 Ícone de Câmara (Fotos / Galeria no lado direito) */}
-              <button
-                type="button"
-                onClick={() => photoInputRef.current?.click()}
-                className="shrink-0 rounded-full p-1.5 text-[#1877f2] transition-all hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 cursor-pointer ml-0.5"
-                title="Tirar foto ou escolher da galeria"
-              >
-                <Camera className="w-5 h-5" />
               </button>
             </div>
 
@@ -2052,6 +2038,34 @@ export default function PaymentBot() {
           </div>
         </div>
       </footer>
+
+      {showAttachmentPicker && (
+        <ChatAttachmentPicker
+          translate={t}
+          maxImageSizeBytes={10 * 1024 * 1024}
+          onClose={() => setShowAttachmentPicker(false)}
+          onSelectImage={selectProofFile}
+          onSelectDocument={(file) => void selectProofFile(file)}
+          onError={(message) => showToast(message, 'error')}
+        />
+      )}
+
+      {selectedProofFile && (
+        <PhotoPreviewModal
+          key={`${selectedProofFile.name}:${selectedProofFile.size}:${selectedProofFile.lastModified}`}
+          file={selectedProofFile}
+          type={selectedProofFile.type === 'application/pdf' || selectedProofFile.name.toLowerCase().endsWith('.pdf')
+            ? 'document'
+            : 'image'}
+          translate={t}
+          disabled={isUploading}
+          onReplace={selectProofFile}
+          onCancel={() => setSelectedProofFile(null)}
+          onSend={async (dataUrl, caption) => {
+            await handleUploadProof(selectedProofFile, dataUrl, caption);
+          }}
+        />
+      )}
     </div>
   );
 }

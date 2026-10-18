@@ -92,6 +92,64 @@ html, body, * {
   scrollbar-width: none;
 }
 
+.photo-preview-send {
+  background-color: var(--app-theme-button, #1877f2);
+}
+
+.photo-preview-send:hover:not(:disabled) {
+  background-color: var(--app-theme-hover, #1265d6);
+}
+
+.photo-preview-quality[data-selected="false"] {
+  background-color: rgb(255 255 255 / 10%);
+  color: rgb(255 255 255 / 75%);
+}
+
+.photo-preview-quality[data-selected="false"]:hover:not(:disabled) {
+  background-color: rgb(255 255 255 / 20%);
+}
+
+:root[data-app-theme] .chat-attachment-action-icon {
+  color: var(--app-theme-accent) !important;
+}
+
+:root[data-app-theme] .chat-attachment-action-icon-bg {
+  background-color: color-mix(in srgb, var(--app-theme-accent) 12%, transparent);
+}
+
+:root[data-app-theme] .chat-attachment-theme-focus:focus-visible {
+  outline-color: var(--app-theme-accent);
+}
+
+.dark[data-app-theme] .chat-attachment-sheet {
+  background-color: color-mix(in srgb, var(--app-theme-chat-bg-dark, #17212b) 42%, #17212b);
+}
+
+@keyframes chat-attachment-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes chat-attachment-sheet-enter {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.chat-attachment-backdrop {
+  animation: chat-attachment-backdrop-enter 140ms ease-out both;
+}
+
+.chat-attachment-sheet {
+  animation: chat-attachment-sheet-enter 190ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-attachment-backdrop,
+  .chat-attachment-sheet {
+    animation-duration: 1ms;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════════
    SEM ARREDONDAMENTO A NÍVEL GLOBAL (ZERO BORDER-RADIUS)
    Cards, Conteiners, Botões e Campos sem arredondamento
@@ -115,7 +173,7 @@ textarea,
 select,
 .input-field,
 div:has(> input):not([class*="rounded-full"]):not(.input-auth-wrap):not(.auth-input-wrap),
-div:has(> textarea):not([class*="rounded-full"]) {
+div:has(> textarea):not([class*="rounded-full"]):not(.photo-preview-caption) {
   border-radius: 0px !important;
 }
 
