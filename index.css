@@ -673,6 +673,144 @@ textarea,
   border-radius: 23px !important;
 }
 
+@keyframes about-screen-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.about-screen-content {
+  animation: about-screen-content-enter 420ms ease-out both;
+}
+
+@keyframes about-chat-message {
+  0%, 15%, 100% { opacity: .75; transform: translateY(2px); }
+  35%, 80% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes about-status-pulse {
+  0%, 100% { opacity: .65; box-shadow: 0 0 0 0 rgba(36, 129, 204, 0); }
+  50% { opacity: 1; box-shadow: 0 0 0 3px rgba(36, 129, 204, .15); }
+}
+
+@keyframes about-fingerprint-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes about-zoom-adjust {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+
+@keyframes about-toggle-preview {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(5px); }
+}
+
+@keyframes about-notification-ring {
+  0%, 75%, 100% { transform: rotate(0); }
+  80% { transform: rotate(10deg); }
+  85% { transform: rotate(-9deg); }
+  90% { transform: rotate(6deg); }
+  95% { transform: rotate(-4deg); }
+}
+
+@keyframes about-progress-preview {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(1.18); }
+}
+
+@keyframes about-feature-preview {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+[data-about-section="about.identity"] .about-chat-bubble,
+[data-about-section="about.messaging"] .about-chat-bubble {
+  animation: about-chat-message 3.2s ease-in-out infinite;
+}
+
+[data-about-section="about.identity"] .about-chat-bubble-two,
+[data-about-section="about.messaging"] .about-chat-bubble-two {
+  animation-delay: .45s;
+}
+
+[data-about-section="about.identity"] .about-chat-bubble-three,
+[data-about-section="about.messaging"] .about-chat-bubble-three {
+  animation-delay: .9s;
+}
+
+[data-about-section="about.history"] .about-timeline-dot,
+[data-about-section="about.sessions"] .about-session-status {
+  animation: about-status-pulse 2.2s ease-in-out infinite;
+}
+
+[data-about-section="about.history"] .about-delay-one {
+  animation-delay: 1.1s;
+}
+
+[data-about-section="about.passkey"] .about-passkey-icon,
+[data-about-section="about.security"] .about-security-shield {
+  animation: about-status-pulse 2.4s ease-in-out infinite;
+}
+
+[data-about-section="about.passkey"] .about-passkey-icon {
+  animation-name: about-fingerprint-pulse;
+}
+
+[data-about-section="about.zoom"] .about-zoom-type,
+[data-about-section="about.zoom"] .about-zoom-knob {
+  animation: about-zoom-adjust 2.8s ease-in-out infinite;
+}
+
+[data-about-section="about.menu"] .about-menu-toggle > span {
+  animation: about-toggle-preview 2.8s ease-in-out infinite;
+}
+
+[data-about-section="about.notifications"] .about-notification-bell {
+  transform-origin: 50% 15%;
+  animation: about-notification-ring 3.6s ease-in-out infinite;
+}
+
+[data-about-section="about.recharge"] .about-recharge-progress {
+  transform-origin: left center;
+  animation: about-progress-preview 2.8s ease-in-out infinite;
+}
+
+[data-about-section="about.recharge"] .about-recharge-status,
+[data-about-section="about.withdrawal"] .about-withdrawal-current {
+  animation: about-status-pulse 2.2s ease-in-out infinite;
+}
+
+[data-about-section="about.xfather"] .about-bot-icon,
+[data-about-section="about.additional"] .about-feature-icon {
+  animation: about-feature-preview 2.6s ease-in-out infinite;
+}
+
+[data-about-section="about.xfather"] .about-delay-1,
+[data-about-section="about.additional"] .about-delay-1 { animation-delay: .25s; }
+[data-about-section="about.xfather"] .about-delay-2,
+[data-about-section="about.additional"] .about-delay-2 { animation-delay: .5s; }
+[data-about-section="about.xfather"] .about-delay-3,
+[data-about-section="about.additional"] .about-delay-3 { animation-delay: .75s; }
+[data-about-section="about.additional"] .about-delay-4 { animation-delay: 1s; }
+[data-about-section="about.additional"] .about-delay-5 { animation-delay: 1.25s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .about-screen-content,
+  .about-screen-content *,
+  [data-about-section] * {
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
+  }
+}
+
 .theme-apply-button {
   border-radius: 22px !important;
   background-color: #2481cc !important;

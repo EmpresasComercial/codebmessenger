@@ -325,6 +325,31 @@ export default function Profile() {
             subtitle={t('profile.bank_subtitle')}
             onClick={() => navigate("/carteira?intent=add-bank")}
           />
+        </div>
+
+        <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
+
+        <div className="w-full bg-white dark:bg-[#17212b]">
+          <div className="px-2 pt-3 pb-1.5">
+            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.help_section')}</span>
+          </div>
+
+          <SettingsItem
+            icon={<Lightbulb className="w-5 h-5 text-white fill-white" />}
+            iconBg="bg-[#b375d6]"
+            title={t('chat.introduction')}
+            subtitle={t('profile.intro_subtitle')}
+            onClick={() => navigate("/sobre-business")}
+          />
+
+          <SettingsItem
+            icon={<HelpCircle className="w-5 h-5 text-white" />}
+            iconBg="bg-[#3390ec]"
+            title={t('chat.faq')}
+            subtitle={t('profile.faq_subtitle')}
+            onClick={() => navigate("/help-faq")}
+          />
+
           <SettingsItem
             icon={<Moon className="w-5 h-5 text-white" />}
             iconBg="bg-[#475569]"
@@ -355,38 +380,6 @@ export default function Profile() {
               </button>
             )}
           />
-        </div>
-
-        <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
-
-        <div className="w-full bg-white dark:bg-[#17212b]">
-          <div className="px-2 pt-3 pb-1.5">
-            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.help_section')}</span>
-          </div>
-
-          <SettingsItem
-            icon={<Lightbulb className="w-5 h-5 text-white fill-white" />}
-            iconBg="bg-[#b375d6]"
-            title={t('chat.introduction')}
-            subtitle={t('profile.intro_subtitle')}
-            onClick={() => navigate("/sobre-business")}
-          />
-
-          <SettingsItem
-            icon={<HelpCircle className="w-5 h-5 text-white" />}
-            iconBg="bg-[#3390ec]"
-            title={t('chat.faq')}
-            subtitle={t('profile.faq_subtitle')}
-            onClick={() => navigate("/help-faq")}
-          />
-        </div>
-
-        <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
-
-        <div className="w-full bg-white dark:bg-[#17212b]">
-          <div className="px-2 pt-3 pb-1.5">
-            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.settings')}</span>
-          </div>
 
           <SettingsItem
             icon={<Volume2 className="w-5 h-5 text-white fill-white" />}
@@ -417,14 +410,6 @@ export default function Profile() {
                 />
               </button>
             )}
-          />
-
-          <SettingsItem
-            icon={<Download className="w-5 h-5 text-white" />}
-            iconBg="bg-[#e95171]"
-            title={t('chat.download_apk')}
-            subtitle={t('profile.download_subtitle')}
-            onClick={() => navigate("/android?setln=pt")}
           />
 
           <SettingsItem
@@ -459,11 +444,11 @@ export default function Profile() {
           />
 
           <SettingsItem
-            icon={<Globe className="w-5 h-5 text-white" />}
-            iconBg="bg-[#b375d6]"
-            title={t('settings.language')}
-            subtitle={selectedLanguage.nativeName}
-            onClick={() => setShowLanguage(true)}
+            icon={<Palette className="w-5 h-5 text-white" />}
+            iconBg="bg-[#7048ae]"
+            title={t('theme.title')}
+            subtitle={t(`theme.name.${appTheme}`)}
+            onClick={() => setShowThemeSettings(true)}
           />
 
           <SettingsItem
@@ -473,13 +458,29 @@ export default function Profile() {
             subtitle={`${appZoom}%`}
             onClick={() => setShowZoomSettings(true)}
           />
+        </div>
+
+        <div className="h-2.5 bg-[#f0f2f5] dark:bg-[#101921] border-y border-gray-100/80 dark:border-gray-800/80" />
+
+        <div className="w-full bg-white dark:bg-[#17212b]">
+          <div className="px-2 pt-3 pb-1.5">
+            <span className="text-[12px] font-semibold text-[#517da2] dark:text-[#64b5f6] uppercase tracking-wider">{t('profile.settings')}</span>
+          </div>
 
           <SettingsItem
-            icon={<Palette className="w-5 h-5 text-white" />}
-            iconBg="bg-[#7048ae]"
-            title={t('theme.title')}
-            subtitle={t(`theme.name.${appTheme}`)}
-            onClick={() => setShowThemeSettings(true)}
+            icon={<Download className="w-5 h-5 text-white" />}
+            iconBg="bg-[#e95171]"
+            title={t('chat.download_apk')}
+            subtitle={t('profile.download_subtitle')}
+            onClick={() => navigate("/android?setln=pt")}
+          />
+
+          <SettingsItem
+            icon={<Globe className="w-5 h-5 text-white" />}
+            iconBg="bg-[#b375d6]"
+            title={t('settings.language')}
+            subtitle={selectedLanguage.nativeName}
+            onClick={() => setShowLanguage(true)}
           />
 
           <SettingsItem

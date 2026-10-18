@@ -33,9 +33,53 @@ const attachmentFlowKeys = [
   'recharge.proof_prepare_failed',
 ] as const;
 
+const aboutPageKeys = [
+  'about.page_heading',
+  'about.footer',
+  'about.identity.title',
+  'about.identity.body',
+  'about.history.title',
+  'about.history.body',
+  'about.messaging.title',
+  'about.messaging.body',
+  'about.passkey.title',
+  'about.passkey.body',
+  'about.zoom.title',
+  'about.zoom.body',
+  'about.menu.title',
+  'about.menu.body',
+  'about.notifications.title',
+  'about.notifications.body',
+  'about.sessions.title',
+  'about.sessions.body',
+  'about.recharge.title',
+  'about.recharge.body',
+  'about.withdrawal.title',
+  'about.withdrawal.body',
+  'about.xfather.title',
+  'about.xfather.body',
+  'about.security.title',
+  'about.security.body',
+  'about.additional.title',
+  'about.additional.body',
+  'about.important.title',
+  'about.important.body',
+] as const;
+
 test('translates the attachment picker and preview flow in all supported languages', () => {
   for (const [language, dictionary] of Object.entries(translations)) {
     for (const key of attachmentFlowKeys) {
+      assert.ok(
+        Object.hasOwn(dictionary, key) && dictionary[key].trim().length > 0,
+        `${language} is missing ${key}`
+      );
+    }
+  }
+});
+
+test('translates the About page in all supported languages', () => {
+  for (const [language, dictionary] of Object.entries(translations)) {
+    for (const key of aboutPageKeys) {
       assert.ok(
         Object.hasOwn(dictionary, key) && dictionary[key].trim().length > 0,
         `${language} is missing ${key}`
