@@ -53,6 +53,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Vite assets carry a content hash in their filename, so cached copies are immutable.
+  if (
+    url.pathname.startsWith('/assets/') &&
+    /-[A-Za-z0-9_-]{8,}\.[A-Za-z0-9]+$/.test(url.pathname)
+  ) {
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        if (cached) return cached;
+
+        return fetch(req).then((response) => {
+          if (response.ok) {
+            const responseToCache = response.clone();
+            event.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => cache.put(req, responseToCache))
+            );
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
   // Requisição de navegação de páginas (HTML)
   if (req.mode === 'navigate') {
     event.respondWith(

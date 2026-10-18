@@ -16,13 +16,12 @@ import { ConnectivityOverlay } from './components/ConnectivityOverlay';
 import { registerServiceWorker, subscribeToPushNotifications, clearAppBadge } from './lib/pushNotifications';
 import { LoadingProvider } from './contexts/LoadingContext';
 import { GlobalLoadingIndicator } from './components/GlobalLoadingIndicator';
+import PageSkeleton from './components/PageSkeleton';
 import { getInviteCode } from './lib/inviteCode';
 
 /* ── Lazy imports ─────────────────────────────────────────────────────────── */
-// Critical path: carregadas no pacote principal (sem lazy)
-import Login    from './pages/Login';
-import Messager from './pages/Messager';
-
+const Login            = lazy(() => import('./pages/Login'));
+const Messager         = lazy(() => import('./pages/Messager'));
 const Bots             = lazy(() => import('./pages/Bots'));
 const Invite           = lazy(() => import('./pages/contactos'));
 const Profile          = lazy(() => import('./pages/Profile'));
@@ -38,54 +37,12 @@ const DevicesPrivacy   = lazy(() => import('./pages/DevicesPrivacy'));
 const PrivacyPolicy    = lazy(() => import('./pages/PrivacyPolicy'));
 const DownloadApp      = lazy(() => import('./pages/DownloadApp'));
 
-/* ── Skeleton global de transição (Telegram-style) ─────────────────────────── */
-function PageSkeleton() {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: '#f1f1f2', fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
-      <style>{`
-        @keyframes __shimmer {
-          0%   { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-        .ps { background: linear-gradient(90deg, #ebebeb 0%, #f5f5f5 40%, #ebebeb 100%); background-size: 200% 100%; animation: __shimmer 1s ease-in-out infinite; will-change: background-position; }
-      `}</style>
-
-      {/* Top bar */}
-      <div style={{ background: '#2481cc', height: 56, display: 'flex', alignItems: 'center', padding: '0 12px', gap: 12 }}>
-        <div className="ps" style={{ width: 28, height: 28, borderRadius: '50%', opacity: 0.5 }} />
-        <div className="ps" style={{ width: 140, height: 18, borderRadius: 4, opacity: 0.5 }} />
-        <div style={{ flex: 1 }} />
-        <div className="ps" style={{ width: 28, height: 28, borderRadius: '50%', opacity: 0.4 }} />
-      </div>
-
-      {/* Search bar */}
-      <div style={{ background: '#fff', padding: '8px 12px', borderBottom: '1px solid #ebeef2' }}>
-        <div className="ps" style={{ width: '100%', height: 36, borderRadius: 4 }} />
-      </div>
-
-      {/* Chat list rows */}
-      {[0,1,2,3,4,5,6,7].map(i => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
-          <div className="ps" style={{ width: 48, height: 48, borderRadius: '50%', flexShrink: 0 }} />
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div className="ps" style={{ width: `${120 + (i % 3) * 30}px`, height: 14, borderRadius: 3 }} />
-              <div className="ps" style={{ width: 36, height: 11, borderRadius: 3 }} />
-            </div>
-            <div className="ps" style={{ width: `${60 + (i % 4) * 40}%`, height: 12, borderRadius: 3 }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function RootRedirect() {
   const { session, ready } = useAuth();
   const [searchParams] = useSearchParams();
   const inviteCode = getInviteCode(searchParams);
 
-  if (!ready) return null;
+  if (!ready) return <PageSkeleton />;
   if (session) return <Navigate to="/conversas" replace />;
   if (inviteCode) return <Navigate to={`/signup?ref=${encodeURIComponent(inviteCode)}`} replace />;
   return <Navigate to="/signup" replace />;

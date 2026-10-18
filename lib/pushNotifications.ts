@@ -22,7 +22,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
  * Registra o Service Worker no navegador
  */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+  if (!('serviceWorker' in navigator)) {
     return null;
   }
 
