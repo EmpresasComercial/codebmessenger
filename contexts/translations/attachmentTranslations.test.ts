@@ -33,6 +33,32 @@ const attachmentFlowKeys = [
   'recharge.proof_prepare_failed',
 ] as const;
 
+const voiceMessageKeys = [
+  'chat.voice_record',
+  'chat.voice_stop',
+  'chat.voice_cancel',
+  'chat.voice_send',
+  'chat.voice_sending',
+  'chat.voice_message',
+  'chat.voice_unsupported',
+  'chat.voice_permission_denied',
+  'chat.voice_too_large',
+  'chat.voice_unavailable',
+  'chat.voice_send_failed',
+  'chat.voice_storage_unavailable',
+  'chat.voice_pause',
+  'chat.voice_resume',
+] as const;
+
+const voiceMessageSizeLimits: Record<string, string> = {
+  pt: '5 MB',
+  en: '5 MB',
+  fr: '5 Mo',
+  ar: '5 ميغابايت',
+  'zh-hans': '5 MB',
+  es: '5 MB',
+};
+
 const aboutPageKeys = [
   'about.page_heading',
   'about.footer',
@@ -105,6 +131,22 @@ test('translates the attachment picker and preview flow in all supported languag
         `${language} is missing ${key}`
       );
     }
+  }
+});
+
+test('translates voice messages and states the configured 5 MB limit', () => {
+  for (const [language, dictionary] of Object.entries(translations)) {
+    for (const key of voiceMessageKeys) {
+      assert.ok(
+        Object.hasOwn(dictionary, key) && dictionary[key].trim().length > 0,
+        `${language} is missing ${key}`
+      );
+    }
+
+    assert.ok(
+      dictionary['chat.voice_too_large'].includes(voiceMessageSizeLimits[language]),
+      `${language} does not state the configured 5 MB voice-message limit`
+    );
   }
 });
 
