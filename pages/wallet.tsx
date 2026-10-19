@@ -1348,7 +1348,7 @@ export default function wallet() {
         {/* Botão Voltar */}
         <button
           onClick={() => navigate(-1)}
-          className="flex h-11 w-11 shrink-0 items-center justify-center text-black dark:text-white pointer-events-auto cursor-pointer md:hidden"
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-black dark:text-white pointer-events-auto cursor-pointer md:hidden"
           aria-label={t('common.back')}
         >
           <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
@@ -1915,7 +1915,7 @@ export default function wallet() {
                     key={reply.label}
                     type="button"
                     onClick={() => handleSendMessage(reply.command)}
-                    className="min-h-11 shrink-0 whitespace-nowrap rounded-full border border-[#eeeeee] bg-white px-3 py-1.5 text-[13px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                    className="shrink-0 whitespace-nowrap rounded-full border border-[#eeeeee] bg-white px-3 py-1.5 text-[13px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
                   >
                     {reply.label}
                   </button>
@@ -1962,7 +1962,7 @@ export default function wallet() {
               <button
                 type="button"
                 onClick={() => handleSendMessage('/limpar')}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#1877f2] transition-all active:bg-[#1877f2]/10"
+                className="shrink-0 rounded-full p-1.5 text-[#1877f2] transition-all active:bg-[#1877f2]/10"
                 title="Reiniciar conversa"
                 aria-label="Limpar e reiniciar conversa"
               >
@@ -1973,7 +1973,7 @@ export default function wallet() {
             {/* Botão circular azul Telegram */}
             <button
               onClick={() => handleSendMessage()}
-              className="flex h-11 w-11 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 cursor-pointer"
+              className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 cursor-pointer"
               aria-label={t('common.send')}
             >
               <Send className="h-[25px] w-[25px] fill-current stroke-[1.8]" />

@@ -914,7 +914,7 @@ export default function PrivateChat() {
       >
         <button
           onClick={() => navigate('/org')}
-          className="flex h-11 w-11 shrink-0 items-center justify-center text-black pointer-events-auto md:hidden dark:text-white"
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-black pointer-events-auto md:hidden dark:text-white"
           aria-label={t('chat.back')}
         >
           <ChevronLeft className="h-5 w-5 stroke-[2]" />
@@ -983,16 +983,15 @@ export default function PrivateChat() {
         <div className="flex items-center gap-1.5 pointer-events-auto">
           <button
             onClick={() => setShowContactProfile(true)}
-            className="flex h-11 w-11 shrink-0 items-center justify-center text-black dark:text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
             aria-label={t('chat.contact_profile')}
           >
             <Phone className="tg-theme-icon w-5 h-5" />
           </button>
           <button
             onClick={() => setShowContactProfile(true)}
-            className="flex h-11 w-11 shrink-0 items-center justify-center text-black dark:text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
             aria-label={t('chat.more_options')}
-            aria-haspopup="dialog"
           >
             <MoreVertical className="tg-theme-icon w-5 h-5" />
           </button>
@@ -1476,13 +1475,7 @@ export default function PrivateChat() {
                 />
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setReplyTo(null)}
-              className="flex h-11 w-11 shrink-0 items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
-              aria-label={t('common.close')}
-              title={t('common.close')}
-            >
+            <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600 p-1 dark:hover:text-gray-200">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -1511,9 +1504,8 @@ export default function PrivateChat() {
                 <button 
                   type="button" 
                   onClick={() => setImagePreview(null)} 
-                  className="absolute -top-1 -right-1 flex h-11 w-11 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black cursor-pointer"
+                  className="absolute -top-1 -right-1 bg-black/70 text-white rounded-full p-0.5 hover:bg-black cursor-pointer"
                   title={t('chat.remove_image')}
-                  aria-label={t('chat.remove_image')}
                 >
                   <X className="w-2.5 h-2.5" />
                 </button>
@@ -1532,7 +1524,7 @@ export default function PrivateChat() {
                 <button
                   type="button"
                   onClick={() => setPdfPreview(null)}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100"
+                  className="shrink-0 rounded-full bg-gray-100 p-0.5 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
                   title={t('chat.remove_pdf')}
                   aria-label={t('chat.remove_pdf')}
                 >
@@ -1573,7 +1565,7 @@ export default function PrivateChat() {
               type="button"
               onClick={() => setShowAttachmentPicker(true)}
               disabled={voiceComposerActive}
-              className="flex h-11 w-11 shrink-0 items-center justify-center cursor-pointer text-[#1877f2] transition-transform active:scale-90"
+              className="shrink-0 cursor-pointer p-1 text-[#1877f2] transition-transform active:scale-90"
               title={t('attachment.open')}
               aria-label={t('attachment.open')}
             >

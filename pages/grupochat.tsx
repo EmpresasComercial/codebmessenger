@@ -1906,7 +1906,7 @@ export default function grupochat() {
       >
         <button
           onClick={() => navigate('/org')}
-          className="flex h-11 w-11 shrink-0 items-center justify-center text-[#111111] pointer-events-auto md:hidden dark:text-white"
+          className="flex h-10 w-8 shrink-0 items-center justify-center text-[#111111] pointer-events-auto md:hidden dark:text-white"
           aria-label="Voltar aos chats"
         >
           <svg
@@ -1964,7 +1964,7 @@ export default function grupochat() {
         <button
           type="button"
           onClick={() => setShowInfo(true)}
-          className="flex h-11 w-11 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
           aria-label="Ligar"
           title="Ligar"
         >
@@ -1973,7 +1973,7 @@ export default function grupochat() {
         <button
           type="button"
           onClick={() => setShowInfo(true)}
-          className="flex h-11 w-11 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
           aria-label="Definições do grupo"
           title="Definições"
         >
@@ -2258,7 +2258,7 @@ export default function grupochat() {
                 }
               }}
               disabled={isSending}
-              className="flex h-11 w-11 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50"
+              className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50"
               title={editingMessage ? "Salvar alterações" : publicInput.trim() || imagePreview || pdfPreview ? t('common.send') : t('chat.voice_record')}
               aria-label={editingMessage ? "Salvar alterações" : publicInput.trim() || imagePreview || pdfPreview ? t('common.send') : t('chat.voice_record')}
             >
