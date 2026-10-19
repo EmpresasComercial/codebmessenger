@@ -39,6 +39,7 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import { renderMessageWithAllowedLinks } from '../lib/allowedMessageLinks';
 import { COMMUNITY_CHAT_AVATAR, DEFAULT_PROFILE_AVATAR, getProfileAvatarUrl } from '../lib/utils';
 import { useChatVisualViewport } from '../lib/useChatVisualViewport';
+import { useDesktopViewport } from '../lib/useDesktopViewport';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
 interface Message {
@@ -103,6 +104,7 @@ const getMessageImageUrl = (message: Message) => {
 
 // ── Componente Principal ───────────────────────────────────────────────
 export default function PrivateChat() {
+  const showDesktopSidebar = useDesktopViewport();
   const { contactId } = useParams();
   const [searchParams] = useSearchParams();
   const { language, t, translateFullChats } = useLanguage();
@@ -894,7 +896,7 @@ export default function PrivateChat() {
   return (
     <div ref={chatViewportRef} className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-white dark:bg-[#0e1621]">
       <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
-        <ChatsList embedded />
+        {showDesktopSidebar && <ChatsList embedded />}
       </aside>
       <div 
       className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden bg-white transition-colors dark:bg-[#0e1621] dark:text-gray-100"

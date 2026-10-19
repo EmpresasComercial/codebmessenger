@@ -35,6 +35,7 @@ import {
   Link2,
 } from 'lucide-react';
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
+import { useDesktopViewport } from "../lib/useDesktopViewport";
 import ChatsList from "./ChatsList";
 import PdfDownloadCard, { formatFileSize } from "../components/PdfDownloadCard";
 import PhotoPreviewModal from "../components/PhotoPreviewModal";
@@ -712,6 +713,7 @@ MessageItem.displayName = "MessageItem";
 
 export default function grupochat() {
   const navigate = useNavigate();
+  const showDesktopSidebar = useDesktopViewport();
   const { session } = useAuth();
   const user = session?.user;
   const { showToast } = useToast();
@@ -1074,7 +1076,7 @@ export default function grupochat() {
     if (isFetchingRef.current && !isInitial) return;
     isFetchingRef.current = true;
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .rpc('get_chat_messages_mcpn', {
           p_group: 'community',
           p_limit: 60,
@@ -1538,7 +1540,7 @@ export default function grupochat() {
 
       setIsSending(true);
       try {
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .rpc('get_chat_messages_mcpn', {
             p_group: 'community',
             p_edit_id: msgIdToEdit,
@@ -1614,21 +1616,16 @@ export default function grupochat() {
 
     setIsSending(true);
     try {
-      const payload = {
-        uid_emissor: user.id,
-        mensagem: tempMsg || " ",
-        detalhes,
-      };
       console.log('[CommunityChat] Enviando para chat_gruop:', {
         hasImage: Boolean(tempImg),
         hasDocument: Boolean(tempPdf),
         hasVoiceMessage: Boolean(voiceAttachment),
         captionLength: messageText.length,
       });
-      const { data: insertedMsgList, error } = await (supabase as any)
+      const { data: insertedMsgList, error } = await supabase
         .rpc('get_chat_messages_mcpn', {
           p_group: 'community',
-          p_send_message: tempMsg || " ",
+          p_send_message: tempMsg,
           p_detalhes: detalhes,
         });
 
@@ -1637,22 +1634,23 @@ export default function grupochat() {
         throw error;
       }
       const insertedMsg = Array.isArray(insertedMsgList) ? insertedMsgList[0] : insertedMsgList;
-      if (insertedMsg) {
-        setPublicMessages(prev => {
-          const updated = prev.map(m => m.id === tempId ? {
-            ...insertedMsg,
-            perfil: {
-              telefone: phoneCache[user.id]?.telefone || "Eu",
-              nome_exibicao: phoneCache[user.id]?.nome_exibicao || "Eu"
-            },
-            status: 'sent' as const
-          } : m);
-          try {
-            localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
-          } catch {}
-          return updated;
-        });
+      if (!insertedMsg) {
+        throw new Error('A persistência não confirmou a mensagem.');
       }
+      setPublicMessages(prev => {
+        const updated = prev.map(m => m.id === tempId ? {
+          ...insertedMsg,
+          perfil: {
+            telefone: phoneCache[user.id]?.telefone || "Eu",
+            nome_exibicao: phoneCache[user.id]?.nome_exibicao || "Eu"
+          },
+          status: 'sent' as const
+        } : m);
+        try {
+          localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
+        } catch {}
+        return updated;
+      });
       console.log('[CommunityChat] Mensagem inserida com sucesso');
       scrollToBottom();
     } catch (err: any) { 
@@ -1735,15 +1733,20 @@ export default function grupochat() {
 
       (async () => {
         try {
-          const { error } = await (supabase as any)
-            .rpc('get_chat_messages_mcpn', {
-              p_group: 'community',
-              p_edit_id: messageId,
-              p_detalhes: updatedDetalhes,
+          const { error } = await supabase
+            .rpc('toggle_chat_message_reaction_mcpn', {
+              p_message_id: messageId,
+              p_emoji: emoji,
             });
-          if (error) console.error('[CommunityChat] Erro ao salvar reação:', error);
+          if (error) {
+            console.error('[CommunityChat] Erro ao salvar reação:', error);
+            showToast('Não foi possível guardar a reação.', 'error');
+            fetchMessages(false);
+          }
         } catch (err: any) {
           console.error('[CommunityChat] Falha ao persistir reação:', err);
+          showToast('Não foi possível guardar a reação.', 'error');
+          fetchMessages(false);
         } finally {
           setTimeout(() => pendingReactionIds.current.delete(messageId), 3000);
         }
@@ -1751,7 +1754,7 @@ export default function grupochat() {
 
       return prev.map(m => m.id === messageId ? { ...m, detalhes: updatedDetalhes } : m);
     });
-  }, [user, closeContextMenu]);
+  }, [user, closeContextMenu, showToast, fetchMessages]);
 
   const handleDownloadImage = async (imageUrl: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1888,7 +1891,7 @@ export default function grupochat() {
   return (
     <div ref={chatViewportRef} className="flex h-[100dvh] min-h-0 w-full overflow-hidden bg-white dark:bg-[#0e1621]">
       <aside className="hidden h-full w-[350px] shrink-0 border-r border-gray-200 dark:border-[#202b36] md:block">
-        <ChatsList embedded />
+        {showDesktopSidebar && <ChatsList embedded />}
       </aside>
       <div 
       className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col font-sans antialiased text-[#202020] select-none tg-chat-no-select overflow-hidden bg-white transition-colors dark:bg-[#0e1621] dark:text-gray-100"

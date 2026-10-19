@@ -787,6 +787,10 @@ export type Database = {
         }[]
       }
       get_client_ip_mcpn: { Args: never; Returns: unknown }
+      toggle_chat_message_reaction_mcpn: {
+        Args: { p_emoji: string; p_message_id: number }
+        Returns: Json
+      }
       get_collection_bank_by_id_mcpn: {
         Args: { p_bank_id: string }
         Returns: {
@@ -808,6 +812,25 @@ export type Database = {
       get_atendimento_links_mcpn: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_chat_messages_mcpn: {
+        Args: {
+          p_delete_id?: number
+          p_detalhes?: Json
+          p_edit_id?: number
+          p_group: string
+          p_limit?: number
+          p_send_message?: string
+        }
+        Returns: {
+          data_registrada: string
+          detalhes: Json
+          id: number
+          mensagem: string
+          nome_exibicao: string
+          telefone: string
+          uid_emissor: string
+        }[]
       }
       get_collection_banks_mcpn: {
         Args: never
