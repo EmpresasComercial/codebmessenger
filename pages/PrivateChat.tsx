@@ -751,7 +751,7 @@ export default function PrivateChat() {
         .rpc('get_chat_messages_mcpn', {
           p_user1: user.id,
           p_user2: contactId,
-          p_send_message: msg,
+          p_send_message: msg || ' ',
           p_detalhes: {
             lida: false,
             ...(attachmentDetails || {})
