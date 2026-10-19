@@ -1,12 +1,12 @@
-﻿import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Loader2, Mic, Pause, Play, Send, Square, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { useToast } from './Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const MAX_RECORDING_SECONDS = 180;
-const MAX_RECORDING_BYTES = 20 * 1024 * 1024;
+const MAX_RECORDING_SECONDS = 120; // 2 minutos
+const MAX_RECORDING_BYTES = 5 * 1024 * 1024; // 5 MB (limite do bucket)
 
 interface VoiceMessageLabels {
   record: string;
@@ -114,8 +114,19 @@ export const VoiceMessageComposer = forwardRef<VoiceMessageComposerHandle, Voice
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Mono + 16kHz + cancela eco/ruído → áudio de voz comprimido e leve
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,         // mono (metade do tamanho vs estéreo)
+          sampleRate: 16000,       // 16 kHz — qualidade de voz ideal
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       streamRef.current = stream;
+
+      // Preferir Opus (codec mais eficiente para voz)
       const mimeType = typeof MediaRecorder.isTypeSupported === 'function'
         ? [
             'audio/webm;codecs=opus',
@@ -123,9 +134,11 @@ export const VoiceMessageComposer = forwardRef<VoiceMessageComposerHandle, Voice
             'audio/mp4',
           ].find((type) => MediaRecorder.isTypeSupported(type))
         : undefined;
-      const recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream);
+
+      // 24 kbps → 2 min ≈ 360 KB (vs ~2 MB sem limite de bitrate)
+      const recorderOptions: MediaRecorderOptions = { audioBitsPerSecond: 24_000 };
+      if (mimeType) recorderOptions.mimeType = mimeType;
+      const recorder = new MediaRecorder(stream, recorderOptions);
 
       chunksRef.current = [];
       discardRef.current = false;
@@ -344,19 +357,42 @@ interface VoiceMessagePlayerProps {
 export function VoiceMessagePlayer({ path, unavailableLabel, isOutgoing = false }: VoiceMessagePlayerProps) {
   const { t } = useLanguage();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed]     = useState(false);
+  const objectUrlRef             = useRef<string | null>(null);
+
+  // Revoga blob URL ao desmontar para não vazar memória
+  useEffect(() => () => {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+  }, []);
 
   useEffect(() => {
     if (!path) return;
-    let active = true;
-    let attempts = 0;
+    let active      = true;
+    let attempts    = 0;
     let retryTimer: number | null = null;
 
     const loadAudio = async () => {
+      // 1. Validar acesso no servidor (RPC SECURITY DEFINER verifica participação)
+      const { data: rpcData, error: rpcError } = await (supabase.rpc as any)(
+        'getvoice',
+        { p_path: path }
+      );
+
+      if (!active) return;
+
+      if (rpcError || !rpcData?.success) {
+        logger.error('VoiceMessage', 'Access denied by server:', rpcData?.message ?? rpcError);
+        setFailed(true);
+        return;
+      }
+
+      // 2. Gerar signed URL com TTL de 15 minutos (900s)
       const { data, error } = await supabase.storage
         .from('chat-voice-messages')
-        .createSignedUrl(path, 60 * 60);
+        .createSignedUrl(path, 900);
+
       if (!active) return;
+
       if (!error && data?.signedUrl) {
         setAudioUrl(data.signedUrl);
         return;
@@ -393,7 +429,7 @@ export function VoiceMessagePlayer({ path, unavailableLabel, isOutgoing = false 
           src={audioUrl}
           controls
           preload="metadata"
-          controlsList="nodownload"
+          controlsList="nodownload nofullscreen noremoteplayback"
           className={`h-10 w-full ${isOutgoing ? 'accent-[#2481cc]' : 'accent-gray-500'}`}
           aria-label={t('chat.voice_message')}
         />
@@ -406,3 +442,4 @@ export function VoiceMessagePlayer({ path, unavailableLabel, isOutgoing = false 
     </div>
   );
 }
+

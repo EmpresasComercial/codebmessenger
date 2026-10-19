@@ -874,14 +874,13 @@ export default function grupochat() {
     }
 
     try {
-      const { error } = await (supabase as any)
-        .rpc('get_chat_messages_mcpn', {
-          p_group: 'community',
-          p_delete_id: msgId,
-        });
+      const { data, error } = await (supabase.rpc as any)('delete_chat_message_mcpn', {
+        p_message_id: String(msgId),
+        p_chat_type: 'community',
+      });
 
-      if (error) {
-        showToast('Mensagem não apagada', 'error');
+      if (error || (data && !data.success)) {
+        showToast(data?.message || 'Mensagem não apagada', 'error');
         return;
       }
 

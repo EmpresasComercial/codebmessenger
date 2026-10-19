@@ -513,11 +513,42 @@ export default function PrivateChat() {
     }
   };
 
-  const handleDelete = () => {
-    if (contextMenu) {
-      setMessages(prev => prev.filter(m => m.id !== contextMenu.message.id));
-      showToast(t('chat.message_deleted'), 'info');
-      closeContextMenu();
+  const handleDelete = async () => {
+    if (!contextMenu) return;
+    const targetMsg = contextMenu.message;
+    const isOwner = contextMenu.isMe;
+    closeContextMenu();
+
+    if (!isOwner) {
+      showToast(t('chat.cannot_delete_other') || 'Você só pode apagar as suas próprias mensagens.', 'error');
+      return;
+    }
+
+    // Remoção otimista da mensagem selecionada
+    setMessages(prev => prev.filter(m => m.id !== targetMsg.id));
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('delete_chat_message_mcpn', {
+        p_message_id: targetMsg.id,
+        p_chat_type: 'private'
+      });
+
+      if (error || (data && !data.success)) {
+        // Rollback se falhar
+        setMessages(prev => {
+          if (prev.some(m => m.id === targetMsg.id)) return prev;
+          return [...prev, targetMsg].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        });
+        showToast(data?.message || t('chat.error_deleting_message') || 'Erro ao apagar mensagem', 'error');
+      } else {
+        showToast(t('chat.message_deleted'), 'info');
+      }
+    } catch {
+      setMessages(prev => {
+        if (prev.some(m => m.id === targetMsg.id)) return prev;
+        return [...prev, targetMsg].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      });
+      showToast(t('chat.error_deleting_message') || 'Erro ao apagar mensagem', 'error');
     }
   };
 
@@ -805,8 +836,7 @@ export default function PrivateChat() {
   const menuActions = contextMenu ? [
     { icon: Reply, label: t('common.reply'), onClick: handleReply, color: '#2481cc' },
     { icon: Copy, label: t('common.copy'), onClick: handleCopy, color: '#555' },
-    ...(contextMenu.isMe ? [{ icon: Pencil, label: t('common.edit'), onClick: () => { showToast(t('chat.edit_coming_soon'), 'info'); closeContextMenu(); }, color: '#555' }] : []),
-    { icon: Trash2, label: t('common.delete'), onClick: handleDelete, color: '#e53e3e', subLabel: t('chat.auto_delete_31_days') },
+    ...(contextMenu.isMe ? [{ icon: Trash2, label: t('common.delete'), onClick: handleDelete, color: '#e53e3e', subLabel: t('chat.delete_for_everyone') || t('chat.auto_delete_31_days') }] : []),
   ] : [];
 
   // ── Render ─────────────────────────────────────────────────────────────
