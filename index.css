@@ -70,6 +70,16 @@ body {
   margin: 0;
 }
 
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--app-theme-accent, #2481cc);
+  outline-offset: 2px;
+}
+
 html, body, * {
   scrollbar-width: none;
   -ms-overflow-style: none;

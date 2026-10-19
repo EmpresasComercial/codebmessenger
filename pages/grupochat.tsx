@@ -285,6 +285,17 @@ const getMessageDetails = (message: any): Record<string, any> => {
   return {};
 };
 
+const getMessageImageUrl = (message: any): string | null => {
+  const details = getMessageDetails(message);
+  const imageUrl = details.imagem_url
+    || details.photo_url
+    || details.image_url
+    || message?.imagem_url
+    || message?.photo_url
+    || message?.image_url;
+  return typeof imageUrl === 'string' && imageUrl.trim() ? imageUrl.trim() : null;
+};
+
 const cleanSharedUrl = (value: string) => value.trim().replace(/[.,;!?)]+$/, '');
 
 const getContextMenuPosition = (messageElement: HTMLElement) => {
@@ -356,6 +367,7 @@ const MessageItem = React.memo(({
   renderFormattedMessage
 }: MessageItemProps) => {
   const parsedData = getMessageDetails(m);
+  const imageUrl = getMessageImageUrl(m);
   const reply = parsedData.reply;
   const reactions = parsedData.reacoes || {};
   const isEdited = Boolean(parsedData.editado);
@@ -439,7 +451,7 @@ const MessageItem = React.memo(({
         )}
 
         {/* ── Mensagem só com imagem (sem balão) ── */}
-        {parsedData.imagem_url && !m.mensagem?.trim() ? (
+        {imageUrl && !m.mensagem?.trim() ? (
           <div
             className="relative cursor-pointer rounded-[18px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.18)] max-w-[80vw] sm:max-w-[360px]"
             onTouchStart={handleMessageTouchStart}
@@ -461,13 +473,13 @@ const MessageItem = React.memo(({
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             <img
-              src={parsedData.imagem_url}
+              src={imageUrl}
               alt="Foto"
               loading="lazy"
               decoding="async"
               className="w-full h-auto block rounded-[18px] cursor-pointer active:opacity-90"
               style={{ maxHeight: '340px', objectFit: 'cover' }}
-              onClick={(e) => { e.stopPropagation(); onOpenZoomedImage(parsedData.imagem_url); }}
+              onClick={(e) => { e.stopPropagation(); onOpenZoomedImage(imageUrl); }}
             />
             <div className="absolute bottom-1.5 right-2 flex items-center gap-1 bg-black/40 rounded-full px-1.5 py-0.5 select-none">
               {isEdited && (
@@ -582,15 +594,15 @@ const MessageItem = React.memo(({
               </div>
             )}
 
-            {parsedData.imagem_url && (
+            {imageUrl && (
               <div className="mb-1.5 -mx-[2px] -mt-[2px] overflow-hidden rounded-[8px]">
                 <img
-                  src={parsedData.imagem_url}
+                  src={imageUrl}
                   alt="Anexo"
                   loading="lazy"
                   decoding="async"
                   className="w-full h-auto max-h-[260px] object-cover cursor-pointer active:opacity-90 rounded-[8px]"
-                  onClick={(e) => { e.stopPropagation(); onOpenZoomedImage(parsedData.imagem_url); }}
+                  onClick={(e) => { e.stopPropagation(); onOpenZoomedImage(imageUrl); }}
                   onTouchStart={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
                 />
@@ -1823,9 +1835,8 @@ export default function grupochat() {
   ] : [];
 
   const sharedPhotos = publicMessages.flatMap((message: any, index: number) => {
-    const details = getMessageDetails(message);
-    const url = details.imagem_url || details.photo_url;
-    return typeof url === 'string' && url
+    const url = getMessageImageUrl(message);
+    return url
       ? [{ id: `${message.id}-photo-${index}`, url }]
       : [];
   }).reverse();
@@ -1888,11 +1899,14 @@ export default function grupochat() {
         }
       }}
     >
-      <div className="h-[68px] shrink-0 md:hidden" aria-hidden="true" />
-      <header className="fixed left-0 right-0 top-0 z-40 flex h-[68px] w-full shrink-0 select-none items-center gap-3 border-b border-[#e5e5e5] bg-white px-3 sm:px-4 pointer-events-none md:sticky md:left-auto md:right-auto md:top-0 dark:border-[#27313d] dark:bg-[#17212b]">
+      <div className="h-[calc(68px+env(safe-area-inset-top,0px))] shrink-0 md:hidden" aria-hidden="true" />
+      <header
+        className="fixed left-0 right-0 top-0 z-40 flex h-[68px] w-full shrink-0 select-none items-center gap-3 border-b border-[#e5e5e5] bg-white px-3 sm:px-4 pointer-events-none md:sticky md:left-auto md:right-auto md:top-0 dark:border-[#27313d] dark:bg-[#17212b]"
+        style={{ height: 'calc(68px + env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
         <button
           onClick={() => navigate('/org')}
-          className="flex h-10 w-8 shrink-0 items-center justify-center text-[#111111] pointer-events-auto md:hidden dark:text-white"
+          className="flex h-11 w-11 shrink-0 items-center justify-center text-[#111111] pointer-events-auto md:hidden dark:text-white"
           aria-label="Voltar aos chats"
         >
           <svg
@@ -1950,7 +1964,7 @@ export default function grupochat() {
         <button
           type="button"
           onClick={() => setShowInfo(true)}
-          className="flex h-10 w-10 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
+          className="flex h-11 w-11 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
           aria-label="Ligar"
           title="Ligar"
         >
@@ -1959,7 +1973,7 @@ export default function grupochat() {
         <button
           type="button"
           onClick={() => setShowInfo(true)}
-          className="flex h-10 w-10 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
+          className="flex h-11 w-11 shrink-0 items-center justify-center text-[#111111] pointer-events-auto dark:text-white"
           aria-label="Definições do grupo"
           title="Definições"
         >
@@ -2202,7 +2216,7 @@ export default function grupochat() {
                 type="button"
                 onClick={() => setShowAttachmentPicker(true)}
                 disabled={isSending}
-                className="shrink-0 cursor-pointer p-1 text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50"
+                className="flex h-11 w-11 shrink-0 items-center justify-center cursor-pointer text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50"
                 title={t('attachment.open')}
                 aria-label={t('attachment.open')}
               >
@@ -2244,7 +2258,7 @@ export default function grupochat() {
                 }
               }}
               disabled={isSending}
-              className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50"
+              className="flex h-11 w-11 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 disabled:opacity-50"
               title={editingMessage ? "Salvar alterações" : publicInput.trim() || imagePreview || pdfPreview ? t('common.send') : t('chat.voice_record')}
               aria-label={editingMessage ? "Salvar alterações" : publicInput.trim() || imagePreview || pdfPreview ? t('common.send') : t('chat.voice_record')}
             >

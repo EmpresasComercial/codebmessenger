@@ -48,6 +48,9 @@ interface Message {
   mensagem: string;
   lida: boolean;
   created_at: string;
+  imagem_url?: string;
+  photo_url?: string;
+  image_url?: string;
   status?: 'sending' | 'sent' | 'failed';
   reaction?: string;
   detalhes?: {
@@ -85,6 +88,17 @@ const getMessageDetails = (details: Message['detalhes'] | string | null | undefi
   }
 
   return details && typeof details === 'object' ? details : {};
+};
+
+const getMessageImageUrl = (message: Message) => {
+  const details = getMessageDetails(message.detalhes as Message['detalhes'] | string | null | undefined);
+  const imageUrl = details.imagem_url
+    || details.photo_url
+    || details.image_url
+    || message.imagem_url
+    || message.photo_url
+    || message.image_url;
+  return typeof imageUrl === 'string' && imageUrl.trim() ? imageUrl.trim() : null;
 };
 
 // ── Componente Principal ───────────────────────────────────────────────
@@ -163,6 +177,8 @@ export default function PrivateChat() {
   const typingChannelRef = useRef<any>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const replyPreviewRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatViewportRef = useChatVisualViewport<HTMLDivElement>();
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
@@ -174,6 +190,28 @@ export default function PrivateChat() {
   const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
   const [pdfPreview, setPdfPreview] = useState<{ name: string; url: string; sizeBytes: number } | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const composer = composerRef.current;
+    const messageList = scrollRef.current;
+    if (!composer || !messageList) return;
+
+    const updateMessageListSpacing = () => {
+      const composerHeight = composer.getBoundingClientRect().height;
+      const replyPreviewHeight = replyPreviewRef.current?.getBoundingClientRect().height ?? 0;
+      messageList.style.paddingBottom = `${Math.max(96, Math.ceil(composerHeight + replyPreviewHeight + 12))}px`;
+    };
+    const resizeObserver = new ResizeObserver(updateMessageListSpacing);
+
+    resizeObserver.observe(composer);
+    if (replyPreviewRef.current) resizeObserver.observe(replyPreviewRef.current);
+    updateMessageListSpacing();
+
+    return () => {
+      resizeObserver.disconnect();
+      messageList.style.removeProperty('padding-bottom');
+    };
+  }, [replyTo]);
 
   const selectPrivatePhoto = (file: File | undefined) => {
     if (!file) return;
@@ -869,11 +907,14 @@ export default function PrivateChat() {
     >
 
       {/* ── HEADER ── */}
-      <div className="h-[68px] shrink-0 md:hidden" aria-hidden="true" />
-      <header className="fixed left-0 right-0 top-0 z-40 flex h-[68px] w-full shrink-0 select-none items-center justify-between border-b border-[#e5e5e5] bg-white px-3 pointer-events-none sm:px-4 md:sticky md:left-auto md:right-auto md:top-0 dark:border-[#27313d] dark:bg-[#17212b]">
+      <div className="h-[calc(68px+env(safe-area-inset-top,0px))] shrink-0 md:hidden" aria-hidden="true" />
+      <header
+        className="fixed left-0 right-0 top-0 z-40 flex h-[68px] w-full shrink-0 select-none items-center justify-between border-b border-[#e5e5e5] bg-white px-3 pointer-events-none sm:px-4 md:sticky md:left-auto md:right-auto md:top-0 dark:border-[#27313d] dark:bg-[#17212b]"
+        style={{ height: 'calc(68px + env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
         <button
           onClick={() => navigate('/org')}
-          className="flex h-10 w-8 shrink-0 items-center justify-center text-black pointer-events-auto md:hidden dark:text-white"
+          className="flex h-11 w-11 shrink-0 items-center justify-center text-black pointer-events-auto md:hidden dark:text-white"
           aria-label={t('chat.back')}
         >
           <ChevronLeft className="h-5 w-5 stroke-[2]" />
@@ -942,15 +983,16 @@ export default function PrivateChat() {
         <div className="flex items-center gap-1.5 pointer-events-auto">
           <button
             onClick={() => setShowContactProfile(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
+            className="flex h-11 w-11 shrink-0 items-center justify-center text-black dark:text-white"
             aria-label={t('chat.contact_profile')}
           >
             <Phone className="tg-theme-icon w-5 h-5" />
           </button>
           <button
             onClick={() => setShowContactProfile(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
+            className="flex h-11 w-11 shrink-0 items-center justify-center text-black dark:text-white"
             aria-label={t('chat.more_options')}
+            aria-haspopup="dialog"
           >
             <MoreVertical className="tg-theme-icon w-5 h-5" />
           </button>
@@ -1187,15 +1229,15 @@ export default function PrivateChat() {
                     )}
 
                     {/* Imagem anexada */}
-                    {m.detalhes?.imagem_url && (
+                    {getMessageImageUrl(m) && (
                       <div className="mb-1 rounded-[14px] overflow-hidden pointer-events-auto">
                         <img
-                          src={m.detalhes.imagem_url}
+                          src={getMessageImageUrl(m) || undefined}
                           alt="Foto"
                           className="w-full max-h-[320px] object-cover rounded-[14px] cursor-pointer hover:opacity-95 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setZoomedImage(m.detalhes?.imagem_url || null);
+                            setZoomedImage(getMessageImageUrl(m));
                           }}
                         />
                       </div>
@@ -1421,7 +1463,7 @@ export default function PrivateChat() {
 
       {/* ── REPLY PREVIEW BAR ── */}
       {replyTo && (
-        <div className="absolute bottom-[65px] left-0 right-0 z-40 flex justify-center px-2 sm:px-6">
+        <div ref={replyPreviewRef} className="absolute bottom-[65px] left-0 right-0 z-40 flex justify-center px-2 sm:px-6">
           <div className="w-full max-w-[1000px] bg-white dark:bg-[#17212b] border-t-2 border-[#2481cc] rounded-t-xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
             <div className="w-[3px] h-full bg-[#2481cc] rounded-full self-stretch" />
             <div className="flex-1 min-w-0">
@@ -1434,7 +1476,13 @@ export default function PrivateChat() {
                 />
               </p>
             </div>
-            <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600 p-1 dark:hover:text-gray-200">
+            <button
+              type="button"
+              onClick={() => setReplyTo(null)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+              aria-label={t('common.close')}
+              title={t('common.close')}
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -1443,6 +1491,7 @@ export default function PrivateChat() {
 
       {/* ── BARRA DE MENSAGEM FLUTUANTE ── */}
       <div
+        ref={composerRef}
         className={`absolute left-0 right-0 flex justify-center bg-white dark:bg-[#17212b] ${showAttachmentPicker ? 'z-[320]' : 'z-40'}`}
         style={{
           bottom: showAttachmentPicker ? 'calc(min(220px, 45dvh) + 6px)' : 0,
@@ -1462,8 +1511,9 @@ export default function PrivateChat() {
                 <button 
                   type="button" 
                   onClick={() => setImagePreview(null)} 
-                  className="absolute -top-1 -right-1 bg-black/70 text-white rounded-full p-0.5 hover:bg-black cursor-pointer"
+                  className="absolute -top-1 -right-1 flex h-11 w-11 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black cursor-pointer"
                   title={t('chat.remove_image')}
+                  aria-label={t('chat.remove_image')}
                 >
                   <X className="w-2.5 h-2.5" />
                 </button>
@@ -1482,7 +1532,7 @@ export default function PrivateChat() {
                 <button
                   type="button"
                   onClick={() => setPdfPreview(null)}
-                  className="shrink-0 rounded-full bg-gray-100 p-0.5 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100"
                   title={t('chat.remove_pdf')}
                   aria-label={t('chat.remove_pdf')}
                 >
@@ -1523,7 +1573,7 @@ export default function PrivateChat() {
               type="button"
               onClick={() => setShowAttachmentPicker(true)}
               disabled={voiceComposerActive}
-              className="shrink-0 cursor-pointer p-1 text-[#1877f2] transition-transform active:scale-90"
+              className="flex h-11 w-11 shrink-0 items-center justify-center cursor-pointer text-[#1877f2] transition-transform active:scale-90"
               title={t('attachment.open')}
               aria-label={t('attachment.open')}
             >

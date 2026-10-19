@@ -5,8 +5,7 @@ export function useChatVisualViewport<T extends HTMLElement>() {
 
   useEffect(() => {
     const container = containerRef.current;
-    const viewport = window.visualViewport;
-    if (!container || !viewport) return;
+    if (!container) return;
 
     const previousHeight = container.style.height;
     const previousTransform = container.style.transform;
@@ -15,21 +14,33 @@ export function useChatVisualViewport<T extends HTMLElement>() {
     const syncViewport = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        container.style.height = `${Math.round(viewport.height)}px`;
-        container.style.transform = `translate3d(0, ${Math.round(viewport.offsetTop)}px, 0)`;
+        const viewport = window.visualViewport;
+        const height = Math.round(viewport?.height ?? window.innerHeight);
+        const offsetTop = Math.round(viewport?.offsetTop ?? 0);
+
+        if (height > 0) container.style.height = `${height}px`;
+        container.style.transform = `translate3d(0, ${offsetTop}px, 0)`;
       });
     };
 
     syncViewport();
-    viewport.addEventListener('resize', syncViewport);
-    viewport.addEventListener('scroll', syncViewport);
+    window.visualViewport?.addEventListener('resize', syncViewport);
+    window.visualViewport?.addEventListener('scroll', syncViewport);
     window.addEventListener('resize', syncViewport);
+    window.addEventListener('orientationchange', syncViewport);
+    window.addEventListener('pageshow', syncViewport);
+    window.addEventListener('focusin', syncViewport);
+    window.addEventListener('focusout', syncViewport);
 
     return () => {
       cancelAnimationFrame(frame);
-      viewport.removeEventListener('resize', syncViewport);
-      viewport.removeEventListener('scroll', syncViewport);
+      window.visualViewport?.removeEventListener('resize', syncViewport);
+      window.visualViewport?.removeEventListener('scroll', syncViewport);
       window.removeEventListener('resize', syncViewport);
+      window.removeEventListener('orientationchange', syncViewport);
+      window.removeEventListener('pageshow', syncViewport);
+      window.removeEventListener('focusin', syncViewport);
+      window.removeEventListener('focusout', syncViewport);
       container.style.height = previousHeight;
       container.style.transform = previousTransform;
     };

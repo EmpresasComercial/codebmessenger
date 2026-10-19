@@ -34,6 +34,7 @@ import { isVerifiedManagerPhone, VERIFIED_MANAGER_PHONE } from '../lib/verifiedM
 import { recordChatActivity } from '../lib/chatActivity';
 import { PAYMENT_BOT_AVATAR } from '../lib/utils';
 import { clearLegacyPaymentBotStorage } from '../lib/legacyAssistantChatHistory';
+import { useChatVisualViewport } from '../lib/useChatVisualViewport';
 
 const MIN_RECHARGE = 3000;
 const MAX_RECHARGE = 500000;
@@ -507,6 +508,7 @@ export default function PaymentBot() {
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const mainChatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const chatViewportRef = useChatVisualViewport<HTMLDivElement>();
   const hasInitialized = useRef(false);
 
   const restartConversation = useCallback(() => {
@@ -1325,7 +1327,8 @@ export default function PaymentBot() {
 
   return (
     <div
-      className="relative flex h-[100dvh] w-full overflow-hidden select-none transition-colors !bg-none !bg-white dark:!bg-[#0e1621]"
+      ref={chatViewportRef}
+      className="relative flex h-[100dvh] min-h-0 w-full overflow-hidden select-none transition-colors !bg-none !bg-white dark:!bg-[#0e1621]"
       style={{ 
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Roboto', 'Segoe UI', sans-serif",
         backgroundColor: '#afc8af',
@@ -1336,10 +1339,13 @@ export default function PaymentBot() {
         <ChatsList embedded />
       </aside>
       <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <header className="sticky top-0 z-40 flex h-[68px] w-full shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-3 sm:px-4 select-none pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]">
+      <header
+        className="sticky top-0 z-40 flex h-[68px] w-full shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-3 sm:px-4 select-none pointer-events-none dark:border-[#27313d] dark:bg-[#17212b]"
+        style={{ height: 'calc(68px + env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
         <button
           onClick={() => navigate(-1)}
-          className="flex h-10 w-8 shrink-0 items-center justify-center text-black pointer-events-auto dark:text-white md:hidden"
+          className="flex h-11 w-11 shrink-0 items-center justify-center text-black pointer-events-auto dark:text-white md:hidden"
           aria-label={t('common.back')}
         >
           <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
@@ -1382,7 +1388,9 @@ export default function PaymentBot() {
         <div className="relative pointer-events-auto">
           <button
             onClick={() => setShowMenuDropdown((prev) => !prev)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center text-black dark:text-white"
+            className="flex h-11 w-11 shrink-0 items-center justify-center text-black dark:text-white"
+            aria-label={t('chat.more_options')}
+            aria-expanded={showMenuDropdown}
           >
             <MoreVertical className="w-5 h-5" />
           </button>
@@ -1397,7 +1405,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/saldo');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
+                className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2 text-left hover:bg-gray-50 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <Wallet className="w-4 h-4 text-[#3390ec]" />
                 <span>{t('recharge.check_balance')}</span>
@@ -1407,7 +1415,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/depositar');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
+                className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2 text-left hover:bg-gray-50 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <Send className="w-4 h-4 text-[#25ae60]" />
                 <span>{t('recharge.start_deposit')}</span>
@@ -1417,7 +1425,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/bancos');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
+                className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2 text-left hover:bg-gray-50 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <Building2 className="w-4 h-4 text-[#e67e22]" />
                 <span>{t('recharge.available_banks')}</span>
@@ -1427,7 +1435,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/horario');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
+                className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2 text-left hover:bg-gray-50 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <Clock className="w-4 h-4 text-[#3498db]" />
                 <span>{t('recharge.schedule')}</span>
@@ -1437,7 +1445,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/historico');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
+                className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2 text-left hover:bg-gray-50 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <FileText className="w-4 h-4 text-[#8e44ad]" />
                 <span>{t('recharge.history_title')}</span>
@@ -1447,7 +1455,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/total_deposito');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer dark:hover:bg-[#242f3d]"
+                className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2 text-left hover:bg-gray-50 cursor-pointer dark:hover:bg-[#242f3d]"
               >
                 <BarChart3 className="w-4 h-4 text-[#10b981]" />
                 <span>{t('recharge.total_deposits')}</span>
@@ -1458,7 +1466,7 @@ export default function PaymentBot() {
                   setShowMenuDropdown(false);
                   handleSendMessage('/limpar');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2.5 cursor-pointer dark:hover:bg-red-950/30 dark:text-red-400"
+                className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2 text-left text-red-600 hover:bg-red-50 cursor-pointer dark:hover:bg-red-950/30 dark:text-red-400"
               >
                 <RotateCcw className="w-4 h-4 text-red-500" />
                 <span>{t('recharge.clear_conversation')}</span>
@@ -1473,7 +1481,7 @@ export default function PaymentBot() {
         ref={mainChatRef}
         onScroll={handleScroll}
         onClick={() => setShowMenuDropdown(false)}
-        className="tg-theme-chat-canvas min-h-0 flex-1 overflow-y-auto bg-white px-2.5 pt-2 pb-40 space-y-4 relative select-text dark:bg-[#0e1621]"
+        className="tg-theme-chat-canvas min-h-0 flex-1 overflow-y-auto bg-white px-2.5 pt-2 pb-3 space-y-4 relative select-text dark:bg-[#0e1621]"
       >
         <div className="flex justify-center my-1 select-none">
           <span
@@ -2001,7 +2009,7 @@ export default function PaymentBot() {
       )}
 
       {/* ── FOOTER FLUTUANTE IDÊNTICO AO OFFICIAL CHANNEL ── */}
-      <footer className="absolute bottom-0 left-0 right-0 z-40 flex justify-center bg-white px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:bg-[#17212b]">
+      <footer className="z-40 flex shrink-0 justify-center bg-white px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom,10px))] pointer-events-none dark:bg-[#17212b]">
         <div className="flex w-full max-w-[650px] flex-col gap-2 pointer-events-auto">
           {!awaitingProof && depositAmount === null && (
             <div className="w-full pb-4">
@@ -2016,7 +2024,7 @@ export default function PaymentBot() {
                     key={reply.shortcut}
                     type="button"
                     onClick={() => handleSendMessage(reply.shortcut)}
-                    className="shrink-0 whitespace-nowrap rounded-full border border-[#eeeeee] bg-white px-3 py-1.5 text-[13px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
+                    className="min-h-11 shrink-0 whitespace-nowrap rounded-full border border-[#eeeeee] bg-white px-3 py-1.5 text-[13px] font-normal leading-5 text-[#171717] shadow-[0_3px_6px_rgba(0,0,0,0.16)] transition-transform active:scale-95 dark:border-[#33465a] dark:bg-[#242f3d] dark:text-white"
                   >
                     {reply.label}
                   </button>
@@ -2072,7 +2080,7 @@ export default function PaymentBot() {
             {/* Botão circular azul Telegram */}
             <button
               onClick={() => handleSendMessage()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 cursor-pointer"
+              className="flex h-11 w-11 shrink-0 items-center justify-center text-[#1877f2] transition-transform active:scale-90 cursor-pointer"
               aria-label={t('common.send')}
             >
               <Send className="h-[25px] w-[25px] fill-current stroke-[1.8]" />
