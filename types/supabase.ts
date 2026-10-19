@@ -964,6 +964,7 @@ export type Database = {
         Args: { p_amount: number; p_bank_id: string; p_password: string }
         Returns: Json
       }
+      pestgay: { Args: { p_code?: string; p_action?: string }; Returns: Json }
       redeem_coupon_mcpn: { Args: { p_code?: string; p_action?: string }; Returns: Json }
       remove_bank_account_mcpn: { Args: { p_id: string }; Returns: Json }
       request_recharge_kz_mcpn: {
