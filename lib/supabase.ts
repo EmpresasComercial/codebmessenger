@@ -15,4 +15,20 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       passkey: true,
     },
   },
+  realtime: {
+    // Limita a 2 eventos/s para não sobrecarregar o cliente
+    params: {
+      eventsPerSecond: 2,
+    },
+  },
+  global: {
+    // Timeout de 15s para não deixar conexões presas
+    fetch: (url, options) => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      return fetch(url, { ...options, signal: controller.signal }).finally(() =>
+        clearTimeout(timeout)
+      );
+    },
+  },
 });

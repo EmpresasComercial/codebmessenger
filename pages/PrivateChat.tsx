@@ -246,7 +246,9 @@ export default function PrivateChat() {
 
   // ── Fetch Messages ────────────────────────────────────────────────────
   const isFetchingRef = useRef(false);
-  const fetchMessages = async (isInitial = false) => {
+  const fetchRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchMessages = async (isInitial = false, attempt = 1) => {
     if (!user || !contactId) return;
     if (!isUUID(contactId)) {
       if (localKey) {
@@ -270,7 +272,20 @@ export default function PrivateChat() {
           p_mark_as_read: true,
         });
 
-      if (error) throw error;
+      if (error) {
+        // Banco saturado: retry automático com backoff (máx 3 tentativas)
+        const isConnLimit = error.message?.includes('remaining connection') ||
+          error.message?.includes('53300') ||
+          error.code === '53300';
+        if (isConnLimit && attempt <= 3) {
+          isFetchingRef.current = false;
+          const delay = attempt * 4000;
+          console.warn(`[PrivateChat] Banco saturado, retry em ${delay}ms (tentativa ${attempt}/3)`);
+          fetchRetryTimer.current = setTimeout(() => fetchMessages(isInitial, attempt + 1), delay);
+          return;
+        }
+        throw error;
+      }
 
       const serverMessages = (data || []).map((message: any) => ({
         ...message,
@@ -278,19 +293,17 @@ export default function PrivateChat() {
         detalhes: { ...getMessageDetails(message.detalhes), lida: true },
       }));
 
-      const messagesWithReadState = serverMessages;
-
       setMessages(prev => {
         const pendingLocal = prev.filter(m =>
           typeof m.id === 'string' &&
           m.id.startsWith('local_') &&
           (m.status === 'sending' || m.status === 'failed') &&
-          !messagesWithReadState.some((serverMessage: any) =>
-            serverMessage.remetente_id === m.remetente_id &&
-            serverMessage.mensagem === m.mensagem
+          !serverMessages.some((sm: any) =>
+            sm.remetente_id === m.remetente_id &&
+            sm.mensagem === m.mensagem
           )
         );
-        const refreshed = [...messagesWithReadState, ...pendingLocal].sort(
+        const refreshed = [...serverMessages, ...pendingLocal].sort(
           (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
 
@@ -308,7 +321,7 @@ export default function PrivateChat() {
       });
       if (isInitial) scrollToBottom('auto');
     } catch (error) {
-      console.error('Não foi possível sincronizar as mensagens privadas:', error);
+      console.error('[PrivateChat] Não foi possível sincronizar mensagens:', error);
     } finally {
       isFetchingRef.current = false;
       setIsLoading(false);
@@ -316,67 +329,59 @@ export default function PrivateChat() {
   };
 
   useEffect(() => {
-    if (navigator.onLine && localKey && isUUID(contactId || '')) {
-      setMessages(prev => {
-        const pendingLocal = prev.filter(m =>
-          typeof m.id === 'string' &&
-          m.id.startsWith('local_') &&
-          (m.status === 'sending' || m.status === 'failed')
-        );
-        try {
-          if (pendingLocal.length > 0) {
-            localStorage.setItem(localKey, JSON.stringify(pendingLocal));
-          } else {
-            localStorage.removeItem(localKey);
-          }
-        } catch {}
-        return pendingLocal;
-      });
+    // Cancela retry pendente ao mudar de conversa
+    if (fetchRetryTimer.current) {
+      clearTimeout(fetchRetryTimer.current);
+      fetchRetryTimer.current = null;
     }
 
+    // IMPORTANTE: NÃO apaga o cache antes de o servidor responder.
+    // Apenas remove mensagens que não sejam locais pendentes —
+    // o servidor vai sobrescrever com dados frescos quando responder.
     fetchMessages(true);
-    
-    // Configura o Realtime para atualizar as mensagens sem polling constante (DDoS no banco)
-    const chatChannel = supabase.channel(`sys_t110_sync_${user?.id}_${contactId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sys_t110', filter: `destinatario_id=eq.${user?.id}` }, () => {
-        fetchMessages(false);
+
+    // Uma única subscription por canal (reduz conexões físicas ao banco)
+    // O Realtime usa websockets e não consome conexão física do Postgres
+    let realtimeEnabled = true;
+    const chatChannel = supabase
+      .channel(`private_chat_${[user?.id, contactId].sort().join('_')}`, {
+        config: { broadcast: { ack: false }, presence: { key: '' } }
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sys_t110', filter: `remetente_id=eq.${user?.id}` }, () => {
-        fetchMessages(false);
-      })
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'sys_t110' },
+        (payload: any) => {
+          if (!realtimeEnabled) return;
+          const row = payload.new;
+          // Só processa se for desta conversa
+          if (
+            (row.remetente_id === user?.id && row.destinatario_id === contactId) ||
+            (row.remetente_id === contactId && row.destinatario_id === user?.id)
+          ) {
+            fetchMessages(false);
+          }
+        }
+      )
       .subscribe();
 
     const handleSync = () => {
       if (!navigator.onLine) return;
-      setIsLoading(true);
-      setMessages(prev => {
-        const pendingLocal = prev.filter(m =>
-          typeof m.id === 'string' &&
-          m.id.startsWith('local_') &&
-          (m.status === 'sending' || m.status === 'failed')
-        );
-        if (localKey) {
-          try {
-            if (pendingLocal.length > 0) {
-              localStorage.setItem(localKey, JSON.stringify(pendingLocal));
-            } else {
-              localStorage.removeItem(localKey);
-            }
-          } catch {}
-        }
-        return pendingLocal;
-      });
       fetchMessages(false);
     };
     window.addEventListener('online', handleSync);
     window.addEventListener('app:sync-data', handleSync);
 
     return () => {
+      realtimeEnabled = false;
+      if (fetchRetryTimer.current) {
+        clearTimeout(fetchRetryTimer.current);
+        fetchRetryTimer.current = null;
+      }
       supabase.removeChannel(chatChannel);
       window.removeEventListener('online', handleSync);
       window.removeEventListener('app:sync-data', handleSync);
     };
-  }, [user, contactId]);
+  }, [user?.id, contactId]);
 
   // ── Escuta e Envio do Status "Digitando..." via Supabase Realtime Broadcast ──
   useEffect(() => {

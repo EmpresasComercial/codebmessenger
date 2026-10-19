@@ -1058,7 +1058,7 @@ export default function grupochat() {
 
   const isFetchingRef = useRef(false);
 
-  const fetchMessages = async (isInitial = false) => {
+  const fetchMessages = async (isInitial = false, attempt = 1) => {
     if (isFetchingRef.current && !isInitial) return;
     isFetchingRef.current = true;
     try {
@@ -1067,7 +1067,19 @@ export default function grupochat() {
           p_group: 'community',
           p_limit: 60,
         });
-      if (error) throw error;
+      if (error) {
+        const isConnLimit = error.message?.includes('remaining connection') ||
+          error.message?.includes('53300') ||
+          error.code === '53300';
+        if (isConnLimit && attempt <= 3) {
+          isFetchingRef.current = false;
+          const delay = attempt * 4000;
+          console.warn(`[GroupChat] Banco saturado, retry em ${delay}ms (${attempt}/3)`);
+          setTimeout(() => fetchMessages(isInitial, attempt + 1), delay);
+          return;
+        }
+        throw error;
+      }
       if (data) {
         (data as any[]).forEach((m: any) => {
           if (m.uid_emissor && !phoneCache[m.uid_emissor]) {
