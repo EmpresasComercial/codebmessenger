@@ -113,29 +113,56 @@ export default function EditProfileModal({
           return;
         }
         const { data: { publicUrl } } = supabase.storage.from("user-avatars").getPublicUrl(path);
-        finalAvatarUrl = publicUrl;
+        finalAvatarUrl = `${publicUrl}?t=${Date.now()}`;
       }
 
       const fullName = [trimmedFirstName, trimmedLastName].filter(Boolean).join(" ");
 
-      const { error: authUpdateError } = await supabase.auth.updateUser({
-        data: {
-          name: fullName, full_name: fullName,
-          first_name: trimmedFirstName, last_name: trimmedLastName,
-          bio: trimmedBio, avatar_url: finalAvatarUrl,
-        },
-      });
-      if (authUpdateError) throw authUpdateError;
+      // 1. Sincroniza metadados do utilizador no Auth
+      try {
+        await supabase.auth.updateUser({
+          data: {
+            name: fullName,
+            full_name: fullName,
+            first_name: trimmedFirstName,
+            last_name: trimmedLastName,
+            bio: trimmedBio,
+            avatar_url: finalAvatarUrl,
+          },
+        });
+      } catch (authErr) {
+        logger.warn("EditProfileModal", "Auth metadata update warning", authErr);
+      }
 
-      const { error: profileUpdateError } = await (supabase as any)
-        .from("sys_t500")
-        .update({ nome_exibicao: fullName || null, avatar_url: finalAvatarUrl || null })
-        .eq("id", user.id);
-      if (profileUpdateError) throw profileUpdateError;
+      // 2. Atualiza via RPC segura update_my_profile_mcpn
+      const { error: rpcError } = await (supabase.rpc as any)("update_my_profile_mcpn", {
+        p_nome_exibicao: fullName,
+        p_avatar_url: finalAvatarUrl,
+        p_bio: trimmedBio,
+      });
+
+      if (rpcError) {
+        logger.warn("EditProfileModal", "RPC update_my_profile_mcpn failed, trying direct update.", rpcError);
+        const { error: profileUpdateError } = await (supabase as any)
+          .from("sys_t500")
+          .update({
+            nome_exibicao: fullName || null,
+            avatar_url: finalAvatarUrl || null,
+            bio: trimmedBio || null,
+          })
+          .eq("id", user.id);
+
+        if (profileUpdateError) throw profileUpdateError;
+      }
 
       showToast(t("profile.updated"), "success");
       setAvatarUrl(finalAvatarUrl);
-      onSaved({ firstName: trimmedFirstName, lastName: trimmedLastName, bio: trimmedBio, avatarUrl: finalAvatarUrl });
+      onSaved({
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+        bio: trimmedBio,
+        avatarUrl: finalAvatarUrl,
+      });
       onClose();
     } catch (error) {
       logger.error("EditProfileModal", "Profile save failed.", error);

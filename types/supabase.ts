@@ -20,6 +20,7 @@ export type Database = {
           codigo_meu_refferal: string | null
           id: string
           avatar_url: string | null
+          bio: string | null
           metadados: Json | null
           nome_exibicao: string | null
           saldo_disponivel: number
@@ -34,6 +35,7 @@ export type Database = {
           codigo_meu_refferal?: string | null
           id: string
           avatar_url?: string | null
+          bio?: string | null
           metadados?: Json | null
           nome_exibicao?: string | null
           saldo_disponivel?: number
@@ -48,6 +50,7 @@ export type Database = {
           codigo_meu_refferal?: string | null
           id?: string
           avatar_url?: string | null
+          bio?: string | null
           metadados?: Json | null
           nome_exibicao?: string | null
           saldo_disponivel?: number
@@ -910,7 +913,7 @@ export type Database = {
         }[]
       }
       get_my_withdrawals_mcpn: {
-        Args: never
+        Args: { p_limit?: number; p_offset?: number }
         Returns: {
           banco_destino: string
           created_at: string
@@ -963,6 +966,22 @@ export type Database = {
       process_withdrawal_request: {
         Args: { p_amount: number; p_bank_id: string; p_password: string }
         Returns: Json
+      }
+      update_my_profile_mcpn: {
+        Args: { p_nome_exibicao?: string; p_avatar_url?: string; p_bio?: string }
+        Returns: Json
+      }
+      get_invite_page_data_mcpn: {
+        Args: Record<string, never> | never
+        Returns: any
+      }
+      get_my_recharges_summary_mcpn: {
+        Args: Record<string, never> | never
+        Returns: any
+      }
+      get_my_latest_pending_recharge_mcpn: {
+        Args: Record<string, never> | never
+        Returns: any
       }
       pestgay: { Args: { p_code?: string; p_action?: string }; Returns: Json }
       redeem_coupon_mcpn: { Args: { p_code?: string; p_action?: string }; Returns: Json }

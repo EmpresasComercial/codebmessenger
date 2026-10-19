@@ -125,7 +125,7 @@ export default function Profile() {
     const loadProfileDetails = async () => {
       const { data, error } = await supabase
         .from("sys_t500")
-        .select("nome_exibicao, avatar_url, metadados")
+        .select("nome_exibicao, avatar_url, bio")
         .eq("id", userId)
         .maybeSingle();
 
@@ -142,7 +142,12 @@ export default function Profile() {
         setFirstName(dbFirstName || "");
         setLastName(dbLastName.join(" "));
       }
-      setAvatarUrl(getProfileAvatarUrl(data));
+      if (data.bio !== undefined && data.bio !== null) {
+        setUserBio(data.bio);
+      }
+      if (data.avatar_url) {
+        setAvatarUrl(getProfileAvatarUrl(data));
+      }
     };
 
     void loadProfileDetails();
