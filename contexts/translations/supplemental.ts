@@ -1,4 +1,4 @@
-﻿const supplementalTranslations = {
+const supplementalTranslations = {
   pt: {
     'auth.choose_login_method': 'Escolha como pretende entrar.',
     'passkey.title': 'Passkeys',
@@ -197,8 +197,8 @@
     'chat.voice_too_large': 'A gravação excede o limite de 20 MB.',
     'chat.voice_unavailable': 'Áudio indisponível',
     'chat.voice_send_failed': 'Não foi possível enviar a mensagem de voz.',
-        'chat.voice_storage_unavailable': 'O armazenamento de áudio ainda não está configurado.',
-        'chat.voice_pause': 'Pausar gravação',
+    'chat.voice_storage_unavailable': 'O armazenamento de áudio ainda não está configurado.',
+    'chat.voice_pause': 'Pausar gravação',
     'chat.voice_resume': 'Retomar gravação',
     'chat.file_size': 'Ficheiro: {size}',
     'chat.image_invalid': 'Selecione uma imagem válida.',
@@ -756,8 +756,8 @@
     'chat.voice_too_large': 'The recording exceeds the 20 MB limit.',
     'chat.voice_unavailable': 'Audio unavailable',
     'chat.voice_send_failed': 'Could not send the voice message.',
-        'chat.voice_storage_unavailable': 'Voice storage is not configured yet.',
-        'chat.voice_pause': 'Pause recording',
+    'chat.voice_storage_unavailable': 'Voice storage is not configured yet.',
+    'chat.voice_pause': 'Pause recording',
     'chat.voice_resume': 'Resume recording',
     'chat.file_size': 'File: {size}',
     'chat.image_invalid': 'Select a valid image.',
