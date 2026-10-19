@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -704,14 +704,11 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
     fetchContacts();
 
-    const contactChannel = supabase.channel('chatslist_contacts_sync')
+    const contactChannel = supabase.channel(`chatslist_contacts_sync_${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sys_t110', filter: `destinatario_id=eq.${user.id}` }, () => {
         fetchContacts();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sys_t110', filter: `remetente_id=eq.${user.id}` }, () => {
-        fetchContacts();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipe_mcpn', filter: `usuario_id=eq.${user.id}` }, () => {
         fetchContacts();
       })
       .subscribe();

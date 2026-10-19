@@ -1194,20 +1194,19 @@ export default function grupochat() {
 
     void loadRegisteredUserCount();
 
-    const membersChannel = supabase
-      .channel('community_registered_members')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sys_t500' }, () => {
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible' && isActive) {
         void loadRegisteredUserCount();
-      })
-      .subscribe((status) => {
-        if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && isActive) {
-          console.error("Não foi possível acompanhar alterações no total de utilizadores:", status);
-        }
-      });
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
 
     return () => {
       isActive = false;
-      void supabase.removeChannel(membersChannel);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, [showToast]);
 
