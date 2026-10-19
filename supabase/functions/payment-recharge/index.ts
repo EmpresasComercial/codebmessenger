@@ -203,16 +203,13 @@ serve(async (req) => {
       });
 
       if (confirmError) {
-        // Fallback update
-        await adminClient
-          .from("paymentbot")
-          .update({
-            comprovativo_url: image_path,
-            banco_origem: bank_name,
-            status: "pendente",
-          })
-          .eq("id", recharge_id)
-          .eq("user_id", user.id);
+        throw new Error(confirmError.message);
+      }
+      if (!confirmData?.success) {
+        return new Response(
+          JSON.stringify({ error: confirmData?.message || "Não foi possível registrar o comprovativo." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
       return new Response(

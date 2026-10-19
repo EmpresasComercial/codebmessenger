@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import * as QRCode from 'qrcode';
 import {
   MoreVertical,
   Send,
@@ -40,10 +39,6 @@ const MIN_RECHARGE = 3000;
 const MAX_RECHARGE = 500000;
 const LEGACY_RECHARGE_BANK_KEY = 'deposit_bot_current_bank';
 const RECHARGE_BANK_ID_KEY = 'deposit_bot_current_bank_id';
-const DEMO_MULTICAIXA_NUMBER = '928809034';
-const DEMO_MULTICAIXA_ENTITY = 'MCX';
-const DEMO_MULTICAIXA_REFERENCE = 'DEMO';
-const DEMO_USDT_ADDRESS = 'TrhjbvkjhbklDFgnh35kjhgihgu';
 const VERIFIED_MANAGER_DISPLAY_PHONE =
   parsePhoneNumberFromString(VERIFIED_MANAGER_PHONE)?.formatInternational() || VERIFIED_MANAGER_PHONE;
 
@@ -298,8 +293,6 @@ interface ChatMessage {
     | 'amount_selector'
     | 'bank_selector'
     | 'deposit_instructions'
-    | 'demo_multicaixa'
-    | 'demo_usdt'
     | 'proof_success'
     | 'history_list'
     | 'banks_list'
@@ -325,39 +318,6 @@ function createBotMsg(
     text,
     payload,
   };
-}
-
-function DemoPaymentQrCode({ value, errorText }: { value: string; errorText: string }) {
-  const [qrDataUrl, setQrDataUrl] = useState('');
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    setQrDataUrl('');
-    setHasError(false);
-
-    QRCode.toDataURL(value, { width: 200, margin: 2, errorCorrectionLevel: 'M' })
-      .then((dataUrl) => {
-        if (active) setQrDataUrl(dataUrl);
-      })
-      .catch((error: unknown) => {
-        logger.error('PaymentBot', 'Falha ao gerar QR de demonstração:', error);
-        if (active) setHasError(true);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [value]);
-
-  if (hasError) {
-    return <p role="alert" className="text-xs text-red-600">{errorText}</p>;
-  }
-  if (!qrDataUrl) {
-    return <div className="h-[200px] w-[200px] animate-pulse rounded-lg bg-gray-100 dark:bg-[#242f3d]" aria-hidden="true" />;
-  }
-
-  return <img src={qrDataUrl} alt="QR Code de demonstração USDT" className="h-[200px] w-[200px] rounded-lg bg-white p-2" />;
 }
 
 function getCurrentDay(): string {
@@ -689,39 +649,16 @@ export default function PaymentBot() {
         if (!currentBank) {
           throw new Error('Esta conta de depósito já não está disponível. Consulte novamente a lista de bancos.');
         }
-        let recId: string | null = null;
-
-        try {
-          const { data: edgeRes, error: edgeErr } = await supabase.functions.invoke('payment-recharge', {
-            body: {
-              action: 'create_recharge',
-              amount,
-              bank_id: currentBank.id,
-              bank_name: currentBank.nome_banco,
-            },
-          });
-          if (!edgeErr && edgeRes?.rechargeId) {
-            recId = edgeRes.rechargeId;
-          }
-        } catch { }
-
-        if (!recId) {
-          const { data } = (await supabase.rpc('request_recharge_kz_mcpn', {
-            p_amount: amount,
-            p_bank_id: currentBank.id,
-          })) as { data: any; error: any };
-
-          recId = data?.recharge_id || data?.id || (data && typeof data === 'string' ? data : null);
-
-          if (!recId) {
-            const { data: latestPending } = await supabase.rpc('get_my_latest_pending_recharge_mcpn');
-            if (Array.isArray(latestPending) && latestPending.length > 0 && latestPending[0]?.id) {
-              recId = latestPending[0].id;
-            }
-          }
+        const { data, error } = await supabase.rpc('request_recharge_kz_mcpn', {
+          p_amount: amount,
+          p_bank_id: currentBank.id,
+        });
+        if (error) throw error;
+        if (!data?.success || !data.recharge_id) {
+          throw new Error(data?.message || 'Não foi possível criar o pedido de recarga.');
         }
 
-        if (!recId) throw new Error('Não foi possível criar o pedido de recarga. Tenta novamente antes de fazer a transferência.');
+        const recId = data.recharge_id;
         setActiveRechargeId(recId);
         rechargeSession.set(recId, amount, currentBank);
 
@@ -1670,7 +1607,11 @@ export default function PaymentBot() {
                                 className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer dark:text-gray-100"
                               >
                                 <span>{b.nome_banco}</span>
-                                <span className="text-[12px] text-[#3390ec]">{t('recharge.select_bank')}</span>
+                                <span className="text-[12px] text-[#3390ec]">
+                                  {b.nome_banco === 'Multicaixa Express'
+                                    ? t('recharge.select_method')
+                                    : t('recharge.select_bank')}
+                                </span>
                               </button>
                             ))
                           ) : (
@@ -1678,28 +1619,11 @@ export default function PaymentBot() {
                           )}
                           <button
                             type="button"
-                            onClick={() => botReply(() => createBotMsg('demo_multicaixa', undefined, {
-                              amount: msg.payload.amount,
-                              paymentNumber: DEMO_MULTICAIXA_NUMBER,
-                              entity: DEMO_MULTICAIXA_ENTITY,
-                              reference: DEMO_MULTICAIXA_REFERENCE,
-                            }))}
-                            className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer dark:text-gray-100"
-                          >
-                            <span>{t('recharge.multicaixa_express')}</span>
-                            <span className="text-[11px] font-medium text-[#25ae60] text-right">{t('recharge.demo_available')}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => botReply(() => createBotMsg('demo_usdt', undefined, {
-                              amount: msg.payload.amount,
-                              address: DEMO_USDT_ADDRESS,
-                              network: 'TRON (TRC20)',
-                            }))}
-                            className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-900 hover:text-[#2481cc] active:text-[#1f72b5] transition-colors cursor-pointer dark:text-gray-100"
+                            disabled
+                            className="w-full text-left py-1.5 flex items-center justify-between text-[14px] text-gray-500 cursor-not-allowed dark:text-gray-400"
                           >
                             <span>{t('recharge.usdt_wallet')}</span>
-                            <span className="text-[11px] font-medium text-[#25ae60] text-right">{t('recharge.demo_available')}</span>
+                            <span className="text-[11px] font-medium text-right">{t('recharge.method_unavailable')}</span>
                           </button>
                         </div>
                       </div>
@@ -1708,126 +1632,83 @@ export default function PaymentBot() {
                     {msg.type === 'deposit_instructions' && msg.payload && (
                       <div className="text-[14px] text-gray-950 leading-relaxed font-normal dark:text-gray-100">
                         <p className="font-bold text-[15px] text-[#2481cc] mb-2">
-                          Dados para transferência
+                          {msg.payload.bank?.nome_banco === 'Multicaixa Express'
+                            ? t('recharge.multicaixa_express')
+                            : 'Dados para transferência'}
                         </p>
-                        <div className="text-[13.5px] space-y-2 my-2">
-                          <div>
-                            <p>
-                              Por favor, conclua a transferência para <strong className="font-bold text-[#2481cc]">{msg.payload.bank?.nome_proprietario || 'Conta Oficial'}</strong>
-                              {' '}no banco <strong className="font-bold text-[#2481cc]">{msg.payload.bank?.nome_banco}</strong>, no valor de{' '}
-                              <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                                <strong className="text-[#dc2626] text-[15px] dark:text-red-400">{formatCurrency(msg.payload.amount, 'KZ')}</strong>
-                                <button
-                                  type="button"
-                                  onClick={() => copyToClipboard(String(msg.payload.amount), true)}
-                                  className="text-[#2481cc] hover:text-[#1f72b5] cursor-pointer"
-                                  title={t('common.copy')}
-                                  aria-label={`${t('common.copy')} ${formatCurrency(msg.payload.amount, 'KZ')}`}
-                                >
-                                  <Copy className="w-4 h-4" />
-                                </button>
-                              </span>.
-                            </p>
-                          </div>
-
-                          <div className="flex items-start gap-2">
-                            <p className="min-w-0 break-all">
-                              <strong>Referência (IBAN):</strong>{' '}
-                              <strong className="select-all font-bold text-[#2481cc]">{ibanReference}</strong>
+                        {msg.payload.bank?.nome_banco === 'Multicaixa Express' ? (
+                          <div className="text-[13.5px] space-y-2 my-2">
+                            <p>{t('recharge.multicaixa_instructions')}</p>
+                            <p>{t('recharge.payment_number')}: <strong className="select-all font-mono text-[#2481cc]">{ibanReference}</strong></p>
+                            <p>{t('recharge.entity')}: <strong className="text-[#2481cc]">{msg.payload.bank?.nome_proprietario}</strong></p>
+                            <p className="flex items-center gap-2">
+                              <span>{t('recharge.payment_amount')}: <strong className="text-[#dc2626] dark:text-red-400">{formatCurrency(msg.payload.amount, 'KZ')}</strong></span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(String(msg.payload.amount), true)}
+                                className="text-[#2481cc] hover:text-[#1f72b5] cursor-pointer"
+                                title={t('common.copy')}
+                                aria-label={`${t('common.copy')} ${formatCurrency(msg.payload.amount, 'KZ')}`}
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
                             </p>
                             <button
                               type="button"
                               onClick={() => copyToClipboard(ibanReference, false)}
-                              className="mt-0.5 shrink-0 text-[#2481cc] hover:text-[#1f72b5] cursor-pointer"
-                              title={copiedIban ? 'Referência copiada' : 'Copiar referência'}
-                              aria-label={copiedIban ? 'Referência copiada' : 'Copiar referência'}
+                              className="text-[#2481cc] hover:text-[#1f72b5] cursor-pointer"
                             >
-                              {copiedIban ? (
-                                <Check className="w-4 h-4 text-green-600" />
-                              ) : (
-                                <Copy className="w-4 h-4" />
-                              )}
+                              {t('common.copy')} {t('recharge.payment_number')}
                             </button>
                           </div>
-                        </div>
-                        <p className="mt-2 text-[13px] text-gray-800 leading-normal italic dark:text-gray-200">
-                          Dirija-se a um ATM ou use o aplicativo do seu banco para concluir a transferência.
-                          {' '}Depois, envie aqui uma captura do comprovativo.
-                        </p>
-                      </div>
-                    )}
+                        ) : (
+                          <>
+                            <div className="text-[13.5px] space-y-2 my-2">
+                              <div>
+                                <p>
+                                  Por favor, conclua a transferência para <strong className="font-bold text-[#2481cc]">{msg.payload.bank?.nome_proprietario || 'Conta Oficial'}</strong>
+                                  {' '}no banco <strong className="font-bold text-[#2481cc]">{msg.payload.bank?.nome_banco}</strong>, no valor de{' '}
+                                  <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                                    <strong className="text-[#dc2626] text-[15px] dark:text-red-400">{formatCurrency(msg.payload.amount, 'KZ')}</strong>
+                                    <button
+                                      type="button"
+                                      onClick={() => copyToClipboard(String(msg.payload.amount), true)}
+                                      className="text-[#2481cc] hover:text-[#1f72b5] cursor-pointer"
+                                      title={t('common.copy')}
+                                      aria-label={`${t('common.copy')} ${formatCurrency(msg.payload.amount, 'KZ')}`}
+                                    >
+                                      <Copy className="w-4 h-4" />
+                                    </button>
+                                  </span>.
+                                </p>
+                              </div>
 
-                    {msg.type === 'demo_multicaixa' && msg.payload && (
-                      <div className="space-y-3 text-[13px] leading-relaxed text-gray-800 dark:text-gray-200">
-                        <p className="font-bold text-[15px] text-[#2481cc]">{t('recharge.multicaixa_express')}</p>
-                        <p className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 text-[12px] font-semibold text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
-                          {t('recharge.demo_warning')}
-                        </p>
-                        <div className="space-y-2">
-                          <p>{t('recharge.payment_number')}: <strong className="font-mono text-[#2481cc]">{msg.payload.paymentNumber}</strong></p>
-                          <p>{t('recharge.entity')}: <strong>{msg.payload.entity}</strong></p>
-                          <p>{t('recharge.demo_reference')}: <strong>{msg.payload.reference}</strong></p>
-                          <div className="flex items-center gap-2">
-                            <p>{t('recharge.payment_amount')}: <strong className="text-[#dc2626] dark:text-red-400">{formatCurrency(msg.payload.amount, 'KZ')}</strong></p>
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard(String(msg.payload.amount), true)}
-                              className="text-[#2481cc] hover:text-[#1f72b5]"
-                              title={t('common.copy')}
-                              aria-label={`${t('common.copy')} ${formatCurrency(msg.payload.amount, 'KZ')}`}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {msg.type === 'demo_usdt' && msg.payload && (
-                      <div className="space-y-3 text-[13px] leading-relaxed text-gray-800 dark:text-gray-200">
-                        <p className="font-bold text-[15px] text-[#2481cc]">{t('recharge.usdt_transfer_title')}</p>
-                        <p className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 text-[12px] font-semibold text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
-                          {t('recharge.demo_warning')}
-                        </p>
-                        <p>{t('recharge.network')}: <strong>{msg.payload.network}</strong></p>
-                        <div className="flex justify-center rounded-lg bg-white p-2">
-                          <DemoPaymentQrCode
-                            value={JSON.stringify({
-                              demo: true,
-                              network: msg.payload.network,
-                              address: msg.payload.address,
-                              amount: msg.payload.amount,
-                              currency: 'KZ',
-                            })}
-                            errorText={t('recharge.qr_generation_failed')}
-                          />
-                        </div>
-                        <p className="flex items-center gap-2">
-                          <span>{t('recharge.payment_amount')}: <strong className="text-[#dc2626] dark:text-red-400">{formatCurrency(msg.payload.amount, 'KZ')}</strong></span>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(String(msg.payload.amount), true)}
-                            className="shrink-0 text-[#2481cc] hover:text-[#1f72b5]"
-                            title={t('common.copy')}
-                            aria-label={`${t('common.copy')} ${formatCurrency(msg.payload.amount, 'KZ')}`}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </button>
-                        </p>
-                        <div className="flex items-start gap-2">
-                          <p className="min-w-0 break-all">
-                            {t('recharge.wallet_address')}: <strong className="font-mono text-[#2481cc]">{msg.payload.address}</strong>
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(msg.payload.address)}
-                            className="mt-0.5 shrink-0 text-[#2481cc] hover:text-[#1f72b5]"
-                            title={t('common.copy')}
-                            aria-label={`${t('common.copy')} ${t('recharge.wallet_address')}`}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </button>
-                        </div>
+                              <div className="flex items-start gap-2">
+                                <p className="min-w-0 break-all">
+                                  <strong>Referência (IBAN):</strong>{' '}
+                                  <strong className="select-all font-bold text-[#2481cc]">{ibanReference}</strong>
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(ibanReference, false)}
+                                  className="mt-0.5 shrink-0 text-[#2481cc] hover:text-[#1f72b5] cursor-pointer"
+                                  title={copiedIban ? 'Referência copiada' : 'Copiar referência'}
+                                  aria-label={copiedIban ? 'Referência copiada' : 'Copiar referência'}
+                                >
+                                  {copiedIban ? (
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  ) : (
+                                    <Copy className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                            <p className="mt-2 text-[13px] text-gray-800 leading-normal italic dark:text-gray-200">
+                              Dirija-se a um ATM ou use o aplicativo do seu banco para concluir a transferência.
+                              {' '}Depois, envie aqui uma captura do comprovativo.
+                            </p>
+                          </>
+                        )}
                       </div>
                     )}
 
