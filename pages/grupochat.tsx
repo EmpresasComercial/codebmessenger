@@ -726,7 +726,15 @@ export default function grupochat() {
       if (!cached) return [];
       const parsed = JSON.parse(cached);
       if (!Array.isArray(parsed)) return [];
-      return parsed;
+      const messages = parsed.filter((message) => message.status !== 'failed');
+      if (messages.length !== parsed.length) {
+        if (messages.length > 0) {
+          localStorage.setItem('community_chat_cache', JSON.stringify(messages.slice(-50)));
+        } else {
+          localStorage.removeItem('community_chat_cache');
+        }
+      }
+      return messages;
     } catch {
       return [];
     }
@@ -1125,7 +1133,7 @@ export default function grupochat() {
           const pendingLocal = prev.filter(m =>
             typeof m.id === 'number' &&
             m.id > 1000000000000 &&
-            (m.status === 'sending' || m.status === 'failed') &&
+            m.status === 'sending' &&
             !sorted.some((serverMessage: any) =>
               serverMessage.uid_emissor === m.uid_emissor &&
               serverMessage.mensagem === m.mensagem
@@ -1163,7 +1171,15 @@ export default function grupochat() {
         if (cached) {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setPublicMessages(parsed);
+            const messages = parsed.filter((message) => message.status !== 'failed');
+            setPublicMessages(messages);
+            if (messages.length !== parsed.length) {
+              if (messages.length > 0) {
+                localStorage.setItem('community_chat_cache', JSON.stringify(messages.slice(-50)));
+              } else {
+                localStorage.removeItem('community_chat_cache');
+              }
+            }
             setIsLoading(false);
             scrollToBottom("auto");
           }
@@ -1671,10 +1687,16 @@ export default function grupochat() {
         throw err;
       }
       setPublicMessages(prev => {
-        const updated = prev.map(m => m.id === tempId ? { ...m, status: 'failed' as const } : m);
+        const updated = prev.filter(message => message.id !== tempId);
         try {
-          localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
-        } catch {}
+          if (updated.length > 0) {
+            localStorage.setItem('community_chat_cache', JSON.stringify(updated.slice(-50)));
+          } else {
+            localStorage.removeItem('community_chat_cache');
+          }
+        } catch (cacheError) {
+          console.error('[CommunityChat] Could not remove the failed message from local cache:', cacheError);
+        }
         return updated;
       });
       showToast('Mensagem não enviada', 'error');

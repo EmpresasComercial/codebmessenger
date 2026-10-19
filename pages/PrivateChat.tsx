@@ -128,16 +128,23 @@ export default function PrivateChat() {
         const cached = localStorage.getItem(localKey);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (typeof navigator !== 'undefined' && navigator.onLine) {
-            return Array.isArray(parsed)
-              ? parsed.filter((message: Message) =>
-                typeof message.id === 'string' &&
-                message.id.startsWith('local_') &&
-                (message.status === 'sending' || message.status === 'failed')
-              )
-              : [];
+          if (!Array.isArray(parsed)) return [];
+          const messages = parsed.filter((message: Message) => message.status !== 'failed');
+          if (messages.length !== parsed.length) {
+            if (messages.length > 0) {
+              localStorage.setItem(localKey, JSON.stringify(messages));
+            } else {
+              localStorage.removeItem(localKey);
+            }
           }
-          return parsed;
+          if (typeof navigator !== 'undefined' && navigator.onLine) {
+            return messages.filter((message: Message) =>
+              typeof message.id === 'string' &&
+              message.id.startsWith('local_') &&
+              message.status === 'sending'
+            );
+          }
+          return messages;
         }
       } catch {}
     }
@@ -337,7 +344,7 @@ export default function PrivateChat() {
         const pendingLocal = prev.filter(m =>
           typeof m.id === 'string' &&
           m.id.startsWith('local_') &&
-          (m.status === 'sending' || m.status === 'failed') &&
+          m.status === 'sending' &&
           !serverMessages.some((sm: any) =>
             sm.remetente_id === m.remetente_id &&
             sm.mensagem === m.mensagem
@@ -796,11 +803,17 @@ export default function PrivateChat() {
         throw err;
       }
       setMessages(prev => {
-        const updated = prev.map(m => m.id === tempId ? { ...m, status: 'failed' as const } : m);
+        const updated = prev.filter(message => message.id !== tempId);
         if (localKey) {
           try {
-            localStorage.setItem(localKey, JSON.stringify(updated));
-          } catch {}
+            if (updated.length > 0) {
+              localStorage.setItem(localKey, JSON.stringify(updated));
+            } else {
+              localStorage.removeItem(localKey);
+            }
+          } catch (cacheError) {
+            console.error('[PrivateChat] Could not remove the failed message from local cache:', cacheError);
+          }
         }
         return updated;
       });
