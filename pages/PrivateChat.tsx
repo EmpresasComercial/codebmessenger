@@ -384,10 +384,15 @@ export default function PrivateChat() {
   }, [user?.id, contactId]);
 
   // ── Escuta e Envio do Status "Digitando..." via Supabase Realtime Broadcast ──
+  const globalTypingChannelRef = useRef<any>(null);
+
   useEffect(() => {
     if (!user || !contactId) return;
     const pairId = [user.id, contactId].sort().join('_');
     const channel = supabase.channel(`typing_${pairId}`, {
+      config: { broadcast: { ack: false } }
+    });
+    const globalChannel = supabase.channel('chatslist_typing_global', {
       config: { broadcast: { ack: false } }
     });
 
@@ -403,33 +408,36 @@ export default function PrivateChat() {
       })
       .subscribe();
 
+    globalChannel.subscribe();
+
     typingChannelRef.current = channel;
+    globalTypingChannelRef.current = globalChannel;
 
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       supabase.removeChannel(channel);
+      supabase.removeChannel(globalChannel);
+      typingChannelRef.current = null;
+      globalTypingChannelRef.current = null;
     };
   }, [user?.id, contactId]);
 
   const sendTypingBroadcast = () => {
     const now = Date.now();
-    if (now - lastTypingBroadcastRef.current > 1800 && typingChannelRef.current) {
+    if (now - lastTypingBroadcastRef.current > 1800) {
       lastTypingBroadcastRef.current = now;
       // Broadcast no canal da conversa (para o PrivateChat aberto do contato)
-      typingChannelRef.current.send({
+      typingChannelRef.current?.send({
         type: 'broadcast',
         event: 'typing',
         payload: { userId: user?.id, targetId: contactId }
       });
       // Broadcast no canal global (para o ChatsList do contato)
-      try {
-        const globalChannel = supabase.channel('chatslist_typing_global');
-        globalChannel.send({
-          type: 'broadcast',
-          event: 'typing',
-          payload: { userId: user?.id, targetId: contactId }
-        });
-      } catch {}
+      globalTypingChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { userId: user?.id, targetId: contactId }
+      });
     }
   };
 
