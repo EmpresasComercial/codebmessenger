@@ -291,7 +291,11 @@ export default function PrivateChat() {
 
   const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-  // ── Fetch Messages ────────────────────────────────────────────────────
+  // ── Fetch Messages com Paginação ─────────────────────────────────────
+  const PAGE_SIZE = 30;
+  const [messageOffset, setMessageOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const isFetchingRef = useRef(false);
   const fetchRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -314,13 +318,12 @@ export default function PrivateChat() {
         .rpc('get_chat_messages_mcpn', {
           p_user1: user.id,
           p_user2: contactId,
-          p_limit: 150,
+          p_limit: PAGE_SIZE,
           p_offset: 0,
           p_mark_as_read: true,
         });
 
       if (error) {
-        // Banco saturado: retry automático com backoff (máx 3 tentativas)
         const isConnLimit = error.message?.includes('remaining connection') ||
           error.message?.includes('53300') ||
           error.code === '53300';
@@ -339,6 +342,10 @@ export default function PrivateChat() {
         lida: true,
         detalhes: { ...getMessageDetails(message.detalhes), lida: true },
       }));
+
+      // Se retornou PAGE_SIZE mensagens, provavelmente há mais
+      setHasMore(serverMessages.length >= PAGE_SIZE);
+      setMessageOffset(serverMessages.length);
 
       setMessages(prev => {
         const pendingLocal = prev.filter(m =>
@@ -372,6 +379,49 @@ export default function PrivateChat() {
     } finally {
       isFetchingRef.current = false;
       setIsLoading(false);
+    }
+  };
+
+  // Carrega mais mensagens antigas (scroll para cima)
+  const loadMoreMessages = async () => {
+    if (!user || !contactId || !isUUID(contactId) || isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .rpc('get_chat_messages_mcpn', {
+          p_user1: user.id,
+          p_user2: contactId,
+          p_limit: PAGE_SIZE,
+          p_offset: messageOffset,
+          p_mark_as_read: false,
+        });
+      if (error) throw error;
+      const older = (data || []).map((message: any) => ({
+        ...message,
+        lida: true,
+        detalhes: { ...getMessageDetails(message.detalhes), lida: true },
+      }));
+      setHasMore(older.length >= PAGE_SIZE);
+      setMessageOffset(prev => prev + older.length);
+      if (older.length > 0) {
+        // Preserva posição do scroll ao inserir mensagens acima
+        const container = scrollRef.current;
+        const prevHeight = container?.scrollHeight ?? 0;
+        setMessages(prev =>
+          [...older, ...prev].sort(
+            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          )
+        );
+        requestAnimationFrame(() => {
+          if (container) {
+            container.scrollTop = container.scrollHeight - prevHeight;
+          }
+        });
+      }
+    } catch (err) {
+      console.error('[PrivateChat] Erro ao carregar mais mensagens:', err);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -515,7 +565,7 @@ export default function PrivateChat() {
     })();
 
     return () => { isMounted = false; };
-  }, [contactId, contactDisplayName, rawContactPhone, contactLevel]);
+  }, [contactId, rawContactPhone, contactLevel]);
 
   // Fecha menu ao clicar fora
   useEffect(() => {
@@ -750,12 +800,6 @@ export default function PrivateChat() {
           ...(attachmentDetails || {})
         }
       };
-      console.log('[PrivateChat] Enviando mensagem via get_chat_messages_mcpn:', {
-        hasImage: Boolean(imageToSend),
-        hasDocument: Boolean(pdfToSend),
-        hasVoiceMessage: Boolean(voiceAttachment),
-        messageLength: msg.length,
-      });
       const { data: insertedList, error } = await (supabase as any)
         .rpc('get_chat_messages_mcpn', {
           p_user1: user.id,
@@ -782,7 +826,6 @@ export default function PrivateChat() {
         }
         return updated;
       });
-      console.log('[PrivateChat] Mensagem inserida com sucesso');
     } catch (err: unknown) {
       console.error('[PrivateChat] Falha ao persistir mensagem:', err);
       if (voiceAttachment) {
@@ -1140,6 +1183,23 @@ export default function PrivateChat() {
           </div>
         )}
 
+        {/* Botão "Carregar mais" mensagens antigas */}
+        {hasMore && !isLoading && (
+          <div className="flex justify-center mb-2">
+            <button
+              type="button"
+              onClick={loadMoreMessages}
+              disabled={isLoadingMore}
+              className="flex items-center gap-2 text-[13px] text-[#2481cc] font-medium bg-white dark:bg-[#182533] border border-[#e5e5e5] dark:border-[#2a3848] rounded-full px-4 py-1.5 shadow-sm active:opacity-70 transition-opacity disabled:opacity-50"
+            >
+              {isLoadingMore
+                ? <><div className="w-3.5 h-3.5 border-2 border-[#2481cc] border-t-transparent rounded-full animate-spin" /> A carregar...</>
+                : 'Ver mensagens anteriores'
+              }
+            </button>
+          </div>
+        )}
+
         {messages.map((m, i) => {
           // Primary: remetente_id matches session user
           // Fallback: destinatario_id matches the contact (means I sent it)
@@ -1248,6 +1308,8 @@ export default function PrivateChat() {
                         <img
                           src={getMessageImageUrl(m) || undefined}
                           alt="Foto"
+                          loading="lazy"
+                          decoding="async"
                           className="w-full max-h-[320px] object-cover rounded-[14px] cursor-pointer hover:opacity-95 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();

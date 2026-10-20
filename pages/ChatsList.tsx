@@ -106,6 +106,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
   const [communityTypingUser, setCommunityTypingUser] = useState<string | null>(null);
   const communityTypingTimer = useRef<NodeJS.Timeout | null>(null);
   const notifiedCommunityMessageIds = useRef<Set<string>>(new Set());
+  // Debounce para evitar flood de fetchContacts() no Realtime
+  const fetchContactsDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const outletContext = useOutletContext<{ openAutoMessages?: () => void }>();
 
@@ -403,7 +405,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             if (prof?.nome_exibicao) {
               senderLabel = prof.nome_exibicao;
             } else if (prof?.telefone) {
-              senderLabel = formatSenderPhone(prof.telefone, getProfileCountryCode(prof.metadados));
+              senderLabel = formatSenderPhone(prof.telefone, getProfileCountryCode((prof as any)?.metadados));
             }
           }
 
@@ -558,24 +560,27 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           });
         }
 
-        // 2. Buscar o patrocinador direto do utilizador (se houver)
+        // 2. Buscar o patrocinador direto do utilizador (batch, sem loop N+1)
         const { data: sponsorData } = await supabase
           .from('equipe_mcpn')
           .select('patrocinador_id')
           .eq('usuario_id', user.id);
 
         if (sponsorData && sponsorData.length > 0) {
-          for (const item of sponsorData) {
-            if (item.patrocinador_id && !uniqueContacts.has(item.patrocinador_id)) {
-              const { data: pData } = await supabase
-                .from('nucleo')
-                .select('*')
-                .eq('id', item.patrocinador_id)
-                .maybeSingle();
+          const missingSponsors = sponsorData
+            .map((s: any) => s.patrocinador_id)
+            .filter((id: string) => id && !uniqueContacts.has(id));
 
+          if (missingSponsors.length > 0) {
+            const { data: sponsorProfiles } = await supabase
+              .from('nucleo')
+              .select('id,telefone,nome_exibicao,metadados,avatar_url,foto_url')
+              .in('id', missingSponsors);
+
+            (sponsorProfiles || []).forEach((pData: any) => {
               if (pData?.telefone) {
-                uniqueContacts.set(item.patrocinador_id, {
-                  id: item.patrocinador_id,
+                uniqueContacts.set(pData.id, {
+                  id: pData.id,
                   telefone: pData.telefone,
                   avatarUrl: getProfileAvatarUrl(pData),
                   countryCode: getProfileCountryCode(pData.metadados),
@@ -583,22 +588,23 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                   isSponsor: true
                 });
               }
-            }
+            });
           }
         }
 
-        // 3. Buscar as mensagens mais recentes trocadas
+        // 3. Buscar as mensagens mais recentes (só colunas necessárias)
         try {
           const { data: lastMsgs } = await (supabase as any)
             .from('sys_t110')
-            .select('*')
+            .select('remetente_id,destinatario_id,created_at,mensagem,detalhes')
             .or(`remetente_id.eq.${user.id},destinatario_id.eq.${user.id}`)
             .order('created_at', { ascending: false })
-            .limit(100);
+            .limit(50);
 
           if (lastMsgs && lastMsgs.length > 0) {
-            // Se houver mensagens com usuários não listados na equipe, buscar dados em sys_t500
+            // Coleta todos os IDs em falta numa única passagem
             const missingIds: string[] = [];
+            const missingProfileIds: string[] = [];
             lastMsgs.forEach((msg: any) => {
               const otherId = msg.remetente_id === user.id ? msg.destinatario_id : msg.remetente_id;
               if (otherId && !uniqueContacts.has(otherId) && !missingIds.includes(otherId)) {
@@ -606,26 +612,51 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               }
             });
 
-            if (missingIds.length > 0) {
-              const { data: missingUsers } = await supabase
-                .from('nucleo')
-                .select('*')
-                .in('id', missingIds);
+            // Contactos já existentes mas sem countryCode/avatarUrl
+            Array.from(uniqueContacts.values()).forEach((contact: any) => {
+              if (!contact.countryCode || !contact.avatarUrl) {
+                if (!missingIds.includes(contact.id) && !missingProfileIds.includes(contact.id)) {
+                  missingProfileIds.push(contact.id);
+                }
+              }
+            });
 
-              if (missingUsers) {
-                missingUsers.forEach((u: any) => {
+            // UMA única query para todos os IDs em falta (missingIds + missingProfileIds)
+            const allMissingIds = [...new Set([...missingIds, ...missingProfileIds])];
+            if (allMissingIds.length > 0) {
+              const { data: fetchedUsers } = await supabase
+                .from('nucleo')
+                .select('id,telefone,nome_exibicao,metadados,avatar_url,foto_url')
+                .in('id', allMissingIds);
+
+              (fetchedUsers || []).forEach((u: any) => {
+                const countryCode = getProfileCountryCode(u.metadados);
+                const avatarUrl = getProfileAvatarUrl(u);
+                if (missingIds.includes(u.id)) {
+                  // Contato novo (veio de mensagem)
                   uniqueContacts.set(u.id, {
                     id: u.id,
                     telefone: u.telefone,
-                    avatarUrl: getProfileAvatarUrl(u),
-                    countryCode: getProfileCountryCode(u.metadados),
+                    avatarUrl,
+                    countryCode,
                     nome_exibicao: u.nome_exibicao,
                     isSubordinate: false
                   });
-                });
-              }
+                } else {
+                  // Contato já existente mas faltavam dados
+                  const contact = uniqueContacts.get(u.id);
+                  if (contact && (countryCode || avatarUrl)) {
+                    uniqueContacts.set(u.id, {
+                      ...contact,
+                      ...(countryCode ? { countryCode } : {}),
+                      ...(avatarUrl ? { avatarUrl } : {}),
+                    });
+                  }
+                }
+              });
             }
 
+            // Aplica lastMessage a cada contato
             lastMsgs.forEach((msg: any) => {
               const otherId = msg.remetente_id === user.id ? msg.destinatario_id : msg.remetente_id;
               if (uniqueContacts.has(otherId)) {
@@ -644,33 +675,6 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             });
           }
         } catch {}
-
-        const contactsMissingProfileData = Array.from(uniqueContacts.values())
-          .filter((contact: any) => !contact.countryCode || !contact.avatarUrl)
-          .map((contact: any) => contact.id);
-        if (contactsMissingProfileData.length > 0) {
-          const { data: profiles, error: profilesError } = await supabase
-            .from('nucleo')
-            .select('*')
-            .in('id', contactsMissingProfileData);
-
-          if (profilesError) {
-            console.error('Erro ao carregar os perfis dos contactos:', profilesError);
-          } else {
-            profiles?.forEach((profile) => {
-              const contact = uniqueContacts.get(profile.id);
-              const countryCode = getProfileCountryCode(profile.metadados);
-              const avatarUrl = getProfileAvatarUrl(profile);
-              if (contact && (countryCode || avatarUrl)) {
-                uniqueContacts.set(profile.id, {
-                  ...contact,
-                  ...(countryCode ? { countryCode } : {}),
-                  ...(avatarUrl ? { avatarUrl } : {}),
-                });
-              }
-            });
-          }
-        }
 
         const { data: unreadMessages, error: unreadError } = await (supabase as any)
           .from('sys_t110')
@@ -704,12 +708,19 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
     fetchContacts();
 
+    const debouncedFetchContacts = () => {
+      if (fetchContactsDebounceTimer.current) clearTimeout(fetchContactsDebounceTimer.current);
+      fetchContactsDebounceTimer.current = setTimeout(() => {
+        fetchContacts();
+      }, 800);
+    };
+
     const contactChannel = supabase.channel(`chatslist_contacts_sync_${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sys_t110', filter: `destinatario_id=eq.${user.id}` }, () => {
-        fetchContacts();
+        debouncedFetchContacts();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sys_t110', filter: `remetente_id=eq.${user.id}` }, () => {
-        fetchContacts();
+        debouncedFetchContacts();
       })
       .subscribe();
 
@@ -722,6 +733,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
     window.addEventListener('app:sync-data', handleSync);
 
     return () => {
+      if (fetchContactsDebounceTimer.current) clearTimeout(fetchContactsDebounceTimer.current);
       supabase.removeChannel(contactChannel);
       window.removeEventListener('online', handleSync);
       window.removeEventListener('app:sync-data', handleSync);
@@ -853,7 +865,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         if (missingProfileIds.length > 0) {
           const { data, error } = await supabase
             .from('nucleo')
-            .select('*')
+            .select('id,telefone,nome_exibicao,metadados,avatar_url,foto_url')
             .in('id', missingProfileIds);
           if (error) throw error;
           profiles = Object.fromEntries((data || []).map((profile: any) => [profile.id, profile]));
@@ -1067,6 +1079,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
                 <img
                   src={c.avatarUrl}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="h-[52px] w-[52px] rounded-full object-cover"
                   onError={(event) => {
                     event.currentTarget.onerror = null;
@@ -1151,6 +1165,8 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
               <img
                 src={avatarUrl}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="h-[52px] w-[52px] rounded-full object-cover"
                 onError={(event) => {
                   event.currentTarget.onerror = null;

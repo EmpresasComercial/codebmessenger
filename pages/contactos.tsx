@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import QRCode from 'qrcode';
 import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -23,10 +24,19 @@ export default function ContactsInvite() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   const rawInviteLink = inviteCode && inviteCode !== '---' 
     ? `${baseUrl}/t?${inviteCode}` 
     : `${baseUrl}/t`;
+
+  useEffect(() => {
+    if (rawInviteLink) {
+      QRCode.toDataURL(rawInviteLink, { width: 220, margin: 1 })
+        .then(url => setQrDataUrl(url))
+        .catch(() => {});
+    }
+  }, [rawInviteLink]);
 
   useEffect(() => {
     async function fetchData() {
@@ -34,12 +44,13 @@ export default function ContactsInvite() {
         setLoading(true);
         const { data: inviteData, error: inviteErr } = await supabase.rpc('get_invite_page_data_mcpn');
         
-        if (!inviteErr && inviteData?.success) {
-          if (inviteData.invite_code) {
-            setInviteCode(inviteData.invite_code);
+        const invPayload = inviteData as any;
+        if (!inviteErr && invPayload?.success) {
+          if (invPayload.invite_code) {
+            setInviteCode(invPayload.invite_code);
           }
-          if (inviteData.app_link) {
-            setBaseUrl(inviteData.app_link);
+          if (invPayload.app_link) {
+            setBaseUrl(invPayload.app_link);
           }
           return;
         }
@@ -231,12 +242,18 @@ export default function ContactsInvite() {
 
             {/* QR Code */}
             <div className="flex flex-col items-center py-6 px-4">
-              <div className="bg-white p-3 rounded-[12px]">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(rawInviteLink)}`}
-                  alt={t('invite.qr_alt')}
-                  className="w-[200px] h-[200px]"
-                />
+              <div className="bg-white p-3 rounded-[12px] flex items-center justify-center min-w-[200px] min-h-[200px]">
+                {qrDataUrl ? (
+                  <img
+                    src={qrDataUrl}
+                    alt={t('invite.qr_alt')}
+                    className="w-[200px] h-[200px]"
+                  />
+                ) : (
+                  <div className="w-[200px] h-[200px] flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-[#2481cc] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
               <p className="text-[13px] text-[#707579] dark:text-[#8e9aa5] text-center mt-3 max-w-[280px] leading-relaxed">
                 {t('invite.qr_instructions')}

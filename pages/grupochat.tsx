@@ -188,75 +188,6 @@ const formatDateLabel = (dateStr: string) => {
 };
 
 const phoneCache: Record<string, SenderProfile> = {};
-
-const GROUP_MEMBERS = [
-  {
-    id: 'm1',
-    name: 'Thomas Hall',
-    badge: 'Admin',
-    badgeType: 'admin',
-    status: 'online',
-    isOnline: true,
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'
-  },
-  {
-    id: 'm2',
-    name: 'Lauren Gabriella 🥰',
-    status: 'visto às 20:31',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop'
-  },
-  {
-    id: 'm3',
-    name: 'Brilson Edlézio',
-    status: 'visto às 20:13',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop'
-  },
-  {
-    id: 'm4',
-    name: 'ID 4700',
-    badge: 'Dono',
-    badgeType: 'owner',
-    status: 'visto às 20:13',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop'
-  },
-  {
-    id: 'm5',
-    name: 'Chrina Manual',
-    status: 'visto às 19:57',
-    avatar: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=100&h=100&fit=crop'
-  },
-  {
-    id: 'm6',
-    name: 'PATRICIA',
-    status: 'visto às 19:42',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop'
-  },
-  {
-    id: 'm7',
-    name: 'Carlos Manuel',
-    status: 'visto às 19:15',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop'
-  },
-  {
-    id: 'm8',
-    name: 'Mariana Santos',
-    status: 'visto às 18:50',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop'
-  },
-  {
-    id: 'm9',
-    name: 'João Pedro',
-    status: 'visto às 18:22',
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop'
-  },
-  {
-    id: 'm10',
-    name: 'Nelson Mandela Neto',
-    status: 'visto às 17:40',
-    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=100&h=100&fit=crop'
-  }
-];
-
 const COMMUNITY_QUICK_REACTIONS = ['👍', '❤️', '👏'];
 
 type GroupTab = 'members' | 'media' | 'files' | 'links';
@@ -1621,12 +1552,6 @@ export default function grupochat() {
 
     setIsSending(true);
     try {
-      console.log('[CommunityChat] Enviando para chat_gruop:', {
-        hasImage: Boolean(tempImg),
-        hasDocument: Boolean(tempPdf),
-        hasVoiceMessage: Boolean(voiceAttachment),
-        captionLength: messageText.length,
-      });
       const { data: insertedMsgList, error } = await supabase
         .rpc('get_chat_messages_mcpn', {
           p_group: 'community',
@@ -1656,7 +1581,6 @@ export default function grupochat() {
         } catch {}
         return updated;
       });
-      console.log('[CommunityChat] Mensagem inserida com sucesso');
       scrollToBottom();
     } catch (err: any) { 
       console.error("Ops! mensagem não enviada", err);

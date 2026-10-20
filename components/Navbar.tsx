@@ -13,6 +13,7 @@ export default function Navbar() {
   const { t } = useLanguage();
   const { session } = useAuth();
   const [unreadMessagesCount, setUnreadMessagesCount] = useState<number | null>(null);
+  const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const userId = session?.user?.id;
@@ -44,7 +45,10 @@ export default function Navbar() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'sys_t110', filter: `destinatario_id=eq.${userId}` },
-        () => void fetchUnreadMessagesCount(),
+        () => {
+          if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = setTimeout(() => void fetchUnreadMessagesCount(), 500);
+        },
       )
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -54,6 +58,7 @@ export default function Navbar() {
 
     return () => {
       active = false;
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       void supabase.removeChannel(unreadChannel);
     };
   }, [session?.user?.id]);

@@ -538,8 +538,9 @@ export default function PaymentBot() {
           setTotalRecharges(Number((accData[0] as any).total_recarregado ?? 0));
         } else {
           const { data: summaryData } = await supabase.rpc('get_my_recharges_summary_mcpn');
-          if (summaryData?.success) {
-            setTotalRecharges(Number(summaryData.total_aprovado) || 0);
+          const sumPayload = summaryData as any;
+          if (sumPayload?.success) {
+            setTotalRecharges(Number(sumPayload.total_aprovado) || 0);
           }
         }
       } catch { }
@@ -907,8 +908,9 @@ export default function PaymentBot() {
         recharges = rpcData;
       } else {
         const { data: sumData } = await supabase.rpc('get_my_recharges_summary_mcpn');
-        if (sumData?.recharges && Array.isArray(sumData.recharges)) {
-          recharges = sumData.recharges;
+        const sumPayload = sumData as any;
+        if (sumPayload?.recharges && Array.isArray(sumPayload.recharges)) {
+          recharges = sumPayload.recharges;
         }
       }
 
