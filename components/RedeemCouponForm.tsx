@@ -25,7 +25,7 @@ export default function RedeemCouponForm({ onRedeemed }: RedeemCouponFormProps) 
 
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc('pestgay', { p_code: normalizedCode });
+      const { data, error } = await supabase.rpc('redeem_coupon_mcpn', { p_code: normalizedCode });
       if (error) throw error;
       const result = data as { success: boolean; message: string } | null;
       if (!result?.success) {

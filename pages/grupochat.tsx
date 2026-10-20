@@ -1224,19 +1224,8 @@ export default function grupochat() {
 
     void loadRegisteredUserCount();
 
-    const handleFocus = () => {
-      if (document.visibilityState === 'visible' && isActive) {
-        void loadRegisteredUserCount();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
     return () => {
       isActive = false;
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, [showToast]);
 

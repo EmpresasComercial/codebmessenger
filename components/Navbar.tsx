@@ -52,16 +52,8 @@ export default function Navbar() {
         }
       });
 
-    const refreshOnFocus = () => {
-      if (document.visibilityState === 'visible') void fetchUnreadMessagesCount();
-    };
-    window.addEventListener('focus', refreshOnFocus);
-    document.addEventListener('visibilitychange', refreshOnFocus);
-
     return () => {
       active = false;
-      window.removeEventListener('focus', refreshOnFocus);
-      document.removeEventListener('visibilitychange', refreshOnFocus);
       void supabase.removeChannel(unreadChannel);
     };
   }, [session?.user?.id]);

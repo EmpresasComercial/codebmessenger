@@ -654,11 +654,12 @@ export default function PaymentBot() {
           p_bank_id: currentBank.id,
         });
         if (error) throw error;
-        if (!data?.success || !data.recharge_id) {
-          throw new Error(data?.message || 'Não foi possível criar o pedido de recarga.');
+        const res = data as { success?: boolean; recharge_id?: string; message?: string } | null;
+        if (!res?.success || !res.recharge_id) {
+          throw new Error(res?.message || 'Não foi possível criar o pedido de recarga.');
         }
 
-        const recId = data.recharge_id;
+        const recId = res.recharge_id;
         setActiveRechargeId(recId);
         rechargeSession.set(recId, amount, currentBank);
 
