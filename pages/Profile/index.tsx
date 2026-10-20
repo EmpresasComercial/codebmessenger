@@ -124,7 +124,7 @@ export default function Profile() {
     let isCurrent = true;
     const loadProfileDetails = async () => {
       const { data, error } = await supabase
-        .from("sys_t500")
+        .from("nucleo")
         .select("nome_exibicao, avatar_url, bio")
         .eq("id", userId)
         .maybeSingle();

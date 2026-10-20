@@ -14,138 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      sys_t500: {
-        Row: {
-          codigo_convite_ref: string | null
-          codigo_meu_refferal: string | null
-          id: string
-          avatar_url: string | null
-          bio: string | null
-          metadados: Json | null
-          nome_exibicao: string | null
-          saldo_disponivel: number
-          senha_saque: string | null
-          telefone: string
-          total_recarregado: number
-          total_retirado: number
-          updated_at: string
-        }
-        Insert: {
-          codigo_convite_ref?: string | null
-          codigo_meu_refferal?: string | null
-          id: string
-          avatar_url?: string | null
-          bio?: string | null
-          metadados?: Json | null
-          nome_exibicao?: string | null
-          saldo_disponivel?: number
-          senha_saque?: string | null
-          telefone?: string
-          total_recarregado?: number
-          total_retirado?: number
-          updated_at?: string
-        }
-        Update: {
-          codigo_convite_ref?: string | null
-          codigo_meu_refferal?: string | null
-          id?: string
-          avatar_url?: string | null
-          bio?: string | null
-          metadados?: Json | null
-          nome_exibicao?: string | null
-          saldo_disponivel?: number
-          senha_saque?: string | null
-          telefone?: string
-          total_recarregado?: number
-          total_retirado?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      atendimento_links: {
-        Row: {
-          id: string
-          links: Json
-          splash_message: string | null
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          links?: Json
-          splash_message?: string | null
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          links?: Json
-          splash_message?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      pasta: {
-        Row: {
-          contas: Json
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          contas?: Json
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          contas?: Json
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      bonus_equipe_mcpn: {
-        Row: {
-          created_at: string
-          detalhes: Json | null
-          from_user_id: string | null
-          id: string
-          nivel: number
-          user_id: string
-          valor: number
-        }
-        Insert: {
-          created_at?: string
-          detalhes?: Json | null
-          from_user_id?: string | null
-          id?: string
-          nivel: number
-          user_id: string
-          valor: number
-        }
-        Update: {
-          created_at?: string
-          detalhes?: Json | null
-          from_user_id?: string | null
-          id?: string
-          nivel?: number
-          user_id?: string
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_bonus_from_user_final"
-            columns: ["from_user_id"]
-            isOneToOne: false
-            referencedRelation: "sys_t500"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_bonus_user_final"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "sys_t500"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       chat_gruop: {
         Row: {
           data_registrada: string
@@ -170,77 +38,13 @@ export type Database = {
         }
         Relationships: []
       }
-      sys_t111: {
-        Row: {
-          user_id: string
-          dados_bancarios: Json
-          created_at: string
-        }
-        Insert: {
-          user_id: string
-          dados_bancarios: Json
-          created_at?: string
-        }
-        Update: {
-          user_id?: string
-          dados_bancarios?: Json
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_t111_user"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      coupon_redeem: {
-        Row: {
-          coupon_id: string | null
-          created_at: string
-          id: string
-          status: boolean
-          user_id: string
-        }
-        Insert: {
-          coupon_id?: string | null
-          created_at?: string
-          id?: string
-          status?: boolean
-          user_id: string
-        }
-        Update: {
-          coupon_id?: string | null
-          created_at?: string
-          id?: string
-          status?: boolean
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_coupon_redeem_source"
-            columns: ["coupon_id"]
-            isOneToOne: false
-            referencedRelation: "cupons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_coupon_redeem_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "sys_t500"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       cupons: {
         Row: {
           ativo: boolean
           codigo_cupom: string
           created_at: string
           id: string
+          resgates: Json
           usos_restantes: number | null
           valor: number
         }
@@ -249,6 +53,7 @@ export type Database = {
           codigo_cupom: string
           created_at?: string
           id?: string
+          resgates?: Json
           usos_restantes?: number | null
           valor: number
         }
@@ -257,6 +62,7 @@ export type Database = {
           codigo_cupom?: string
           created_at?: string
           id?: string
+          resgates?: Json
           usos_restantes?: number | null
           valor?: number
         }
@@ -289,7 +95,21 @@ export type Database = {
             foreignKeyName: "fk_equipe_patrocinador"
             columns: ["patrocinador_id"]
             isOneToOne: false
+            referencedRelation: "nucleo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_equipe_patrocinador"
+            columns: ["patrocinador_id"]
+            isOneToOne: false
             referencedRelation: "sys_t500"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_equipe_user"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "nucleo"
             referencedColumns: ["id"]
           },
           {
@@ -301,31 +121,47 @@ export type Database = {
           },
         ]
       }
-      feedback_suporte_mcpn: {
+      extrato_mcpn: {
         Row: {
-          created_at: string | null
+          created_at: string
+          detalhes: Json | null
+          from_user_id: string | null
           id: string
-          mensagem: string
-          screenshot_url: string | null
+          nivel: number | null
+          tipo: string
           user_id: string
+          valor: number
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
+          detalhes?: Json | null
+          from_user_id?: string | null
           id?: string
-          mensagem: string
-          screenshot_url?: string | null
+          nivel?: number | null
+          tipo: string
           user_id: string
+          valor: number
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
+          detalhes?: Json | null
+          from_user_id?: string | null
           id?: string
-          mensagem?: string
-          screenshot_url?: string | null
+          nivel?: number | null
+          tipo?: string
           user_id?: string
+          valor?: number
         }
         Relationships: [
           {
-            foreignKeyName: "fk_feedback_account_user"
+            foreignKeyName: "extrato_mcpn_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "nucleo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extrato_mcpn_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "sys_t500"
@@ -341,7 +177,7 @@ export type Database = {
           id: number
           ip_address: unknown
           success: boolean | null
-          usuario_id: string
+          usuario_id: string | null
         }
         Insert: {
           action_type?: string | null
@@ -350,7 +186,7 @@ export type Database = {
           id?: number
           ip_address: unknown
           success?: boolean | null
-          usuario_id?: string
+          usuario_id?: string | null
         }
         Update: {
           action_type?: string | null
@@ -359,11 +195,18 @@ export type Database = {
           id?: number
           ip_address?: unknown
           success?: boolean | null
-          usuario_id?: string
+          usuario_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_ip_audit_account_user"
+            foreignKeyName: "ip_audit_mcpn_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "nucleo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ip_audit_mcpn_usuario_id_fkey"
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "sys_t500"
@@ -371,12 +214,123 @@ export type Database = {
           },
         ]
       }
-
+      nucleo: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          codigo_convite_ref: string | null
+          codigo_meu_refferal: string | null
+          dados_bancarios: Json | null
+          device_id: string | null
+          id: string
+          nome_exibicao: string | null
+          saldo_disponivel: number
+          telefone: string
+          total_recarregado: number
+          total_retirado: number
+          updated_at: string
+          webpush_subscription: Json | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          codigo_convite_ref?: string | null
+          codigo_meu_refferal?: string | null
+          dados_bancarios?: Json | null
+          device_id?: string | null
+          id: string
+          nome_exibicao?: string | null
+          saldo_disponivel?: number
+          telefone?: string
+          total_recarregado?: number
+          total_retirado?: number
+          updated_at?: string
+          webpush_subscription?: Json | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          codigo_convite_ref?: string | null
+          codigo_meu_refferal?: string | null
+          dados_bancarios?: Json | null
+          device_id?: string | null
+          id?: string
+          nome_exibicao?: string | null
+          saldo_disponivel?: number
+          telefone?: string
+          total_recarregado?: number
+          total_retirado?: number
+          updated_at?: string
+          webpush_subscription?: Json | null
+        }
+        Relationships: []
+      }
+      pasta: {
+        Row: {
+          contas: Json
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          contas?: Json
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          contas?: Json
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      paymentbot: {
+        Row: {
+          created_at: string
+          detalhes_transacao: Json | null
+          id: string
+          status: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          detalhes_transacao?: Json | null
+          id?: string
+          status?: string
+          user_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          detalhes_transacao?: Json | null
+          id?: string
+          status?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recargas_mcpn_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "nucleo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recargas_mcpn_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "sys_t500"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           ativo: boolean
           duracao_dias: number
           id: string
+          limite_compra: number | null
           nome: string
           preco: number
           renda_diaria: number
@@ -385,6 +339,7 @@ export type Database = {
           ativo?: boolean
           duracao_dias: number
           id?: string
+          limite_compra?: number | null
           nome: string
           preco: number
           renda_diaria: number
@@ -393,11 +348,57 @@ export type Database = {
           ativo?: boolean
           duracao_dias?: number
           id?: string
+          limite_compra?: number | null
           nome?: string
           preco?: number
           renda_diaria?: number
         }
         Relationships: []
+      }
+      retiradas_mcpn: {
+        Row: {
+          created_at: string
+          dados_bancarios_snapshot: Json
+          id: string
+          status: string
+          user_id: string
+          valor_bruto: number
+          valor_liquido: number | null
+        }
+        Insert: {
+          created_at?: string
+          dados_bancarios_snapshot: Json
+          id?: string
+          status?: string
+          user_id: string
+          valor_bruto: number
+          valor_liquido?: number | null
+        }
+        Update: {
+          created_at?: string
+          dados_bancarios_snapshot?: Json
+          id?: string
+          status?: string
+          user_id?: string
+          valor_bruto?: number
+          valor_liquido?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_retiradas_user_final"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "nucleo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_retiradas_user_final"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "sys_t500"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sacola: {
         Row: {
@@ -432,212 +433,7 @@ export type Database = {
         }
         Relationships: []
       }
-      pushsend: {
-        Row: {
-          created_at: string
-          endpoint: string
-          id: string
-          keys_auth: string
-          keys_p256dh: string
-          updated_at: string
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          endpoint: string
-          id?: string
-          keys_auth: string
-          keys_p256dh: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          endpoint?: string
-          id?: string
-          keys_auth?: string
-          keys_p256dh?: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      paymentbot: {
-        Row: {
-          created_at: string
-          detalhes_transacao: Json | null
-          id: string
-          status: string
-          user_id: string
-          valor: number
-        }
-        Insert: {
-          created_at?: string
-          detalhes_transacao?: Json | null
-          id?: string
-          status?: string
-          user_id: string
-          valor: number
-        }
-        Update: {
-          created_at?: string
-          detalhes_transacao?: Json | null
-          id?: string
-          status?: string
-          user_id?: string
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_recargas_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "sys_t500"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      recharges_usdt_mcpn: {
-        Row: {
-          created_at: string | null
-          id: string
-          status: string | null
-          tx_hash: string | null
-          user_id: string
-          valor_usdt: number
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          status?: string | null
-          tx_hash?: string | null
-          user_id: string
-          valor_usdt: number
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          status?: string | null
-          tx_hash?: string | null
-          user_id?: string
-          valor_usdt?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_recharges_usdt_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "sys_t500"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      renda_diaria_mcpn: {
-        Row: {
-          created_at: string | null
-          id: string
-          user_id: string
-          user_produto_id: string | null
-          valor: number
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          user_id: string
-          user_produto_id?: string | null
-          valor: number
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          user_id?: string
-          user_produto_id?: string | null
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_renda_diaria_account_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "sys_t500"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_renda_user_produto"
-            columns: ["user_produto_id"]
-            isOneToOne: false
-            referencedRelation: "user_produtos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      retiradas_mcpn: {
-        Row: {
-          created_at: string
-          dados_bancarios_snapshot: Json
-          id: string
-          status: string
-          user_id: string
-          valor_bruto: number
-          valor_liquido: number
-        }
-        Insert: {
-          created_at?: string
-          dados_bancarios_snapshot: Json
-          id?: string
-          status?: string
-          user_id: string
-          valor_bruto: number
-          valor_liquido?: number
-        }
-        Update: {
-          created_at?: string
-          dados_bancarios_snapshot?: Json
-          id?: string
-          status?: string
-          user_id?: string
-          valor_bruto?: number
-          valor_liquido?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_retiradas_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "sys_t500"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-
-      usdt_config_mcpn: {
-        Row: {
-          ativo: boolean | null
-          created_at: string | null
-          endereco_carteira: string
-          id: number
-          taxa_cambio: number | null
-        }
-        Insert: {
-          ativo?: boolean | null
-          created_at?: string | null
-          endereco_carteira: string
-          id?: number
-          taxa_cambio?: number | null
-        }
-        Update: {
-          ativo?: boolean | null
-          created_at?: string | null
-          endereco_carteira?: string
-          id?: number
-          taxa_cambio?: number | null
-        }
-        Relationships: []
-      }
-      user_produtos: {
+      sys_600: {
         Row: {
           ativo: boolean
           created_at: string
@@ -648,8 +444,6 @@ export type Database = {
           preco_pago: number
           produto_id: string | null
           renda_diaria: number
-          storage_size: string | null
-          url_download_setup: string | null
           user_id: string
         }
         Insert: {
@@ -662,8 +456,6 @@ export type Database = {
           preco_pago: number
           produto_id?: string | null
           renda_diaria: number
-          storage_size?: string | null
-          url_download_setup?: string | null
           user_id: string
         }
         Update: {
@@ -676,11 +468,16 @@ export type Database = {
           preco_pago?: number
           produto_id?: string | null
           renda_diaria?: number
-          storage_size?: string | null
-          url_download_setup?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_user_produtos_account_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "nucleo"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_user_produtos_account_user"
             columns: ["user_id"]
@@ -697,67 +494,89 @@ export type Database = {
           },
         ]
       }
-      verificacoes_usuarios_mcpn: {
+      sys_t110: {
         Row: {
-          bi_numero: string | null
-          created_at: string | null
-          frente_path: string | null
-          nome: string | null
-          status: string | null
-          updated_at: string | null
-          user_id: string
-          verso_path: string | null
+          created_at: string
+          destinatario_id: string
+          detalhes: Json
+          id: string
+          mensagem: string
+          remetente_id: string
         }
         Insert: {
-          bi_numero?: string | null
-          created_at?: string | null
-          frente_path?: string | null
-          nome?: string | null
-          status?: string | null
-          updated_at?: string | null
-          user_id: string
-          verso_path?: string | null
+          created_at?: string
+          destinatario_id: string
+          detalhes?: Json
+          id?: string
+          mensagem: string
+          remetente_id: string
         }
         Update: {
-          bi_numero?: string | null
-          created_at?: string | null
-          frente_path?: string | null
-          nome?: string | null
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string
-          verso_path?: string | null
+          created_at?: string
+          destinatario_id?: string
+          detalhes?: Json
+          id?: string
+          mensagem?: string
+          remetente_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_verificacao_account_user"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "sys_t500"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
-      v_historico_geral: {
+      sys_t500: {
         Row: {
-          amount: number | null
-          created_at: string | null
-          description: string | null
+          avatar_url: string | null
+          bio: string | null
+          codigo_convite_ref: string | null
+          codigo_meu_refferal: string | null
+          dados_bancarios: Json | null
+          device_id: string | null
           id: string | null
-          status: string | null
-          type: string | null
-          user_id: string | null
+          nome_exibicao: string | null
+          saldo_disponivel: number | null
+          telefone: string | null
+          total_recarregado: number | null
+          total_retirado: number | null
+          updated_at: string | null
+          webpush_subscription: Json | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          codigo_convite_ref?: string | null
+          codigo_meu_refferal?: string | null
+          dados_bancarios?: Json | null
+          device_id?: string | null
+          id?: string | null
+          nome_exibicao?: string | null
+          saldo_disponivel?: number | null
+          telefone?: string | null
+          total_recarregado?: number | null
+          total_retirado?: number | null
+          updated_at?: string | null
+          webpush_subscription?: Json | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          codigo_convite_ref?: string | null
+          codigo_meu_refferal?: string | null
+          dados_bancarios?: Json | null
+          device_id?: string | null
+          id?: string | null
+          nome_exibicao?: string | null
+          saldo_disponivel?: number | null
+          telefone?: string | null
+          total_recarregado?: number | null
+          total_retirado?: number | null
+          updated_at?: string | null
+          webpush_subscription?: Json | null
         }
         Relationships: []
       }
     }
     Functions: {
-      getpay: { Args: Record<string, never>; Returns: Json }
-      getwallet: { Args: Record<string, never>; Returns: Json }
       buy_product_mcpn: { Args: { p_product_id: string }; Returns: Json }
-      collect_daily_earnings: { Args: never; Returns: Json }
       confirm_recharge_mcpn: {
         Args: {
           p_bank_name: string
@@ -766,12 +585,15 @@ export type Database = {
         }
         Returns: Json
       }
-      distribute_purchase_commission: {
-        Args: { p_amount: number; p_buyer_id: string }
-        Returns: undefined
+      create_coupon_mcpn: {
+        Args: {
+          p_admin_secret?: string
+          p_codigo: string
+          p_usos_max?: number
+          p_valor: number
+        }
+        Returns: Json
       }
-      generate_invite_code: { Args: never; Returns: string }
-
       get_available_products_mcpn: {
         Args: never
         Returns: {
@@ -786,20 +608,45 @@ export type Database = {
           size: string
         }[]
       }
-      get_client_ip_mcpn: { Args: never; Returns: unknown }
-      toggle_chat_message_reaction_mcpn: {
-        Args: { p_emoji: string; p_message_id: number }
-        Returns: Json
-      }
-      get_collection_bank_by_id_mcpn: {
-        Args: { p_bank_id: string }
-        Returns: {
-          iban: string
-          id: string
-          nome_banco: string
-          nome_proprietario: string
-        }[]
-      }
+      get_chat_messages_mcpn:
+        | {
+            Args: {
+              p_delete_id?: number
+              p_detalhes?: Json
+              p_edit_id?: number
+              p_group: string
+              p_limit?: number
+              p_send_message?: string
+            }
+            Returns: {
+              data_registrada: string
+              detalhes: Json
+              id: number
+              mensagem: string
+              nome_exibicao: string
+              telefone: string
+              uid_emissor: string
+            }[]
+          }
+        | {
+            Args: {
+              p_detalhes?: Json
+              p_limit?: number
+              p_mark_as_read?: boolean
+              p_offset?: number
+              p_send_message?: string
+              p_user1: string
+              p_user2: string
+            }
+            Returns: {
+              created_at: string
+              destinatario_id: string
+              detalhes: Json
+              id: string
+              mensagem: string
+              remetente_id: string
+            }[]
+          }
       get_collection_bank_details_mcpn: {
         Args: { p_bank_id: string }
         Returns: {
@@ -807,29 +654,6 @@ export type Database = {
           id: string
           nome_banco: string
           nome_proprietario: string
-        }[]
-      }
-      get_atendimento_links_mcpn: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_chat_messages_mcpn: {
-        Args: {
-          p_delete_id?: number
-          p_detalhes?: Json
-          p_edit_id?: number
-          p_group: string
-          p_limit?: number
-          p_send_message?: string
-        }
-        Returns: {
-          data_registrada: string
-          detalhes: Json
-          id: number
-          mensagem: string
-          nome_exibicao: string
-          telefone: string
-          uid_emissor: string
         }[]
       }
       get_collection_banks_mcpn: {
@@ -842,7 +666,6 @@ export type Database = {
           nome_proprietario: string
         }[]
       }
-      get_daily_ops_status_mcpn: { Args: never; Returns: Json }
       get_general_history_mcpn: {
         Args: never
         Returns: {
@@ -854,11 +677,15 @@ export type Database = {
           type: string
         }[]
       }
+      get_invite_page_data_mcpn: { Args: never; Returns: Json }
       get_my_account_data: {
         Args: never
         Returns: {
+          codigo_meu_refferal: string
           lucro_acumulado: number
+          nome_exibicao: string
           saldo_disponivel: number
+          tarefas_hoje: number
           telefone: string
           total_comissao_equipe: number
           total_recarregado: number
@@ -886,6 +713,7 @@ export type Database = {
           preco_pago: number
           produto_imagem: string
           produto_nome: string
+          renda_diaria: number
           storage_size: string
           url_download_setup: string
         }[]
@@ -901,6 +729,7 @@ export type Database = {
           valor: number
         }[]
       }
+      get_my_recharges_summary_mcpn: { Args: never; Returns: Json }
       get_my_settings_data_mcpn: {
         Args: never
         Returns: {
@@ -908,31 +737,18 @@ export type Database = {
           phone: string
         }[]
       }
-      get_my_team_detailed: {
-        Args: never
+      get_my_subordinates_chat: {
+        Args: { p_user_id?: string }
         Returns: {
-          created_at: string
+          codigo_meu_refferal: string
+          data_registro: string
           membro_id: string
           nivel: number
+          nome_exibicao: string
+          patrocinador_id: string
+          patrocinador_telefone: string
           telefone: string
-          total_investido: number
           total_recarregado: number
-        }[]
-      }
-      get_my_usdt_recharges_mcpn: {
-        Args: never
-        Returns: {
-          created_at: string
-          id: string
-          status: string
-          tx_hash: string
-          valor_usdt: number
-        }[]
-      }
-      get_my_verification_status_mcpn: {
-        Args: never
-        Returns: {
-          status: string
         }[]
       }
       get_my_withdrawals_mcpn: {
@@ -947,19 +763,9 @@ export type Database = {
           valor_liquido: number
         }[]
       }
-      get_product_details_mcpn: {
-        Args: { p_id: string }
-        Returns: {
-          descricao: string
-          duracao_dias: number
-          id: string
-          imagem_url: string
-          limite_compra: number
-          nome: string
-          preco: number
-          renda_diaria: number
-          size: string
-        }[]
+      get_sender_phone_mcpn: {
+        Args: { p_detailed?: boolean; p_get_count?: boolean; p_uid?: string }
+        Returns: Json
       }
       get_withdraw_info_mcpn: {
         Args: never
@@ -968,89 +774,56 @@ export type Database = {
           bank_id: string
           bank_name: string
           has_bank: boolean
+          has_bots: boolean
           has_pending: boolean
           iban: string
           is_verified: boolean
+          total_daily_income: number
         }[]
       }
-      link_bank_account_mcpn: {
-        Args: { p_bank_name: string; p_holder_name: string; p_iban: string }
-        Returns: Json
-      }
-      log_ip_audit_mcpn: {
-        Args: {
-          p_action: string
-          p_details?: Json
-          p_success: boolean
-          p_user_id: string
-        }
-        Returns: undefined
-      }
+      getpay: { Args: never; Returns: Json }
+      getvoice_mcpn: { Args: { p_path: string }; Returns: Json }
+      getwallet: { Args: never; Returns: Json }
       process_withdrawal_request: {
-        Args: { p_amount: number; p_bank_id: string; p_password: string }
+        Args: { p_amount: number; p_bank_id?: string; p_password?: string }
         Returns: Json
       }
-      update_my_profile_mcpn: {
-        Args: { p_nome_exibicao?: string; p_avatar_url?: string; p_bio?: string }
+      redeem_coupon_mcpn: {
+        Args: { p_action?: string; p_code?: string }
         Returns: Json
       }
-      get_invite_page_data_mcpn: {
-        Args: Record<string, never> | never
-        Returns: any
-      }
-      get_my_recharges_summary_mcpn: {
-        Args: Record<string, never> | never
-        Returns: any
-      }
-      get_my_latest_pending_recharge_mcpn: {
-        Args: Record<string, never> | never
-        Returns: any
-      }
-      pestgay: { Args: { p_code?: string; p_action?: string }; Returns: Json }
-      redeem_coupon_mcpn: { Args: { p_code?: string; p_action?: string }; Returns: Json }
       remove_bank_account_mcpn: { Args: { p_id: string }; Returns: Json }
       request_recharge_kz_mcpn: {
         Args: { p_amount: number; p_bank_id?: string }
-        Returns: Json
-      }
-      request_recharge_mcpn: {
-        Args: { p_amount: number; p_bank_name: string }
-        Returns: Json
-      }
-      request_recharge_usdt_mcpn: {
-        Args: { p_amount_usdt: number }
         Returns: Json
       }
       save_bank_data_mcpn: {
         Args: { p_bank_name: string; p_holder_name: string; p_iban: string }
         Returns: Json
       }
-      secure_registration_mcpn:
-        | { Args: { p_invite_code: string; p_phone: string }; Returns: Json }
-        | {
-            Args: {
-              p_device_id?: string
-              p_invite_code: string
-              p_phone: string
-            }
-            Returns: Json
-          }
-      submit_identity_verification_mcpn: {
+      save_webpush_subscription_mcpn: {
         Args: {
-          p_bi_numero: string
-          p_frente_path: string
-          p_nome: string
-          p_verso_path: string
+          p_endpoint: string
+          p_keys_auth: string
+          p_keys_p256dh: string
+          p_user_agent?: string
         }
         Returns: Json
       }
-
-      submit_support_feedback_mcpn: {
-        Args: { p_mensagem: string }
+      secure_registration_mcpn: {
+        Args: { p_device_id?: string; p_invite_code: string; p_phone: string }
         Returns: Json
       }
-      toggle_reaction_mcpn: {
-        Args: { p_emoji: string; p_message_id: number; p_user_id: string }
+      toggle_chat_message_reaction_mcpn: {
+        Args: { p_emoji: string; p_message_id: number }
+        Returns: Json
+      }
+      update_my_profile_mcpn: {
+        Args: {
+          p_avatar_url?: string
+          p_bio?: string
+          p_nome_exibicao?: string
+        }
         Returns: Json
       }
     }
@@ -1071,12 +844,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1100,11 +873,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1125,11 +898,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1150,11 +923,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1167,11 +940,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

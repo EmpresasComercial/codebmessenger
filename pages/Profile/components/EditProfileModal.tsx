@@ -144,7 +144,7 @@ export default function EditProfileModal({
       if (rpcError) {
         logger.warn("EditProfileModal", "RPC update_my_profile_mcpn failed, trying direct update.", rpcError);
         const { error: profileUpdateError } = await (supabase as any)
-          .from("sys_t500")
+          .from("nucleo")
           .update({
             nome_exibicao: fullName || null,
             avatar_url: finalAvatarUrl || null,

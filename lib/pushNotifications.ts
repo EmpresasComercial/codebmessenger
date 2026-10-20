@@ -80,20 +80,15 @@ export async function subscribeToPushNotifications(): Promise<{ success: boolean
       return { success: false, message: 'Chaves de notificação inválidas.' };
     }
 
-    // 5. Salvar a subscription no Supabase vinculada ao usuário
+    // 5. Salvar a subscription no perfil do usuário (nucleo.webpush_subscription)
     const { data: userData } = await supabase.auth.getUser();
     if (userData?.user) {
-      await (supabase.from('pushsend' as any) as any).upsert(
-        {
-          user_id: userData.user.id,
-          endpoint,
-          keys_p256dh: p256dh,
-          keys_auth: auth,
-          user_agent: navigator.userAgent,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'endpoint' }
-      );
+      await (supabase.rpc as any)('save_webpush_subscription_mcpn', {
+        p_endpoint: endpoint,
+        p_keys_p256dh: p256dh,
+        p_keys_auth: auth,
+        p_user_agent: navigator.userAgent,
+      });
     }
 
     return { success: true, message: 'Notificações ativadas com sucesso!' };

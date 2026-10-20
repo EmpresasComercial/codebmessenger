@@ -396,7 +396,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
             senderLabel = "Tu";
           } else {
             const { data: prof } = await supabase
-              .from('sys_t500')
+              .from('nucleo')
               .select('*')
               .eq('id', latestMsg.uid_emissor)
               .maybeSingle();
@@ -463,7 +463,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
       try {
         const { data: profile, error } = await supabase
-          .from('sys_t500')
+          .from('nucleo')
           .select('*')
           .eq('id', message.uid_emissor)
           .maybeSingle();
@@ -568,7 +568,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           for (const item of sponsorData) {
             if (item.patrocinador_id && !uniqueContacts.has(item.patrocinador_id)) {
               const { data: pData } = await supabase
-                .from('sys_t500')
+                .from('nucleo')
                 .select('*')
                 .eq('id', item.patrocinador_id)
                 .maybeSingle();
@@ -608,7 +608,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
 
             if (missingIds.length > 0) {
               const { data: missingUsers } = await supabase
-                .from('sys_t500')
+                .from('nucleo')
                 .select('*')
                 .in('id', missingIds);
 
@@ -650,7 +650,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
           .map((contact: any) => contact.id);
         if (contactsMissingProfileData.length > 0) {
           const { data: profiles, error: profilesError } = await supabase
-            .from('sys_t500')
+            .from('nucleo')
             .select('*')
             .in('id', contactsMissingProfileData);
 
@@ -852,7 +852,7 @@ export default function ChatsList({ embedded = false }: { embedded?: boolean }) 
         let profiles: Record<string, any> = {};
         if (missingProfileIds.length > 0) {
           const { data, error } = await supabase
-            .from('sys_t500')
+            .from('nucleo')
             .select('*')
             .in('id', missingProfileIds);
           if (error) throw error;

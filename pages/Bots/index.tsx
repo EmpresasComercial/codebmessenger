@@ -375,7 +375,7 @@ export default function BusinessMessengerBotsChat() {
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.user) {
         const { data: userData } = await supabase
-          .from("sys_t500")
+          .from("nucleo")
           .select("saldo_disponivel")
           .eq("id", sessionData.session.user.id)
           .single();

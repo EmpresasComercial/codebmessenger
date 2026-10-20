@@ -32,13 +32,17 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // 1. Busca todas as inscrições dos dispositivos desse usuário
-    const { data: subscriptions, error } = await supabaseAdmin
-      .from("pushsend")
-      .select("*")
-      .eq("user_id", user_id);
+    // 1. Busca todas as inscrições dos dispositivos desse usuário em nucleo
+    const { data: userProfile, error } = await supabaseAdmin
+      .from("nucleo")
+      .select("webpush_subscription")
+      .eq("id", user_id)
+      .maybeSingle();
 
-    if (error || !subscriptions || subscriptions.length === 0) {
+    const rawSubs = userProfile?.webpush_subscription;
+    const subscriptions = Array.isArray(rawSubs) ? rawSubs : (rawSubs ? [rawSubs] : []);
+
+    if (error || subscriptions.length === 0) {
       return new Response(JSON.stringify({ message: "Nenhum dispositivo encontrado para este usuário." }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -56,7 +60,7 @@ serve(async (req) => {
       ...(typeof message === "string" ? { message } : {}),
     });
 
-    const sendPromises = subscriptions.map(async (sub) => {
+    const sendPromises = subscriptions.map(async (sub: any) => {
       const pushSubscription = {
         endpoint: sub.endpoint,
         keys: {
@@ -69,9 +73,17 @@ serve(async (req) => {
         await webpush.sendNotification(pushSubscription, payload);
         return { endpoint: sub.endpoint, status: "success" };
       } catch (err: any) {
-        // Se a inscrição expirou no celular, remove do banco
+        // Se a inscrição expirou no celular, remove de nucleo
         if (err.statusCode === 410 || err.statusCode === 404) {
-          await supabaseAdmin.from("pushsend").delete().eq("id", sub.id);
+          const { data: currentProfile } = await supabaseAdmin
+            .from("nucleo")
+            .select("webpush_subscription")
+            .eq("id", user_id)
+            .maybeSingle();
+          if (Array.isArray(currentProfile?.webpush_subscription)) {
+            const updated = currentProfile.webpush_subscription.filter((s: any) => s.endpoint !== sub.endpoint);
+            await supabaseAdmin.from("nucleo").update({ webpush_subscription: updated }).eq("id", user_id);
+          }
         }
         return { endpoint: sub.endpoint, status: "failed", error: err.message };
       }
