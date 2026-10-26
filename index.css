@@ -2,6 +2,26 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+.login-banner-wave {
+  transform-origin: 50% 10%;
+  animation: login-banner-wave 4.5s ease-in-out infinite;
+}
+
+@keyframes login-banner-wave {
+  0%, 100% {
+    transform: perspective(320px) rotateY(-12deg) rotateZ(-7deg) scale(0.97);
+  }
+  50% {
+    transform: perspective(320px) rotateY(12deg) rotateZ(7deg) scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-banner-wave {
+    animation: none;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════════
    SISTEMA DE DESIGN OFICIAL DO TELEGRAM MESSENGER
    ══════════════════════════════════════════════════════════════════ */

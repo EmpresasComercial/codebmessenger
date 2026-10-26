@@ -8,6 +8,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
     resolve: {
       dedupe: ['react', 'react-dom'],
       alias: {
@@ -40,10 +43,6 @@ export default defineConfig(({ mode }) => {
             if (id.includes('node_modules/react-router')) {
               return 'react-router';
             }
-            // Supabase → chunk separado (grande)
-            if (id.includes('@supabase')) {
-              return 'supabase';
-            }
             // Phone number metadata → separado do pacote inicial
             if (id.includes('/node_modules/libphonenumber-js/')) {
               return 'phone-number';
@@ -72,13 +71,8 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-      // Otimizações esbuild
-      esbuildOptions: {
-        // Remove console.log em produção
-        drop: ['console', 'debugger'],
-        // Target browsers modernos → bundle menor
-        target: 'es2020',
-      },
+      // Target browsers modernos → bundle menor
+      target: 'es2020',
     },
   };
 });

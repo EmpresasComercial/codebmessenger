@@ -17,7 +17,9 @@ import { registerServiceWorker, subscribeToPushNotifications, clearAppBadge } fr
 import { LoadingProvider } from './contexts/LoadingContext';
 import { GlobalLoadingIndicator } from './components/GlobalLoadingIndicator';
 import PageSkeleton from './components/PageSkeleton';
+import RouteErrorBoundary from './components/RouteErrorBoundary';
 import { getInviteCode } from './lib/inviteCode';
+import { installChatNotificationAudioUnlock } from './lib/chatNotificationSound';
 
 /* ── Lazy imports ─────────────────────────────────────────────────────────── */
 const Login            = lazy(() => import('./pages/Login'));
@@ -41,11 +43,24 @@ function RootRedirect() {
   const { session, ready } = useAuth();
   const [searchParams] = useSearchParams();
   const inviteCode = getInviteCode(searchParams);
+  const hostname = window.location.hostname.toLowerCase();
 
   if (!ready) return <PageSkeleton />;
+  if (hostname === 'chat.telegramas.cc') {
+    return <Navigate to="/BaMnOpQ4rStU2vWxYz" replace />;
+  }
+  if (hostname === 'download.telegramas.cc') {
+    return <Navigate to="/android?setln=pt" replace />;
+  }
   if (session) return <Navigate to="/conversas" replace />;
   if (inviteCode) return <Navigate to={`/signup?ref=${encodeURIComponent(inviteCode)}`} replace />;
   return <Navigate to="/signup" replace />;
+}
+
+function InviteRedirect() {
+  const [searchParams] = useSearchParams();
+  const inviteCode = getInviteCode(searchParams);
+  return <Navigate to={inviteCode ? `/signup?ref=${encodeURIComponent(inviteCode)}` : '/signup'} replace />;
 }
 
 function GlobalLanguageSelector() {
@@ -56,11 +71,11 @@ function GlobalLanguageSelector() {
   const firstSegment = normalizedPath.split('/').filter(Boolean)[0] ?? '';
   const alwaysVisibleRoutes = new Set(['signin', 'signup', 'login', 'entrar']);
   const alwaysHiddenRoutes = new Set([
-    'org',
     'conversas',
     'chat',
     'privado',
     'grupo',
+    'bamnopq4rstu2vwxyz',
     'web',
     'webgrupo',
     'chat-comunidade',
@@ -101,6 +116,7 @@ function GlobalLanguageSelector() {
 export default function App() {
   React.useEffect(() => {
     document.title = 'Teggram-X';
+    const removeChatAudioUnlock = installChatNotificationAudioUnlock();
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
@@ -133,6 +149,7 @@ export default function App() {
     appleLink.href = iconUrl;
 
     return () => {
+      removeChatAudioUnlock();
       window.removeEventListener('focus', handleClearBadgeOnFocus);
       document.removeEventListener('visibilitychange', handleClearBadgeOnFocus);
     };
@@ -148,9 +165,11 @@ export default function App() {
                 <ConnectivityOverlay />
                 <GlobalLoadingIndicator />
                 <GlobalLanguageSelector />
-                <Suspense fallback={<PageSkeleton />}>
-                <Routes>
+                <RouteErrorBoundary>
+                  <Suspense fallback={<PageSkeleton />}>
+                    <Routes>
                   <Route path="/"         element={<RootRedirect />} />
+                  <Route path="/t"         element={<InviteRedirect />} />
                   <Route path="/signup"  element={<Messager />} />
                   <Route path="/signin"  element={<Login />} />
                   <Route path="/android"  element={<DownloadApp />} />
@@ -160,13 +179,14 @@ export default function App() {
 
                   <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                     {/* Rotas Simplificadas Oficiais */}
+                    <Route path="/BaMnOpQ4rStU2vWxYz" element={<GrupoChat />} />
                     <Route path="Sobre"                  element={<AboutUs />} />
                     <Route path="Banco"                  element={<AddBank />} />
                     <Route path="Senha"                  element={<Navigate to="/botfather?command=%2Fsenha" replace />} />
                     <Route path="conversas"              element={<ChatsHome />} />
                     <Route path="Contactos"              element={<Invite />} />
                     <Route path="Dispositivos"           element={<Navigate to="/sessoes-ativas" replace />} />
-                    <Route path="grupo"                  element={<GrupoChat />} />
+                    <Route path="grupo"                  element={<Navigate to="/BaMnOpQ4rStU2vWxYz" replace />} />
                     <Route path="Ajuda"                  element={<HelpFAQ />} />
                     <Route path="Perfil"                 element={<Profile />} />
                     <Route path="Pagamento"              element={<Playmentbot />} />
@@ -211,16 +231,15 @@ export default function App() {
                     <Route path="provas-social"           element={<Navigate to="/conversas" replace />} />
                     <Route path="confirmar-recarga"       element={<Navigate to="/Pagamento" replace />} />
                     <Route path="payMoney"                element={<Navigate to="/Pagamento" replace />} />
-                    <Route path="org"                    element={<Navigate to="/conversas" replace />} />
                     <Route path="telegramBussiness"       element={<Navigate to="/conversas" replace />} />
                     <Route path="telegramBusiness"        element={<Navigate to="/conversas" replace />} />
                     <Route path="telegram-business"       element={<Navigate to="/conversas" replace />} />
-                    <Route path="web"                     element={<Navigate to="/grupo" replace />} />
-                    <Route path="webgrupo"                element={<Navigate to="/grupo" replace />} />
-                    <Route path="chat-comunidade"         element={<Navigate to="/grupo" replace />} />
-                    <Route path="chat/comunidade"         element={<Navigate to="/grupo" replace />} />
-                    <Route path="comunidade-chat"         element={<Navigate to="/grupo" replace />} />
-                    <Route path="grupochat"               element={<Navigate to="/grupo" replace />} />
+                    <Route path="web"                     element={<Navigate to="/BaMnOpQ4rStU2vWxYz" replace />} />
+                    <Route path="webgrupo"                element={<Navigate to="/BaMnOpQ4rStU2vWxYz" replace />} />
+                    <Route path="chat-comunidade"         element={<Navigate to="/BaMnOpQ4rStU2vWxYz" replace />} />
+                    <Route path="chat/comunidade"         element={<Navigate to="/BaMnOpQ4rStU2vWxYz" replace />} />
+                    <Route path="comunidade-chat"         element={<Navigate to="/BaMnOpQ4rStU2vWxYz" replace />} />
+                    <Route path="grupochat"               element={<Navigate to="/BaMnOpQ4rStU2vWxYz" replace />} />
                     <Route path="chat/:contactId"         element={<PrivateChat />} />
                     <Route path="devices"                 element={<Navigate to="/sessoes-ativas" replace />} />
                     <Route path="telegram-premium"        element={<Navigate to="/Contactos" replace />} />
@@ -230,8 +249,9 @@ export default function App() {
                   </Route>
 
                   <Route path="*" element={<Navigate to="/signin" replace />} />
-                </Routes>
-              </Suspense>
+                    </Routes>
+                  </Suspense>
+                </RouteErrorBoundary>
               </PresenceProvider>
             </AuthProvider>
           </ToastProvider>

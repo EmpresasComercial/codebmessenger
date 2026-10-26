@@ -1,0 +1,44 @@
+[
+  {
+    "id": "d37153a7-fed4-42be-af0a-51ae9f334981",
+    "email": "928809030@user.com",
+    "phone": null,
+    "raw_user_meta_data": {
+      "bio": "",
+      "sub": "d37153a7-fed4-42be-af0a-51ae9f334981",
+      "name": "Costa",
+      "email": "928809030@user.com",
+      "phone": "928809030",
+      "device_id": "dev_Linux_armv81_385x833_msvu9el9_3pftvl0o5a4",
+      "full_name": "Costa",
+      "last_name": "",
+      "avatar_url": "/tg_duck_rapido.png",
+      "first_name": "Costa",
+      "referred_by": "6767657288",
+      "email_verified": false,
+      "phone_verified": false
+    },
+    "created_at": "2026-08-16 13:26:36.860906+00"
+  },
+  {
+    "id": "6fbc96b2-5cc9-45b0-814b-37f64fc5835a",
+    "email": "928809034@user.com",
+    "phone": null,
+    "raw_user_meta_data": {
+      "bio": "",
+      "sub": "6fbc96b2-5cc9-45b0-814b-37f64fc5835a",
+      "name": "Marido",
+      "email": "928809034@user.com",
+      "phone": "928809034",
+      "device_id": "dev_Win32_1327x746_muy1hb3w_sqdj9ckapep",
+      "full_name": "Marido",
+      "last_name": "",
+      "avatar_url": "https://ptvmqurxtciyqxdpsuen.supabase.co/storage/v1/object/public/user-avatars/avatars/6fbc96b2-5cc9-45b0-814b-37f64fc5835a/profile.png",
+      "first_name": "Marido",
+      "referred_by": "Yt9g",
+      "email_verified": false,
+      "phone_verified": false
+    },
+    "created_at": "2026-10-07 11:44:28.240211+00"
+  }
+]

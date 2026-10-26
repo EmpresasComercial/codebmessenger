@@ -1,0 +1,308 @@
+=== public.get_general_history_mcpn ===
+CREATE OR REPLACE FUNCTION public.get_general_history_mcpn()
+ RETURNS TABLE(id text, type text, amount numeric, description text, status text, created_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions', 'private_mcpn'
+AS $function$
+DECLARE
+    v_uid uuid := auth.uid();
+BEGIN
+    IF v_uid IS NULL THEN
+        RAISE EXCEPTION 'Sessão expirada';
+    END IF;
+
+    RETURN QUERY
+    -- Recargas
+    SELECT
+        p.id::text,
+        'recarga'::text          AS type,
+        p.valor                  AS amount,
+        'Recarga via ' || COALESCE(p.metodo_pagamento, 'transferência')  AS description,
+        p.status,
+        p.created_at
+    FROM public.paymentbot p
+    WHERE p.user_id = v_uid
+
+    UNION ALL
+
+    -- Saques/Retiradas
+    SELECT
+        r.id::text,
+        'saque'::text            AS type,
+        r.valor                  AS amount,
+        'Saque solicitado'::text AS description,
+        r.status,
+        r.created_at
+    FROM public.retiradas_mcpn r
+    WHERE r.user_id = v_uid
+
+    UNION ALL
+
+    -- Extrato unificado (renda_diaria + comissao_equipe)
+    SELECT
+        e.id::text,
+        e.tipo                   AS type,
+        e.valor                  AS amount,
+        CASE e.tipo
+            WHEN 'renda_diaria'    THEN 'Rendimento diário do robô'
+            WHEN 'comissao_equipe' THEN 'Comissão de equipa (Nível ' || COALESCE(e.nivel::text, '?') || ')'
+            ELSE e.tipo
+        END                      AS description,
+        'confirmed'::text        AS status,
+        e.created_at
+    FROM public.extrato_mcpn e
+    WHERE e.user_id = v_uid
+
+    ORDER BY created_at DESC;
+END;
+$function$
+
+
+=== public.get_sender_phone_mcpn ===
+CREATE OR REPLACE FUNCTION public.get_sender_phone_mcpn(p_uid uuid DEFAULT NULL::uuid, p_detailed boolean DEFAULT true, p_get_count boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rec record;
+  v_count bigint;
+BEGIN
+  IF p_get_count THEN
+    SELECT COUNT(*) INTO v_count FROM public.nucleo;
+    RETURN jsonb_build_object('count', v_count);
+  END IF;
+
+  IF p_uid IS NULL THEN
+    RETURN '{}'::jsonb;
+  END IF;
+
+  SELECT 
+    a.id,
+    a.telefone,
+    COALESCE(a.nome_exibicao, a.telefone, 'Contato') AS nome_exibicao,
+    a.avatar_url,
+    a.bio,
+    a.updated_at,
+    e.created_at AS invited_at
+  INTO v_rec
+  FROM public.nucleo a
+  LEFT JOIN public.equipe_mcpn e ON e.usuario_id = a.id
+  WHERE a.id = p_uid
+  LIMIT 1;
+
+  IF v_rec.id IS NULL THEN
+    RETURN '{}'::jsonb;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'id', v_rec.id,
+    'nome_exibicao', v_rec.nome_exibicao,
+    'telefone', v_rec.telefone,
+    'avatar_url', v_rec.avatar_url,
+    'bio', v_rec.bio,
+    'invited_at', v_rec.invited_at,
+    'registered_at', v_rec.invited_at
+  );
+END;
+$function$
+
+
+=== private_mcpn.get_my_subordinates_chat ===
+CREATE OR REPLACE FUNCTION private_mcpn.get_my_subordinates_chat(p_user_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(membro_id uuid, telefone text, nome_exibicao text, codigo_meu_refferal text, nivel integer, patrocinador_id uuid, patrocinador_telefone text, data_registro timestamp with time zone, total_recarregado numeric)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions', 'private_mcpn'
+AS $function$
+DECLARE
+    v_target_id uuid := COALESCE(p_user_id, auth.uid());
+BEGIN
+    RETURN QUERY
+    -- Nível 1: Convidados Diretos
+    SELECT 
+        e1.usuario_id AS membro_id,
+        COALESCE(u1.telefone, '')::text AS telefone,
+        u1.nome_exibicao::text AS nome_exibicao,
+        u1.codigo_meu_refferal::text AS codigo_meu_refferal,
+        1 AS nivel,
+        e1.patrocinador_id,
+        COALESCE(p1.telefone, '')::text AS patrocinador_telefone,
+        e1.created_at AS data_registro,
+        COALESCE(u1.total_recarregado, 0)::numeric AS total_recarregado
+    FROM public.equipe_mcpn e1
+    JOIN public.nucleo u1 ON u1.id = e1.usuario_id
+    LEFT JOIN public.nucleo p1 ON p1.id = e1.patrocinador_id
+    WHERE e1.patrocinador_id = v_target_id
+
+    UNION ALL
+
+    -- Nível 2: Convidados pelos membros do Nível 1
+    SELECT 
+        e2.usuario_id AS membro_id,
+        COALESCE(u2.telefone, '')::text AS telefone,
+        u2.nome_exibicao::text AS nome_exibicao,
+        u2.codigo_meu_refferal::text AS codigo_meu_refferal,
+        2 AS nivel,
+        e2.patrocinador_id,
+        COALESCE(p2.telefone, '')::text AS patrocinador_telefone,
+        e2.created_at AS data_registro,
+        COALESCE(u2.total_recarregado, 0)::numeric AS total_recarregado
+    FROM public.equipe_mcpn e1
+    JOIN public.equipe_mcpn e2 ON e2.patrocinador_id = e1.usuario_id
+    JOIN public.nucleo u2 ON u2.id = e2.usuario_id
+    LEFT JOIN public.nucleo p2 ON p2.id = e2.patrocinador_id
+    WHERE e1.patrocinador_id = v_target_id
+
+    UNION ALL
+
+    -- Nível 3: Convidados pelos membros do Nível 2
+    SELECT 
+        e3.usuario_id AS membro_id,
+        COALESCE(u3.telefone, '')::text AS telefone,
+        u3.nome_exibicao::text AS nome_exibicao,
+        u3.codigo_meu_refferal::text AS codigo_meu_refferal,
+        3 AS nivel,
+        e3.patrocinador_id,
+        COALESCE(p3.telefone, '')::text AS patrocinador_telefone,
+        e3.created_at AS data_registro,
+        COALESCE(u3.total_recarregado, 0)::numeric AS total_recarregado
+    FROM public.equipe_mcpn e1
+    JOIN public.equipe_mcpn e2 ON e2.patrocinador_id = e1.usuario_id
+    JOIN public.equipe_mcpn e3 ON e3.patrocinador_id = e2.usuario_id
+    JOIN public.nucleo u3 ON u3.id = e3.usuario_id
+    LEFT JOIN public.nucleo p3 ON p3.id = e3.patrocinador_id
+    WHERE e1.patrocinador_id = v_target_id
+
+    ORDER BY nivel ASC, data_registro DESC;
+END;
+$function$
+
+
+=== public.get_collection_banks_mcpn ===
+CREATE OR REPLACE FUNCTION public.get_collection_banks_mcpn()
+ RETURNS TABLE(id uuid, nome_banco text, nome_proprietario text, iban text, created_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'private_mcpn', 'extensions', 'pg_temp'
+AS $function$ BEGIN RETURN QUERY SELECT COALESCE((c->>'id')::uuid, b.id) AS id, COALESCE(c->>'banco', c->>'nome_banco', 'Banco')::text AS nome_banco, COALESCE(c->>'titular', c->>'nome_proprietario', '')::text AS nome_proprietario, COALESCE(c->>'iban', '')::text AS iban, b.updated_at AS created_at FROM public.pasta b, jsonb_array_elements(b.contas) AS c; END; $function$
+
+
+=== public.get_collection_bank_details_mcpn ===
+CREATE OR REPLACE FUNCTION public.get_collection_bank_details_mcpn(p_bank_id uuid)
+ RETURNS TABLE(id uuid, nome_banco text, nome_proprietario text, iban text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'private_mcpn', 'extensions', 'pg_temp'
+AS $function$ BEGIN RETURN QUERY SELECT COALESCE((c->>'id')::uuid, b.id) AS id, COALESCE(c->>'banco', c->>'nome_banco', 'Banco')::text AS nome_banco, COALESCE(c->>'titular', c->>'nome_proprietario', '')::text AS nome_proprietario, COALESCE(c->>'iban', '')::text AS iban FROM public.pasta b, jsonb_array_elements(b.contas) AS c WHERE (c->>'id')::uuid = p_bank_id OR b.id = p_bank_id LIMIT 1; END; $function$
+
+
+=== public.toggle_chat_message_reaction_mcpn ===
+CREATE OR REPLACE FUNCTION public.toggle_chat_message_reaction_mcpn(p_message_id bigint, p_emoji text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_details jsonb;
+  v_reactions jsonb;
+  v_users jsonb;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required'
+      USING ERRCODE = '28000';
+  END IF;
+
+  IF p_emoji IS NULL OR length(btrim(p_emoji)) = 0 OR length(p_emoji) > 32 THEN
+    RAISE EXCEPTION 'Invalid reaction'
+      USING ERRCODE = '22023';
+  END IF;
+
+  SELECT COALESCE(c.detalhes, '{}'::jsonb)
+  INTO v_details
+  FROM public.chat_gruop AS c
+  WHERE c.id = p_message_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Message not found'
+      USING ERRCODE = 'P0002';
+  END IF;
+
+  v_reactions := COALESCE(v_details -> 'reacoes', '{}'::jsonb);
+  IF jsonb_typeof(v_reactions) <> 'object' THEN
+    RAISE EXCEPTION 'Invalid reaction data'
+      USING ERRCODE = '22023';
+  END IF;
+
+  v_users := COALESCE(v_reactions -> p_emoji, '[]'::jsonb);
+  IF jsonb_typeof(v_users) <> 'array' THEN
+    RAISE EXCEPTION 'Invalid reaction data'
+      USING ERRCODE = '22023';
+  END IF;
+
+  IF v_users @> jsonb_build_array(v_user_id::text) THEN
+    SELECT COALESCE(jsonb_agg(value ORDER BY ordinality), '[]'::jsonb)
+    INTO v_users
+    FROM jsonb_array_elements(v_users) WITH ORDINALITY AS reaction(value, ordinality)
+    WHERE value <> to_jsonb(v_user_id::text);
+
+    IF jsonb_array_length(v_users) = 0 THEN
+      v_reactions := v_reactions - p_emoji;
+    ELSE
+      v_reactions := jsonb_set(v_reactions, ARRAY[p_emoji], v_users, true);
+    END IF;
+  ELSE
+    v_reactions := jsonb_set(
+      v_reactions,
+      ARRAY[p_emoji],
+      v_users || jsonb_build_array(v_user_id::text),
+      true
+    );
+  END IF;
+
+  UPDATE public.chat_gruop
+  SET detalhes = jsonb_set(v_details, '{reacoes}', v_reactions, true)
+  WHERE id = p_message_id;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$function$
+
+
+=== public.update_my_profile_mcpn ===
+CREATE OR REPLACE FUNCTION public.update_my_profile_mcpn(p_nome_exibicao text DEFAULT NULL::text, p_avatar_url text DEFAULT NULL::text, p_bio text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+    DECLARE
+      v_uid uuid := auth.uid();
+    BEGIN
+      IF v_uid IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Não autenticado');
+      END IF;
+
+      UPDATE public.nucleo
+      SET 
+        nome_exibicao = COALESCE(NULLIF(trim(p_nome_exibicao), ''), nome_exibicao),
+        avatar_url = COALESCE(p_avatar_url, avatar_url),
+        bio = COALESCE(p_bio, bio),
+        updated_at = now()
+      WHERE id = v_uid;
+
+      RETURN jsonb_build_object(
+        'success', true,
+        'nome_exibicao', p_nome_exibicao,
+        'avatar_url', p_avatar_url,
+        'bio', p_bio
+      );
+    END;
+    $function$
+
+
